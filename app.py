@@ -1,87 +1,116 @@
-
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
+from flask_sqlalchemy import SQLAlchemy
+from models import db, Vehiculo
+from datetime import datetime, timedelta
 import os
-from flask import Flask, render_template, request, redirect, session, url_for
-import qrcode
+from io import BytesIO
 from reportlab.pdfgen import canvas
-from datetime import datetime
+import qrcode
 
 app = Flask(__name__)
-app.secret_key = "clave_secreta"
+app.secret_key = 'secreto123'  # cámbialo por seguridad
 
-USUARIO = "admin"
-CONTRASENA = "1234"
+# Configuración de base de datos
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///vehiculos.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
 
-os.makedirs("pdfs", exist_ok=True)
+@app.before_first_request
+def crear_tablas():
+    db.create_all()
 
-@app.route("/")
-def index():
-    if "usuario" in session:
-        return redirect(url_for("panel"))
-    return redirect(url_for("login"))
-
-@app.route("/login", methods=["GET", "POST"])
+@app.route('/')
 def login():
-    error = ""
-    if request.method == "POST":
-        usuario = request.form["usuario"]
-        contrasena = request.form["contrasena"]
-        if usuario == USUARIO and contrasena == CONTRASENA:
-            session["usuario"] = usuario
-            return redirect(url_for("panel"))
-        else:
-            error = "Usuario o contraseÃ±a incorrectos"
-    return render_template("login.html", error=error)
+    return render_template('login.html')
 
-@app.route("/panel")
+@app.route('/ingresar', methods=['POST'])
+def ingresar():
+    usuario = request.form['usuario']
+    password = request.form['password']
+    if usuario == 'admin' and password == '1234':
+        session['usuario'] = usuario
+        return redirect('/panel')
+    else:
+        return render_template('error.html', mensaje='Credenciales incorrectas')
+
+@app.route('/panel')
 def panel():
-    if "usuario" not in session:
-        return redirect(url_for("login"))
-    return render_template("panel.html", usuario=session["usuario"])
+    if 'usuario' not in session:
+        return redirect('/')
+    return render_template('panel.html')
 
-@app.route("/registro", methods=["GET", "POST"])
-def registro():
-    if "usuario" not in session:
-        return redirect(url_for("login"))
-    
-    if request.method == "POST":
-        marca = request.form["marca"]
-        linea = request.form["linea"]
-        anio = request.form["anio"]
-        serie = request.form["serie"]
-        motor = request.form["motor"]
+@app.route('/registrar', methods=['POST'])
+def registrar():
+    if 'usuario' not in session:
+        return redirect('/')
 
-        datos = f"Marca: {marca}\nLÃ­nea: {linea}\nAÃ±o: {anio}\nSerie: {serie}\nMotor: {motor}"
+    marca = request.form['marca']
+    linea = request.form['linea']
+    anio = request.form['anio']
+    numero_serie = request.form['numero_serie']
+    numero_motor = request.form['numero_motor']
+    vigencia = int(request.form['vigencia'])
 
-        # Crear cÃ³digo QR
-        qr = qrcode.make(datos)
-        qr_path = f"pdfs/qr_{serie}.png"
-        qr.save(qr_path)
+    # Obtener fecha actual y fecha de expiración
+    fecha_registro = datetime.utcnow()
+    fecha_expiracion = fecha_registro + timedelta(days=vigencia)
 
-        # Crear PDF
-        pdf_path = f"pdfs/{serie}.pdf"
-        c = canvas.Canvas(pdf_path)
-        c.setFont("Helvetica", 12)
-        c.drawString(50, 800, f"Registro de vehÃ­culo - {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-        y = 780
-        for linea in datos.split("\n"):
-            c.drawString(50, y, linea)
-            y -= 20
-        c.drawImage(qr_path, 50, y - 170, width=150, height=150)
-        c.save()
+    # Generar folio automático (consecutivo)
+    ultimo = Vehiculo.query.order_by(Vehiculo.id.desc()).first()
+    if ultimo and ultimo.folio:
+        folio_num = int(ultimo.folio)
+    else:
+        folio_num = 99  # Para que el siguiente sea 0100
+    folio = f"{folio_num + 1:04d}"
 
-        return render_template("exitoso.html")
-    
-    return render_template("registro_vehiculo.html")
+    # Generar contenido para QR
+    qr_data = f"Folio: {folio}\nMarca: {marca}\nLínea: {linea}\nAño: {anio}\nSerie: {numero_serie}\nMotor: {numero_motor}\nVigencia: {vigencia} días"
 
-@app.route("/error")
-def error():
-    mensaje = request.args.get("mensaje", "Ha ocurrido un error.")
-    return render_template("error.html", mensaje=mensaje)
+    # Crear código QR
+    qr_img = qrcode.make(qr_data)
+    qr_buffer = BytesIO()
+    qr_img.save(qr_buffer)
+    qr_buffer.seek(0)
 
-@app.route("/logout")
+    # Crear PDF del vehículo
+    pdf_buffer = BytesIO()
+    pdf = canvas.Canvas(pdf_buffer)
+    pdf.drawString(100, 800, f"Folio: {folio}")
+    pdf.drawString(100, 780, f"Marca: {marca}")
+    pdf.drawString(100, 760, f"Línea: {linea}")
+    pdf.drawString(100, 740, f"Año: {anio}")
+    pdf.drawString(100, 720, f"Número de serie: {numero_serie}")
+    pdf.drawString(100, 700, f"Número de motor: {numero_motor}")
+    pdf.drawString(100, 680, f"Vigencia: {vigencia} días")
+    pdf.drawString(100, 660, f"Fecha de registro: {fecha_registro.strftime('%Y-%m-%d')}")
+    pdf.drawString(100, 640, f"Expira: {fecha_expiracion.strftime('%Y-%m-%d')}")
+    pdf.drawImage(qr_buffer, 400, 700, width=100, height=100)
+    pdf.showPage()
+    pdf.save()
+    pdf_buffer.seek(0)
+
+    # Guardar en base de datos
+    nuevo = Vehiculo(
+        marca=marca,
+        linea=linea,
+        anio=anio,
+        numero_serie=numero_serie,
+        numero_motor=numero_motor,
+        fecha_registro=fecha_registro,
+        fecha_expiracion=fecha_expiracion,
+        vigencia_dias=vigencia,
+        folio=folio,
+        usuario=session['usuario']
+    )
+    db.session.add(nuevo)
+    db.session.commit()
+
+    return send_file(pdf_buffer, as_attachment=True, download_name=f"{folio}_vehiculo.pdf")
+
+@app.route('/logout')
 def logout():
-    session.pop("usuario", None)
-    return redirect(url_for("login"))
+    session.clear()
+    return redirect('/')
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
