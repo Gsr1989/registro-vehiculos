@@ -1,5 +1,5 @@
 Flask
-reportlab
+Flask-SQLAlchemy
 qrcode
-Pillow
+reportlab
 gunicorn
