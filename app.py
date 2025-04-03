@@ -2,15 +2,14 @@ from flask import Flask, render_template, request, redirect, url_for, session, s
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Vehiculo
 from datetime import datetime, timedelta
-import os
 from io import BytesIO
 from reportlab.pdfgen import canvas
 import qrcode
 
 app = Flask(__name__)
-app.secret_key = 'secreto123'  # cámbialo por seguridad
+app.secret_key = 'secreto123'
 
-# Configuración de base de datos
+# Configuración base de datos
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///vehiculos.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
@@ -51,28 +50,23 @@ def registrar():
     numero_motor = request.form['numero_motor']
     vigencia = int(request.form['vigencia'])
 
-    # Obtener fecha actual y fecha de expiración
     fecha_registro = datetime.utcnow()
     fecha_expiracion = fecha_registro + timedelta(days=vigencia)
 
-    # Generar folio automático (consecutivo)
     ultimo = Vehiculo.query.order_by(Vehiculo.id.desc()).first()
     if ultimo and ultimo.folio:
         folio_num = int(ultimo.folio)
     else:
-        folio_num = 99  # Para que el siguiente sea 0100
+        folio_num = 99
     folio = f"{folio_num + 1:04d}"
 
-    # Generar contenido para QR
     qr_data = f"Folio: {folio}\nMarca: {marca}\nLínea: {linea}\nAño: {anio}\nSerie: {numero_serie}\nMotor: {numero_motor}\nVigencia: {vigencia} días"
 
-    # Crear código QR
     qr_img = qrcode.make(qr_data)
     qr_buffer = BytesIO()
     qr_img.save(qr_buffer)
     qr_buffer.seek(0)
 
-    # Crear PDF del vehículo
     pdf_buffer = BytesIO()
     pdf = canvas.Canvas(pdf_buffer)
     pdf.drawString(100, 800, f"Folio: {folio}")
@@ -89,7 +83,6 @@ def registrar():
     pdf.save()
     pdf_buffer.seek(0)
 
-    # Guardar en base de datos
     nuevo = Vehiculo(
         marca=marca,
         linea=linea,
@@ -106,6 +99,13 @@ def registrar():
     db.session.commit()
 
     return send_file(pdf_buffer, as_attachment=True, download_name=f"{folio}_vehiculo.pdf")
+
+@app.route('/registros')
+def registros():
+    if 'usuario' not in session:
+        return redirect('/')
+    vehiculos = Vehiculo.query.all()
+    return render_template('registros.html', vehiculos=vehiculos)
 
 @app.route('/logout')
 def logout():
