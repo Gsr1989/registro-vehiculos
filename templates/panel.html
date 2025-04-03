@@ -7,19 +7,8 @@
 <body>
     <h2>Bienvenido, {{ usuario }}</h2>
     <a href="/logout">Cerrar sesión</a>
-    
-    <h3>Registrar vehículo</h3>
-    <form method="POST" action="/registro">
-        Marca: <input type="text" name="marca" required><br>
-        Línea: <input type="text" name="linea" required><br>
-        Año: <input type="text" name="anio" required><br>
-        Número de serie: <input type="text" name="serie" required><br>
-        Número de motor: <input type="text" name="motor" required><br>
-        <button type="submit">Registrar</button>
-    </form>
 
-    {% if mensaje %}
-        <p style="color: green;">{{ mensaje }}</p>
-    {% endif %}
+    <h3>Acciones</h3>
+    <a href="/registro"><button>Registrar vehículo</button></a>
 </body>
 </html>
