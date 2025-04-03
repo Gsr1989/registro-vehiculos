@@ -1,19 +1,17 @@
 
+import os
 from flask import Flask, render_template, request, redirect, session, url_for
 import qrcode
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from datetime import datetime, timedelta
-import os
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "clave_secreta"
 
 USUARIO = "admin"
 CONTRASENA = "1234"
-FOLIO = 100
-if not os.path.exists("documentos"):
-    os.makedirs("documentos")
+
+os.makedirs("pdfs", exist_ok=True)
 
 @app.route("/")
 def index():
@@ -31,7 +29,7 @@ def login():
             session["usuario"] = usuario
             return redirect(url_for("panel"))
         else:
-            error = "Usuario o contraseña incorrectos"
+            error = "Usuario o contraseÃ±a incorrectos"
     return render_template("login.html", error=error)
 
 @app.route("/panel")
@@ -42,10 +40,9 @@ def panel():
 
 @app.route("/registro", methods=["GET", "POST"])
 def registro():
-    global FOLIO
     if "usuario" not in session:
         return redirect(url_for("login"))
-
+    
     if request.method == "POST":
         marca = request.form["marca"]
         linea = request.form["linea"]
@@ -53,41 +50,33 @@ def registro():
         serie = request.form["serie"]
         motor = request.form["motor"]
 
-        folio = f"{FOLIO:04d}"
-        fecha_expedicion = datetime.today()
-        fecha_vencimiento = fecha_expedicion + timedelta(days=30)
+        datos = f"Marca: {marca}\nLÃ­nea: {linea}\nAÃ±o: {anio}\nSerie: {serie}\nMotor: {motor}"
 
-        # Crear QR
-        texto_qr = f"Folio: {folio}\nMarca: {marca}\nLínea: {linea}\nAño: {anio}\nSerie: {serie}\nMotor: {motor}\nExpedición: {fecha_expedicion.strftime('%d/%m/%Y')}\nVencimiento: {fecha_vencimiento.strftime('%d/%m/%Y')}"
-        img = qrcode.make(texto_qr)
-        ruta_qr = f"documentos/qr_{folio}.png"
-        img.save(ruta_qr)
+        # Crear cÃ³digo QR
+        qr = qrcode.make(datos)
+        qr_path = f"pdfs/qr_{serie}.png"
+        qr.save(qr_path)
 
-        # PDF principal
-        pdf_path = f"documentos/registro_{folio}.pdf"
-        c = canvas.Canvas(pdf_path, pagesize=letter)
-        c.drawString(100, 750, f"Folio: {folio}")
-        c.drawString(100, 730, f"Marca: {marca}")
-        c.drawString(100, 710, f"Línea: {linea}")
-        c.drawString(100, 690, f"Año: {anio}")
-        c.drawString(100, 670, f"Número de serie: {serie}")
-        c.drawString(100, 650, f"Número de motor: {motor}")
-        c.drawString(100, 630, f"Expedición: {fecha_expedicion.strftime('%d/%m/%Y')}")
-        c.drawString(100, 610, f"Vigencia: {fecha_vencimiento.strftime('%d/%m/%Y')}")
-        c.drawImage(ruta_qr, 400, 600, width=150, height=150)
+        # Crear PDF
+        pdf_path = f"pdfs/{serie}.pdf"
+        c = canvas.Canvas(pdf_path)
+        c.setFont("Helvetica", 12)
+        c.drawString(50, 800, f"Registro de vehÃ­culo - {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        y = 780
+        for linea in datos.split("\n"):
+            c.drawString(50, y, linea)
+            y -= 20
+        c.drawImage(qr_path, 50, y - 170, width=150, height=150)
         c.save()
 
-        # PDF comprobante
-        comprobante_path = f"documentos/comprobante_{folio}.pdf"
-        cc = canvas.Canvas(comprobante_path, pagesize=letter)
-        cc.drawString(100, 750, f"Referencia: {serie}")
-        cc.drawString(100, 730, f"Fecha de pago: {fecha_expedicion.strftime('%d/%m/%Y')}")
-        cc.save()
-
-        FOLIO += 1
         return render_template("exitoso.html")
-
+    
     return render_template("registro_vehiculo.html")
+
+@app.route("/error")
+def error():
+    mensaje = request.args.get("mensaje", "Ha ocurrido un error.")
+    return render_template("error.html", mensaje=mensaje)
 
 @app.route("/logout")
 def logout():
