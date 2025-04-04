@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, redirect, session, send_file
+from flask import Flask, render_template, request, redirect, session
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Vehiculo
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
 from reportlab.pdfgen import canvas
 import qrcode
@@ -14,6 +14,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///vehiculos.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
+# Crear tablas al iniciar
 @app.before_request
 def crear_tablas():
     db.create_all()
@@ -43,7 +44,7 @@ def panel():
 def registrar_vehiculo():
     if 'usuario' not in session:
         return redirect('/')
-    
+
     marca = request.form['marca']
     linea = request.form['linea']
     anio = request.form['anio']
@@ -54,33 +55,14 @@ def registrar_vehiculo():
         marca=marca,
         linea=linea,
         anio=anio,
-        serie=serie,
-        motor=motor,
-        fecha_registro=datetime.now()
+        numero_serie=serie,
+        numero_motor=motor,
+        fecha=datetime.now()
     )
     db.session.add(nuevo)
     db.session.commit()
 
-    # Crear código QR con los datos
-    data = f'Marca: {marca}\nLínea: {linea}\nAño: {anio}\nSerie: {serie}\nMotor: {motor}'
-    qr = qrcode.make(data)
-    qr_buffer = BytesIO()
-    qr.save(qr_buffer)
-    qr_buffer.seek(0)
-
-    # Crear PDF
-    pdf_buffer = BytesIO()
-    p = canvas.Canvas(pdf_buffer)
-    p.drawString(100, 800, f'Marca: {marca}')
-    p.drawString(100, 780, f'Línea: {linea}')
-    p.drawString(100, 760, f'Año: {anio}')
-    p.drawString(100, 740, f'Serie: {serie}')
-    p.drawString(100, 720, f'Motor: {motor}')
-    p.drawInlineImage(qr_buffer, 100, 600, 150, 150)
-    p.save()
-    pdf_buffer.seek(0)
-
-    return send_file(pdf_buffer, as_attachment=True, download_name=f'{serie}.pdf', mimetype='application/pdf')
+    return render_template('exitoso.html', mensaje='Vehículo registrado correctamente')
 
 if __name__ == '__main__':
     app.run(debug=True)
