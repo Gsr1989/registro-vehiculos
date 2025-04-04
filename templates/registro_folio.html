@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registrar Folio</title>
+</head>
+<body>
+    <h2>Registrar nuevo folio</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul>
+        {% for category, message in messages %}
+          <li style="color: {% if category == 'success' %}green{% else %}red{% endif %};">
+            {{ message }}
+          </li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form action="/registrar_folio" method="POST">
+        <label for="folio">Folio:</label>
+        <input type="text" name="folio" required><br><br>
+
+        <label for="vigencia">Vigencia (días):</label>
+        <select name="vigencia" required>
+            <option value="30">30 días</option>
+            <option value="60">60 días</option>
+            <option value="90">90 días</option>
+        </select><br><br>
+
+        <button type="submit">Registrar</button>
+    </form>
+</body>
+</html>
