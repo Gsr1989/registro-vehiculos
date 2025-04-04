@@ -1,4 +1,4 @@
-from  flask import Flask, render_template, request, redirect, url_for, session, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Vehiculo
 from datetime import datetime, timedelta
