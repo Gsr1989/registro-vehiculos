@@ -1,14 +1,28 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Panel</title>
+  <meta charset="UTF-8">
+  <title>Panel de Registro</title>
 </head>
 <body>
-    <h2>Bienvenido, {{ usuario }}</h2>
-    <a href="/logout">Cerrar sesión</a>
+  <h2>Registrar Vehículo</h2>
+  <form action="/registrar_vehiculo" method="POST">
+    <label for="marca">Marca:</label><br>
+    <input type="text" id="marca" name="marca" required><br><br>
 
-    <h3>Acciones</h3>
-    <a href="/registro"><button>Registrar vehículo</button></a>
+    <label for="linea">Línea:</label><br>
+    <input type="text" id="linea" name="linea" required><br><br>
+
+    <label for="anio">Año:</label><br>
+    <input type="number" id="anio" name="anio" required><br><br>
+
+    <label for="serie">Número de serie:</label><br>
+    <input type="text" id="serie" name="serie" required><br><br>
+
+    <label for="motor">Número de motor:</label><br>
+    <input type="text" id="motor" name="motor" required><br><br>
+
+    <button type="submit">Registrar y generar PDF</button>
+  </form>
 </body>
 </html>
