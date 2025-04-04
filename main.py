@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, send_file
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Vehiculo
 from datetime import datetime
 from io import BytesIO
 from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
 import qrcode
 
 app = Flask(__name__)
@@ -14,8 +15,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///vehiculos.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
-# Crear tablas al iniciar
-@app.before_request
+@app.before_first_request
 def crear_tablas():
     db.create_all()
 
@@ -50,19 +50,49 @@ def registrar_vehiculo():
     anio = request.form['anio']
     serie = request.form['serie']
     motor = request.form['motor']
+    fecha = datetime.now()
 
-    nuevo = Vehiculo(
+    vehiculo = Vehiculo(
         marca=marca,
         linea=linea,
         anio=anio,
         numero_serie=serie,
         numero_motor=motor,
-        fecha=datetime.now()
+        fecha=fecha
     )
-    db.session.add(nuevo)
+    db.session.add(vehiculo)
     db.session.commit()
 
-    return render_template('exitoso.html', mensaje='Vehículo registrado correctamente')
+    # Crear QR
+    qr_data = f"Marca: {marca}\nLínea: {linea}\nAño: {anio}\nSerie: {serie}\nMotor: {motor}"
+    qr = qrcode.make(qr_data)
+    qr_buffer = BytesIO()
+    qr.save(qr_buffer)
+    qr_buffer.seek(0)
+
+    # Crear PDF
+    pdf_buffer = BytesIO()
+    p = canvas.Canvas(pdf_buffer)
+    p.drawString(100, 800, "Comprobante de Registro de Vehículo")
+    p.drawString(100, 780, f"Marca: {marca}")
+    p.drawString(100, 760, f"Línea: {linea}")
+    p.drawString(100, 740, f"Año: {anio}")
+    p.drawString(100, 720, f"Serie: {serie}")
+    p.drawString(100, 700, f"Motor: {motor}")
+    p.drawString(100, 680, f"Fecha: {fecha.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    qr_img = ImageReader(qr_buffer)
+    p.drawImage(qr_img, 400, 700, width=120, height=120)
+    p.showPage()
+    p.save()
+    pdf_buffer.seek(0)
+
+    return send_file(pdf_buffer, as_attachment=True, download_name=f'{serie}.pdf', mimetype='application/pdf')
+
+@app.route('/logout')
+def logout():
+    session.pop('usuario', None)
+    return redirect('/')
 
 if __name__ == '__main__':
     app.run(debug=True)
