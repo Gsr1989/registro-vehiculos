@@ -1,5 +1,2 @@
 Flask==2.3.3
-Flask-SQLAlchemy
-qrcode
-reportlab
-gunicorn
+gunicorn==21.2.0
