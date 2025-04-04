@@ -25,6 +25,11 @@ def crear_bd():
 
 crear_bd()
 
+# Ruta de inicio
+@app.route('/')
+def inicio():
+    return render_template('inicio.html')
+
 # Ruta para registrar
 @app.route('/registrar', methods=['GET', 'POST'])
 def registrar():
