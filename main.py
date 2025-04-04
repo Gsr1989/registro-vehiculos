@@ -1,92 +1,89 @@
-from flask import Flask, render_template, request, redirect, flash
+from flask import Flask, render_template, request, redirect, url_for, flash
 from datetime import datetime, timedelta
 import sqlite3
-import os
 
 app = Flask(__name__)
-app.secret_key = 'secreto123'  # Cambia esto por algo más seguro en producción
+app.secret_key = 'clave_secreta'
 
-# Crear base de datos si no existe
-def crear_bd():
-    if not os.path.exists('datos.db'):
-        conn = sqlite3.connect('datos.db')
-        c = conn.cursor()
-        c.execute('''
-            CREATE TABLE registros (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                numero_serie TEXT,
-                folio TEXT UNIQUE,
-                fecha_expedicion TEXT,
-                fecha_vencimiento TEXT
-            )
-        ''')
+# Conexión a la base de datos
+def conectar_db():
+    conn = sqlite3.connect('folios.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# Crear tabla si no existe
+def crear_tabla():
+    conn = conectar_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS folios (
+            folio TEXT PRIMARY KEY,
+            fecha_expedicion TEXT,
+            fecha_vencimiento TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+crear_tabla()
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/admin')
+def admin():
+    return render_template('registro_folio.html')
+
+@app.route('/registrar_folio', methods=['POST'])
+def registrar_folio():
+    folio = request.form['folio']
+    vigencia = int(request.form['vigencia'])
+
+    fecha_expedicion = datetime.now()
+    fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
+
+    try:
+        conn = conectar_db()
+        conn.execute('INSERT INTO folios (folio, fecha_expedicion, fecha_vencimiento) VALUES (?, ?, ?)',
+                     (folio, fecha_expedicion.strftime('%Y-%m-%d'), fecha_vencimiento.strftime('%Y-%m-%d')))
         conn.commit()
         conn.close()
+        flash('Folio registrado exitosamente.', 'success')
+    except sqlite3.IntegrityError:
+        flash('Este folio ya está registrado.', 'error')
 
-crear_bd()
+    return redirect(url_for('admin'))
 
-# Ruta de inicio
-@app.route('/')
-def inicio():
-    return render_template('inicio.html')
-
-# Ruta para registrar
-@app.route('/registrar', methods=['GET', 'POST'])
-def registrar():
-    if request.method == 'POST':
-        numero_serie = request.form['numero_serie']
-        folio = request.form['folio']
-        vigencia_dias = int(request.form['vigencia_dias'])
-
-        fecha_expedicion = datetime.now()
-        fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia_dias)
-
-        try:
-            conn = sqlite3.connect('datos.db')
-            c = conn.cursor()
-            c.execute('INSERT INTO registros (numero_serie, folio, fecha_expedicion, fecha_vencimiento) VALUES (?, ?, ?, ?)', 
-                      (numero_serie, folio, fecha_expedicion.strftime('%Y-%m-%d'), fecha_vencimiento.strftime('%Y-%m-%d')))
-            conn.commit()
-            conn.close()
-            flash(f'Folio {folio} registrado exitosamente.', 'success')
-        except sqlite3.IntegrityError:
-            flash('Ese folio ya existe. Usa uno diferente.', 'error')
-        return redirect('/registrar')
-    return render_template('registro.html')
-
-# Ruta para consulta
-@app.route('/consulta', methods=['GET', 'POST'])
+@app.route('/consulta')
 def consulta():
-    resultado = None
-    if request.method == 'POST':
-        folio = request.form['folio']
-        conn = sqlite3.connect('datos.db')
-        c = conn.cursor()
-        c.execute('SELECT fecha_expedicion, fecha_vencimiento FROM registros WHERE folio = ?', (folio,))
-        fila = c.fetchone()
-        conn.close()
+    return render_template('consulta_folio.html')
 
-        if fila:
-            fecha_expedicion = datetime.strptime(fila[0], '%Y-%m-%d')
-            fecha_vencimiento = datetime.strptime(fila[1], '%Y-%m-%d')
-            hoy = datetime.now()
+@app.route('/resultado_consulta', methods=['POST'])
+def resultado_consulta():
+    folio = request.form['folio']
+    conn = conectar_db()
+    cursor = conn.execute('SELECT * FROM folios WHERE folio = ?', (folio,))
+    fila = cursor.fetchone()
+    conn.close()
 
-            if hoy <= fecha_vencimiento:
-                resultado = {
-                    'tipo': 'activo',
-                    'mensaje': f"El folio Nº {folio} se encuentra activo y vence el día {fecha_vencimiento.strftime('%d/%m/%Y')}."
-                }
-            else:
-                resultado = {
-                    'tipo': 'vencido',
-                    'mensaje': f"El folio Nº {folio} ha vencido desde el día {fecha_vencimiento.strftime('%d/%m/%Y')}."
-                }
+    if fila:
+        fecha_exp = datetime.strptime(fila['fecha_expedicion'], '%Y-%m-%d')
+        fecha_venc = datetime.strptime(fila['fecha_vencimiento'], '%Y-%m-%d')
+        hoy = datetime.now()
+
+        if hoy <= fecha_venc:
+            estado = 'Vigente'
         else:
-            resultado = {
-                'tipo': 'no_encontrado',
-                'mensaje': "Este folio no se encuentra en nuestros registros."
-            }
-    return render_template('consulta.html', resultado=resultado)
+            estado = 'Vencido'
+
+        return render_template('resultado_consulta.html',
+                               encontrado=True,
+                               folio=folio,
+                               estado=estado,
+                               fecha_expedicion=fecha_exp.strftime('%d/%m/%Y'),
+                               fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'))
+    else:
+        return render_template('resultado_consulta.html', encontrado=False)
 
 if __name__ == '__main__':
     app.run(debug=True)
