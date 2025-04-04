@@ -14,8 +14,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///vehiculos.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
-# Crear tablas directamente (sin decorador)
-with app.app_context():
+# Crear tablas al iniciar (corregido con app.before_request)
+@app.before_request
+def crear_tablas():
     db.create_all()
 
 @app.route('/')
@@ -38,8 +39,6 @@ def panel():
         return render_template('panel.html')
     else:
         return redirect('/')
-
-# Agrega aquí tus demás rutas...
 
 if __name__ == '__main__':
     app.run(debug=True)
