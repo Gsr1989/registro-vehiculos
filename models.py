@@ -5,17 +5,9 @@ db = SQLAlchemy()
 
 class Vehiculo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    marca = db.Column(db.String(100))
-    linea = db.Column(db.String(100))
-    anio = db.Column(db.String(10))
-    numero_serie = db.Column(db.String(100), unique=True)
-    numero_motor = db.Column(db.String(100))
+    marca = db.Column(db.String(100), nullable=False)
+    linea = db.Column(db.String(100), nullable=False)
+    anio = db.Column(db.String(4), nullable=False)
+    serie = db.Column(db.String(100), nullable=False, unique=True)
+    motor = db.Column(db.String(100), nullable=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
-    vigencia_dias = db.Column(db.Integer)
-    fecha_expiracion = db.Column(db.DateTime)
-    folio = db.Column(db.String(10), unique=True)
-    usuario = db.Column(db.String(100))
-
-    def estado(self):
-        hoy = datetime.utcnow()
-        return "Vigente" if hoy <= self.fecha_expiracion else "Vencido"
