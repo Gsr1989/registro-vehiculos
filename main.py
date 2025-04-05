@@ -55,32 +55,36 @@ def registrar_folio():
 def consulta():
     return render_template('consulta_folio.html')
 
-@app.route('/resultado_consulta', methods=['POST'])
+@app.route('/resultado_consulta', methods=['GET', 'POST'])
 def resultado_consulta():
-    folio = request.form['folio']
-    conn = conectar_db()
-    cursor = conn.execute('SELECT * FROM folios WHERE folio = ?', (folio,))
-    fila = cursor.fetchone()
-    conn.close()
+    if request.method == 'POST':
+        folio = request.form['folio']
+        conn = conectar_db()
+        cursor = conn.execute('SELECT * FROM folios WHERE folio = ?', (folio,))
+        fila = cursor.fetchone()
+        conn.close()
 
-    if fila:
-        fecha_exp = datetime.strptime(fila['fecha_expedicion'], '%Y-%m-%d')
-        fecha_venc = datetime.strptime(fila['fecha_vencimiento'], '%Y-%m-%d')
-        hoy = datetime.now()
+        if fila:
+            fecha_exp = datetime.strptime(fila['fecha_expedicion'], '%Y-%m-%d')
+            fecha_venc = datetime.strptime(fila['fecha_vencimiento'], '%Y-%m-%d')
+            hoy = datetime.now()
 
-        if hoy <= fecha_venc:
-            estado = 'Vigente'
+            if hoy <= fecha_venc:
+                estado = 'Vigente'
+            else:
+                estado = 'Vencido'
+
+            return render_template('resultado_consulta.html',
+                                   encontrado=True,
+                                   folio=folio,
+                                   estado=estado,
+                                   fecha_expedicion=fecha_exp.strftime('%d/%m/%Y'),
+                                   fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'))
         else:
-            estado = 'Vencido'
+            return render_template('resultado_consulta.html', encontrado=False)
 
-        return render_template('resultado_consulta.html',
-                               encontrado=True,
-                               folio=folio,
-                               estado=estado,
-                               fecha_expedicion=fecha_exp.strftime('%d/%m/%Y'),
-                               fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'))
-    else:
-        return render_template('resultado_consulta.html', encontrado=False)
+    # Si entra por GET, simplemente carga la página sin resultado
+    return render_template('resultado_consulta.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
