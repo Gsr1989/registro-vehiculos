@@ -1,123 +1,89 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Resultado de Consulta</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-      background-color: #f5f5f5;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #e6e6e6;
-      padding: 20px 30px;
-      border-bottom: 1px solid #ccc;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 22px;
-      color: #333;
-    }
-    main {
-      max-width: 700px;
-      margin: 40px auto;
-      background-color: #fff;
-      padding: 30px 20px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-    }
-    .mensaje {
-      padding: 20px;
-      border-radius: 6px;
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 20px;
-      white-space: pre-line;
-    }
-    .verde { background-color: #d4f8d4; color: #207020; }
-    .amarillo { background-color: #fff4cc; color: #8a6d00; }
-    .rojo { background-color: #fdd; color: #900; }
-    .datos {
-      background-color: #eee;
-      padding: 15px;
-      border-radius: 6px;
-      margin-bottom: 15px;
-    }
-    .datos p {
-      margin: 6px 0;
-      font-size: 15px;
-    }
-    .final {
-      text-align: center;
-      font-weight: bold;
-      margin-top: 25px;
-      font-size: 15px;
-      color: #444;
-    }
-    .boton {
-      display: block;
-      width: 100%;
-      text-align: center;
-      background-color: #800000;
-      color: white;
-      padding: 12px;
-      border-radius: 5px;
-      text-decoration: none;
-      font-size: 16px;
-      margin-top: 20px;
-    }
-    @media (min-width: 768px) {
-      .boton {
-        width: auto;
-        display: inline-block;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado de Consulta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #e6e6e6;
+            padding: 15px 30px;
+            border-bottom: 1px solid #ccc;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+        }
+        main {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        h2 {
+            font-size: 24px;
+            color: #333;
+        }
+        .resultado {
+            margin-top: 20px;
+        }
+        .resultado h3 {
+            font-size: 18px;
+        }
+        .resultado p {
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        .resultado .green {
+            color: green;
+        }
+        .resultado .yellow {
+            color: #ff9800;
+        }
+        .resultado .red {
+            color: red;
+        }
+        .resultado .data {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>Gobierno Digital - Resultado</h1>
-  </header>
-  <main>
-    <h2>Resultado de la consulta</h2>
-
-    {% if resultado.estado == 'Vigente' %}
-      <div class="mensaje verde">
-        La Secretaría de Movilidad de la Ciudad de México certifica que:
-
-        El folio Nº {{ resultado.folio }} se encuentra Vigente.
-        Fecha de expedición: {{ resultado.fecha_expedicion }}
-        Fecha de vencimiento: {{ resultado.fecha_vencimiento }}
-      </div>
-    {% elif resultado.estado == 'Vencido' %}
-      <div class="mensaje amarillo">
-        La Secretaría de Movilidad de la Ciudad de México certifica que:
-
-        El folio Nº {{ resultado.folio }} se encuentra Vencido.
-        Fecha de expedición: {{ resultado.fecha_expedicion }}
-        Fecha de vencimiento: {{ resultado.fecha_vencimiento }}
-      </div>
-    {% else %}
-      <div class="mensaje rojo">
-        El folio ingresado no se encuentra en nuestros registros.
-      </div>
-    {% endif %}
-
-    {% if resultado.estado in ['Vigente', 'Vencido'] %}
-    <div class="datos">
-      <p><strong>Marca:</strong> {{ resultado.marca }}</p>
-      <p><strong>Línea:</strong> {{ resultado.linea }}</p>
-      <p><strong>Año:</strong> {{ resultado.anio }}</p>
-      <p><strong>Número de Serie:</strong> {{ resultado.numero_serie }}</p>
-      <p><strong>Número de Motor:</strong> {{ resultado.motor }}</p>
-    </div>
-
-    <p class="final">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</p>
-    {% endif %}
-  </main>
+    <header>
+        <h1>Gobierno Digital - Resultado de Consulta</h1>
+    </header>
+    <main>
+        <h2>Resultado de la consulta</h2>
+        
+        <div class="resultado">
+            <h3>La Secretaría de Movilidad de la Ciudad de México certifica que:</h3>
+            <p class="{{ resultado.estado | lower }}">{{ resultado.estado }}</p>
+            {% if resultado.estado != 'Este folio no se encuentra en nuestros registros' %}
+                <p>Fecha de expedición: {{ resultado.fecha_expedicion }}</p>
+                <p>Fecha de vencimiento: {{ resultado.fecha_vencimiento }}</p>
+                <div class="data">
+                    <p>Marca: {{ resultado.marca }}</p>
+                    <p>Línea: {{ resultado.linea }}</p>
+                    <p>Año: {{ resultado.año }}</p>
+                    <p>Número de Serie: {{ resultado.numero_serie }}</p>
+                    <p>Número de Motor: {{ resultado.numero_motor }}</p>
+                </div>
+                <p><strong>DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</strong></p>
+            {% endif %}
+        </div>
+    </main>
 </body>
 </html>
