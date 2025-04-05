@@ -29,6 +29,11 @@ def crear_tabla():
 
 crear_tabla()
 
+# Ruta raíz que redirige al login
+@app.route('/')
+def inicio():
+    return redirect(url_for('login'))
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
