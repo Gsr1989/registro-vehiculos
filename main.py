@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import datetime, timedelta
 import sqlite3
 
@@ -33,9 +33,27 @@ crear_tabla()
 def index():
     return render_template('index.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        password = request.form['password']
+        if password == 'admin':  # Cambia esta parte con la contraseña real
+            session['logged_in'] = True
+            return redirect(url_for('admin'))
+        else:
+            flash('Contraseña incorrecta', 'error')
+    return render_template('login.html')
+
 @app.route('/admin')
 def admin():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     return render_template('registro_folio.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
 
 @app.route('/registrar_folio', methods=['POST'])
 def registrar_folio():
@@ -65,44 +83,41 @@ def registrar_folio():
 def consulta():
     return render_template('consulta_folio.html')
 
-@app.route('/resultado_consulta', methods=['GET', 'POST'])
+@app.route('/resultado_consulta', methods=['POST'])
 def resultado_consulta():
-    if request.method == 'POST':
-        folio = request.form['folio']
-        conn = conectar_db()
-        cursor = conn.execute('SELECT * FROM folios WHERE folio = ?', (folio,))
-        fila = cursor.fetchone()
-        conn.close()
+    folio = request.form['folio']
+    conn = conectar_db()
+    cursor = conn.execute('SELECT * FROM folios WHERE folio = ?', (folio,))
+    fila = cursor.fetchone()
+    conn.close()
 
-        resultado = {}
-        if fila:
-            fecha_exp = datetime.strptime(fila['fecha_expedicion'], '%Y-%m-%d')
-            fecha_venc = datetime.strptime(fila['fecha_vencimiento'], '%Y-%m-%d')
-            hoy = datetime.now()
+    resultado = {}
+    if fila:
+        fecha_exp = datetime.strptime(fila['fecha_expedicion'], '%Y-%m-%d')
+        fecha_venc = datetime.strptime(fila['fecha_vencimiento'], '%Y-%m-%d')
+        hoy = datetime.now()
 
-            if hoy <= fecha_venc:
-                estado = 'Vigente'
-            else:
-                estado = 'Vencido'
-
-            resultado = {
-                'estado': estado,
-                'fecha_expedicion': fecha_exp.strftime('%d/%m/%Y'),
-                'fecha_vencimiento': fecha_venc.strftime('%d/%m/%Y'),
-                'marca': fila['marca'],
-                'linea': fila['linea'],
-                'ano': fila['ano'],
-                'num_serie': fila['num_serie'],
-                'num_motor': fila['num_motor']
-            }
+        if hoy <= fecha_venc:
+            estado = 'Vigente'
         else:
-            resultado = {
-                'estado': 'No encontrado'
-            }
+            estado = 'Vencido'
 
-        return render_template('resultado_consulta.html', resultado=resultado)
+        resultado = {
+            'estado': estado,
+            'fecha_expedicion': fecha_exp.strftime('%d/%m/%Y'),
+            'fecha_vencimiento': fecha_venc.strftime('%d/%m/%Y'),
+            'marca': fila['marca'],
+            'linea': fila['linea'],
+            'ano': fila['ano'],
+            'num_serie': fila['num_serie'],
+            'num_motor': fila['num_motor']
+        }
+    else:
+        resultado = {
+            'estado': 'No encontrado'
+        }
 
-    return render_template('resultado_consulta.html')
+    return render_template('resultado_consulta.html', resultado=resultado)
 
 if __name__ == '__main__':
     app.run(debug=True)
