@@ -1,20 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Consulta de Folio</title>
-    <style>
-        body { font-family: sans-serif; background-color: #f5f5f5; padding: 20px; }
-        form { background: white; padding: 20px; border-radius: 8px; max-width: 400px; margin: auto; }
-        input, button { width: 100%; padding: 10px; margin: 10px 0; font-size: 16px; }
-        button { background-color: #0066cc; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Consulta</title>
 </head>
 <body>
-    <h2 style="text-align: center;">Consulta tu Folio</h2>
-    <form method="POST" action="/resultado_consulta">
-        <input type="text" name="folio" placeholder="Ingresa tu folio" required>
-        <button type="submit">Consultar</button>
-    </form>
+  <h2>Consulta de folio</h2>
+  <form method="POST" action="/resultado_consulta">
+    <input type="text" name="folio" placeholder="Ingresa tu folio" required><br>
+    <button type="submit">Consultar</button>
+  </form>
 </body>
 </html>
