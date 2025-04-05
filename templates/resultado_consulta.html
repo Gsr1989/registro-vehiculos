@@ -60,13 +60,13 @@
     <main>
         <h2>Resultado de la consulta</h2>{% if resultado.estado == 'Vigente' %}
         <div class="resultado vigente">
-            <strong>Folio vigente</strong><br>
+            <strong>El folio <u>{{ resultado.folio }}</u> se encuentra vigente.</strong><br>
             Fecha de expedición: {{ resultado.fecha_expedicion }}<br>
             Fecha de vencimiento: {{ resultado.fecha_vencimiento }}
         </div>
     {% elif resultado.estado == 'Vencido' %}
         <div class="resultado vencido">
-            <strong>Este folio está vencido.</strong>
+            <strong>El folio <u>{{ resultado.folio }}</u> está vencido.</strong>
         </div>
     {% else %}
         <div class="resultado no-encontrado">
