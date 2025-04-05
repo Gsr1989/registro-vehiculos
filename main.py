@@ -15,13 +15,13 @@ def crear_tabla():
     conn.execute('''
         CREATE TABLE IF NOT EXISTS folios (
             folio TEXT PRIMARY KEY,
+            fecha_expedicion TEXT,
+            fecha_vencimiento TEXT,
             marca TEXT,
             linea TEXT,
-            ano INTEGER,
-            num_serie TEXT,
-            num_motor TEXT,
-            fecha_expedicion TEXT,
-            fecha_vencimiento TEXT
+            año TEXT,
+            numero_serie TEXT,
+            numero_motor TEXT
         )
     ''')
     conn.commit()
@@ -29,48 +29,41 @@ def crear_tabla():
 
 crear_tabla()
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        username = request.form['username']
         password = request.form['password']
-        if password == 'admin':  # Cambia esta parte con la contraseña real
+        if username == 'admin' and password == 'tu_contraseña':  # Aquí pon tu contraseña
             session['logged_in'] = True
             return redirect(url_for('admin'))
         else:
-            flash('Contraseña incorrecta', 'error')
+            flash('Credenciales incorrectas', 'error')
     return render_template('login.html')
 
-@app.route('/admin')
+@app.route('/admin', methods=['GET', 'POST'])
 def admin():
-    if not session.get('logged_in'):
+    if 'logged_in' not in session:
         return redirect(url_for('login'))
-    return render_template('registro_folio.html')
-
-@app.route('/logout')
-def logout():
-    session.pop('logged_in', None)
-    return redirect(url_for('login'))
+    return render_template('panel.html')
 
 @app.route('/registrar_folio', methods=['POST'])
 def registrar_folio():
     folio = request.form['folio']
+    vigencia = int(request.form['vigencia'])
     marca = request.form['marca']
     linea = request.form['linea']
-    ano = request.form['ano']
-    num_serie = request.form['num_serie']
-    num_motor = request.form['num_motor']
-    vigencia = int(request.form['vigencia'])
+    año = request.form['año']
+    numero_serie = request.form['numero_serie']
+    numero_motor = request.form['numero_motor']
     fecha_expedicion = datetime.now()
     fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
 
     try:
         conn = conectar_db()
-        conn.execute('INSERT INTO folios (folio, marca, linea, ano, num_serie, num_motor, fecha_expedicion, fecha_vencimiento) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                     (folio, marca, linea, ano, num_serie, num_motor, fecha_expedicion.strftime('%Y-%m-%d'), fecha_vencimiento.strftime('%Y-%m-%d')))
+        conn.execute('''INSERT INTO folios (folio, fecha_expedicion, fecha_vencimiento, marca, linea, año, numero_serie, numero_motor)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', 
+                     (folio, fecha_expedicion.strftime('%Y-%m-%d'), fecha_vencimiento.strftime('%Y-%m-%d'), marca, linea, año, numero_serie, numero_motor))
         conn.commit()
         conn.close()
         flash('Folio registrado exitosamente.', 'success')
@@ -108,9 +101,9 @@ def resultado_consulta():
             'fecha_vencimiento': fecha_venc.strftime('%d/%m/%Y'),
             'marca': fila['marca'],
             'linea': fila['linea'],
-            'ano': fila['ano'],
-            'num_serie': fila['num_serie'],
-            'num_motor': fila['num_motor']
+            'año': fila['año'],
+            'numero_serie': fila['numero_serie'],
+            'numero_motor': fila['numero_motor']
         }
     else:
         resultado = {
@@ -118,6 +111,11 @@ def resultado_consulta():
         }
 
     return render_template('resultado_consulta.html', resultado=resultado)
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=True)
