@@ -1,100 +1,125 @@
 <!DOCTYPE html><html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Folio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            background-color: #e6e6e6;
-            padding: 15px 30px;
-            text-align: left;
-            border-bottom: 1px solid #ccc;
-        }
-        header h1 {
-            margin: 0;
-            font-size: 20px;
-            color: #333;
-        }
-        main {
-            max-width: 600px;
-            margin: 40px auto;
-            background: #fff;
-            padding: 30px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-        }
-        h2 {
-            margin-top: 0;
-            font-size: 24px;
-            color: #333;
-        }
-        form {
-            margin-top: 20px;
-        }
-        input[type="text"], select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        button {
-            background-color: #0066cc;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .mensaje {
-            margin-bottom: 15px;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        .success {
-            background-color: #e0f7e9;
-            color: #2e7d32;
-            border: 1px solid #a5d6a7;
-        }
-        .error {
-            background-color: #fdecea;
-            color: #c62828;
-            border: 1px solid #f5c6cb;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrar folio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+    }
+    header {
+      background-color: #e6e6e6;
+      padding: 20px 30px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #333;
+    }
+    main {
+      max-width: 600px;
+      margin: 50px auto;
+      background-color: #fff;
+      padding: 40px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    h2 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #0066cc;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .mensaje {
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    .success {
+      background-color: #e0f7e9;
+      color: #2e7d32;
+      border: 1px solid #a5d6a7;
+    }
+    .error {
+      background-color: #fdecea;
+      color: #c62828;
+      border: 1px solid #f5c6cb;
+    }
+    .boton-guinda {
+      background-color: #800000;
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .boton-guinda:hover {
+      background-color: #660000;
+    }
+    .boton-logout {
+      margin-top: 20px;
+      background-color: #999;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .boton-logout:hover {
+      background-color: #777;
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Gobierno Digital - Registro de Folios</h1>
-    </header>
-    <main>
-        <h2>Registrar nuevo folio</h2>{% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="mensaje {{ category }}">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
+  <header>
+    <h1>Gobierno Digital - Registro de Folios</h1>
+  </header>
+  <main>
+    <h2>Registrar nuevo folio</h2>{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="mensaje {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
-    <form method="POST" action="/registrar_folio">
-        <input type="text" name="folio" placeholder="Folio único" required>
-        <select name="vigencia" required>
-            <option value="30">30 días</option>
-            <option value="60">60 días</option>
-            <option value="90">90 días</option>
-        </select>
-        <button type="submit">Registrar</button>
-    </form>
-</main>
+<form method="POST" action="/registrar_folio">
+  <input type="text" name="folio" placeholder="Folio único" required>
+  <select name="vigencia" required>
+    <option value="30">30 días</option>
+    <option value="60">60 días</option>
+    <option value="90">90 días</option>
+  </select>
+  <button type="submit">Registrar</button>
+</form>
 
+<a href="/consulta"><button class="boton-guinda">Ir a consulta</button></a>
+<br>
+<a href="/logout"><button class="boton-logout">Cerrar sesión</button></a>
+
+  </main>
 </body>
 </html>
