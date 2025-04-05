@@ -1,31 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Panel de Administración</title>
+  <meta charset="UTF-8">
+  <title>Panel</title>
 </head>
 <body>
-    <h1>Registro de Folio</h1>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <p style="color:{{ 'green' if category == 'success' else 'red' }}">{{ message }}</p>
-      {% endfor %}
-    {% endwith %}
-
-    <form action="/registrar_folio" method="POST">
-        <input type="text" name="folio" placeholder="Folio único" required><br>
-        <input type="text" name="serie" placeholder="Número de serie del vehículo" required><br>
-        <select name="vigencia" required>
-            <option value="">Selecciona vigencia</option>
-            <option value="30">30 días</option>
-            <option value="60">60 días</option>
-            <option value="90">90 días</option>
-        </select><br><br>
-        <button type="submit">Registrar</button>
-    </form>
-
-    <br>
-    <a href="/consulta"><button>Ir a consulta</button></a>
-    <a href="/logout"><button>Cerrar sesión</button></a>
+  <h2>Panel de administración</h2>
+  <a href="/registro_folio"><button>Registro de folio</button></a>
+  <a href="/consulta"><button>Ir a consulta</button></a>
+  <a href="/logout"><button>Cerrar sesión</button></a>
 </body>
 </html>
