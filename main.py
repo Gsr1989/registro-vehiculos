@@ -5,7 +5,6 @@ import sqlite3
 app = Flask(__name__)
 app.secret_key = 'clave_secreta'
 
-# Usuario y contraseña del login
 USUARIO = 'admin'
 CONTRASEÑA = '1234'
 
@@ -20,13 +19,32 @@ def crear_tabla():
         CREATE TABLE IF NOT EXISTS folios (
             folio TEXT PRIMARY KEY,
             fecha_expedicion TEXT,
-            fecha_vencimiento TEXT
+            fecha_vencimiento TEXT,
+            marca TEXT,
+            linea TEXT,
+            anio TEXT,
+            numero_serie TEXT,
+            numero_motor TEXT
         )
     ''')
     conn.commit()
     conn.close()
 
+def actualizar_tabla():
+    conn = conectar_db()
+    try:
+        conn.execute('ALTER TABLE folios ADD COLUMN marca TEXT')
+        conn.execute('ALTER TABLE folios ADD COLUMN linea TEXT')
+        conn.execute('ALTER TABLE folios ADD COLUMN anio TEXT')
+        conn.execute('ALTER TABLE folios ADD COLUMN numero_serie TEXT')
+        conn.execute('ALTER TABLE folios ADD COLUMN numero_motor TEXT')
+        conn.commit()
+    except:
+        pass
+    conn.close()
+
 crear_tabla()
+actualizar_tabla()
 
 @app.route('/')
 def index():
@@ -65,10 +83,24 @@ def registrar_folio():
     fecha_expedicion = datetime.now()
     fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
 
+    # Nuevos campos
+    marca = request.form['marca']
+    linea = request.form['linea']
+    anio = request.form['anio']
+    numero_serie = request.form['numero_serie']
+    numero_motor = request.form['numero_motor']
+
     try:
         conn = conectar_db()
-        conn.execute('INSERT INTO folios (folio, fecha_expedicion, fecha_vencimiento) VALUES (?, ?, ?)',
-                     (folio, fecha_expedicion.strftime('%Y-%m-%d'), fecha_vencimiento.strftime('%Y-%m-%d')))
+        conn.execute('''
+            INSERT INTO folios (
+                folio, fecha_expedicion, fecha_vencimiento,
+                marca, linea, anio, numero_serie, numero_motor
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            folio, fecha_expedicion.strftime('%Y-%m-%d'), fecha_vencimiento.strftime('%Y-%m-%d'),
+            marca, linea, anio, numero_serie, numero_motor
+        ))
         conn.commit()
         conn.close()
         flash('Folio registrado exitosamente.', 'success')
@@ -105,7 +137,12 @@ def resultado_consulta():
                 'folio': folio,
                 'estado': estado,
                 'fecha_expedicion': fecha_exp.strftime('%d/%m/%Y'),
-                'fecha_vencimiento': fecha_venc.strftime('%d/%m/%Y')
+                'fecha_vencimiento': fecha_venc.strftime('%d/%m/%Y'),
+                'marca': fila['marca'],
+                'linea': fila['linea'],
+                'anio': fila['anio'],
+                'numero_serie': fila['numero_serie'],
+                'numero_motor': fila['numero_motor']
             }
         else:
             resultado = {
