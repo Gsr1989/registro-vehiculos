@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +15,6 @@
         header {
             background-color: #e6e6e6;
             padding: 15px 30px;
-            text-align: left;
             border-bottom: 1px solid #ccc;
         }
         header h1 {
@@ -31,12 +31,8 @@
             border-radius: 6px;
         }
         h2 {
-            margin-top: 0;
             font-size: 24px;
             color: #333;
-        }
-        form {
-            margin-top: 20px;
         }
         input[type="text"] {
             width: 100%;
@@ -62,9 +58,9 @@
         <h1>Gobierno Digital - Consulta</h1>
     </header>
     <main>
-        <h2>Ingresa tu folio para consultar</h2>
+        <h2>Ingresa tu folio</h2>
         <form method="POST" action="/resultado_consulta">
-            <input type="text" name="folio" placeholder="Ingresa tu folio" required>
+            <input type="text" name="folio" placeholder="Folio a consultar" required>
             <button type="submit">Consultar</button>
         </form>
     </main>
