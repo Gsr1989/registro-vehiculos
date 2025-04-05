@@ -3,57 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <title>Resultado de Consulta</title>
-    <style>
-        body { font-family: sans-serif; background-color: #f5f5f5; padding: 20px; }
-        .contenedor { background: white; padding: 30px; max-width: 600px; margin: auto; border-radius: 10px; }
-        .estado-vigente { color: green; font-weight: bold; }
-        .estado-vencido { color: orange; font-weight: bold; }
-        .estado-no { color: red; font-weight: bold; }
-        .recuadro {
-            background-color: #eee;
-            padding: 10px;
-            margin-top: 20px;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #800000;
-            color: white;
-            padding: 10px 20px;
-            margin-top: 20px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-    </style>
 </head>
 <body>
-    <div class="contenedor">
-        {% if encontrado %}
-            <p>La Secretaría de Movilidad de la Ciudad de México certifica que:</p>
-            <p class="{% if estado == 'Vigente' %}estado-vigente{% elif estado == 'Vencido' %}estado-vencido{% else %}estado-no{% endif %}">
-                El folio Nº {{ folio }} se encuentra {{ estado | lower }}<br>
+    <h2>Resultado de la consulta</h2>
+
+    {% if encontrado %}
+        {% if estado == 'vigente' %}
+            <div style="background:#d4f4d4;padding:20px;">
+                <strong>El folio N° {{ folio }} se encuentra Vigente.</strong><br>
                 Fecha de expedición: {{ fecha_expedicion }}<br>
                 Fecha de vencimiento: {{ fecha_vencimiento }}
-            </p>
-
-            <div class="recuadro">
-                <p><strong>Marca:</strong> —</p>
-                <p><strong>Línea:</strong> —</p>
-                <p><strong>Año:</strong> —</p>
-                <p><strong>Número de Serie:</strong> {{ numero_serie }}</p>
-                <p><strong>Número de Motor:</strong> —</p>
             </div>
-
-            <p style="margin-top: 20px; font-weight: bold;">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</p>
-
-            <form action="/generar_comprobante" method="post">
-                <input type="hidden" name="folio" value="{{ folio }}">
-                <button type="submit">Generar comprobante de pago</button>
-            </form>
-        {% else %}
-            <p class="estado-no">Este folio no se encuentra en nuestros registros.</p>
+        {% elif estado == 'vencido' %}
+            <div style="background:#f9e4b7;padding:20px;">
+                <strong>El folio N° {{ folio }} se encuentra Vencido.</strong><br>
+                Fecha de expedición: {{ fecha_expedicion }}<br>
+                Fecha de vencimiento: {{ fecha_vencimiento }}
+            </div>
         {% endif %}
-    </div>
+
+        <div style="background:#eee;margin-top:20px;padding:15px;">
+            <strong>Número de serie:</strong> {{ serie }}
+        </div>
+
+        <br>
+        <a href="{{ url_for('generar_comprobante', folio=folio) }}"><button>Generar comprobante de pago</button></a>
+
+    {% else %}
+        <div style="background:#f8d7da;padding:20px;">
+            <strong>Este folio no se encuentra en nuestros registros.</strong>
+        </div>
+    {% endif %}
 </body>
 </html>
