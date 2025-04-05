@@ -1,9 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import datetime, timedelta
 import sqlite3
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta'
+
+# Usuario y contraseña del login
+USUARIO = 'admin'
+CONTRASEÑA = '1234'
 
 def conectar_db():
     conn = sqlite3.connect('folios.db')
@@ -28,12 +32,34 @@ crear_tabla()
 def index():
     return render_template('index.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        usuario = request.form['usuario']
+        contraseña = request.form['contraseña']
+        if usuario == USUARIO and contraseña == CONTRASEÑA:
+            session['autenticado'] = True
+            return redirect(url_for('admin'))
+        else:
+            flash('Usuario o contraseña incorrectos.', 'error')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('autenticado', None)
+    return redirect(url_for('login'))
+
 @app.route('/admin')
 def admin():
+    if not session.get('autenticado'):
+        return redirect(url_for('login'))
     return render_template('registro_folio.html')
 
 @app.route('/registrar_folio', methods=['POST'])
 def registrar_folio():
+    if not session.get('autenticado'):
+        return redirect(url_for('login'))
+
     folio = request.form['folio']
     vigencia = int(request.form['vigencia'])
     fecha_expedicion = datetime.now()
