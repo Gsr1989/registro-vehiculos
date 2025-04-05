@@ -34,7 +34,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        if username == 'admin' and password == 'tu_contraseña':  # Aquí pon tu contraseña
+        if username == 'admin' and password == 'tu_contraseña':  # Aquí pon tu contraseña real
             session['logged_in'] = True
             return redirect(url_for('admin'))
         else:
