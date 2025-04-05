@@ -1,10 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
 from datetime import datetime, timedelta
 import sqlite3
-from io import BytesIO
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from PyPDF2 import PdfReader, PdfWriter
+import io
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta'
@@ -19,9 +17,10 @@ def crear_tabla():
     conn.execute('''
         CREATE TABLE IF NOT EXISTS folios (
             folio TEXT PRIMARY KEY,
+            serie TEXT,
+            vigencia INTEGER,
             fecha_expedicion TEXT,
-            fecha_vencimiento TEXT,
-            numero_serie TEXT
+            fecha_vencimiento TEXT
         )
     ''')
     conn.commit()
@@ -33,31 +32,54 @@ crear_tabla()
 def index():
     return render_template('index.html')
 
-@app.route('/admin')
-def admin():
-    return render_template('registro_folio.html')
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        if request.form['username'] == 'admin' and request.form['password'] == '1234':
+            session['admin'] = True
+            return redirect(url_for('panel'))
+        else:
+            flash('Credenciales incorrectas')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
+
+@app.route('/panel')
+def panel():
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    return render_template('panel.html')
 
 @app.route('/registrar_folio', methods=['POST'])
 def registrar_folio():
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+
     folio = request.form['folio']
+    serie = request.form['serie']
     vigencia = int(request.form['vigencia'])
-    numero_serie = request.form['numero_serie']
+
     fecha_expedicion = datetime.now()
     fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
 
     try:
         conn = conectar_db()
-        conn.execute('INSERT INTO folios (folio, fecha_expedicion, fecha_vencimiento, numero_serie) VALUES (?, ?, ?, ?)',
-                     (folio, fecha_expedicion.strftime('%Y-%m-%d'), fecha_vencimiento.strftime('%Y-%m-%d'), numero_serie))
+        conn.execute('INSERT INTO folios (folio, serie, vigencia, fecha_expedicion, fecha_vencimiento) VALUES (?, ?, ?, ?, ?)',
+                     (folio, serie, vigencia,
+                      fecha_expedicion.strftime('%Y-%m-%d'),
+                      fecha_vencimiento.strftime('%Y-%m-%d')))
         conn.commit()
         conn.close()
         flash('Folio registrado exitosamente.', 'success')
     except sqlite3.IntegrityError:
         flash('Este folio ya está registrado.', 'error')
 
-    return redirect(url_for('admin'))
+    return redirect(url_for('panel'))
 
-@app.route('/consulta')
+@app.route('/consulta', methods=['GET'])
 def consulta():
     return render_template('consulta_folio.html')
 
@@ -73,11 +95,7 @@ def resultado_consulta():
         fecha_exp = datetime.strptime(fila['fecha_expedicion'], '%Y-%m-%d')
         fecha_venc = datetime.strptime(fila['fecha_vencimiento'], '%Y-%m-%d')
         hoy = datetime.now()
-
-        if hoy <= fecha_venc:
-            estado = 'Vigente'
-        else:
-            estado = 'Vencido'
+        estado = 'vigente' if hoy <= fecha_venc else 'vencido'
 
         return render_template('resultado_consulta.html',
                                encontrado=True,
@@ -85,64 +103,37 @@ def resultado_consulta():
                                estado=estado,
                                fecha_expedicion=fecha_exp.strftime('%d/%m/%Y'),
                                fecha_vencimiento=fecha_venc.strftime('%d/%m/%Y'),
-                               numero_serie=fila['numero_serie'])
+                               serie=fila['serie'],
+                               vigencia=fila['vigencia'])
     else:
         return render_template('resultado_consulta.html', encontrado=False)
 
-@app.route('/generar_comprobante', methods=['POST'])
-def generar_comprobante():
-    folio = request.form['folio']
+@app.route('/generar_comprobante/<folio>')
+def generar_comprobante(folio):
     conn = conectar_db()
     cursor = conn.execute('SELECT * FROM folios WHERE folio = ?', (folio,))
     fila = cursor.fetchone()
     conn.close()
 
     if not fila:
-        return "Folio no encontrado", 404
+        return 'Folio no encontrado', 404
 
-    fecha_exp = datetime.strptime(fila['fecha_expedicion'], '%Y-%m-%d')
-    dias = (datetime.strptime(fila['fecha_vencimiento'], '%Y-%m-%d') - fecha_exp).days
-    fecha_pago = fecha_exp.strftime('%d/%m/%Y')
-    serie = fila['numero_serie'] if 'numero_serie' in fila.keys() else 'SIN SERIE'
+    serie = fila['serie']
+    fecha_pago = datetime.strptime(fila['fecha_expedicion'], '%Y-%m-%d').strftime('%d/%m/%Y')
+    vigencia = fila['vigencia']
+    monto = {30: 374.00, 60: 748.00, 90: 1122.00}.get(vigencia, 0.0)
 
-    generar_comprobante_precio_izquierda_final(serie, fecha_pago, dias)
-    final_path = f"comprobante_precio_final_{dias}.pdf"
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer)
+    c.drawString(240, 730, f"PERMISO PARA CIRCULAR {vigencia} DÍAS")
+    c.drawString(500, 525, serie)
+    c.drawString(500, 505, fecha_pago)
+    c.setFont("Helvetica-Bold", 11.4)
+    c.drawString(440, 355, f"${monto:.2f}")
+    c.save()
+    buffer.seek(0)
 
-    return send_file(final_path, as_attachment=True)
-
-def generar_comprobante_precio_izquierda_final(serie, fecha_pago, dias):
-    precios = {30: "$374.00", 60: "$748.00", 90: "$1122.00"}
-    precio = precios.get(dias, "$0.00")
-    texto_vigencia = f"PERMISO PARA CIRCULAR {dias} DÍAS"
-
-    packet = BytesIO()
-    can = canvas.Canvas(packet, pagesize=letter)
-
-    can.setFont("Helvetica-Bold", 7.2)
-    x_serie = 119
-    y_serie = 635
-    y_vigencia = y_serie + 21.1
-    can.drawString(x_serie, y_vigencia, texto_vigencia)
-    can.drawString(x_serie, y_serie, serie)
-    can.drawString(176, 494.4, fecha_pago)
-
-    # Precio ajustado
-    can.setFont("Helvetica-Bold", 11.4)
-    can.drawString(397.3, y_vigencia - 272, precio)
-
-    can.save()
-    packet.seek(0)
-
-    template_path = "recibo de pago semovo.pdf"
-    existing_pdf = PdfReader(template_path)
-    output = PdfWriter()
-    template_page = existing_pdf.pages[0]
-    overlay = PdfReader(packet)
-    template_page.merge_page(overlay.pages[0])
-    output.add_page(template_page)
-
-    with open(f"comprobante_precio_final_{dias}.pdf", "wb") as f:
-        output.write(f)
+    return send_file(buffer, as_attachment=True, download_name='comprobante_pago.pdf', mimetype='application/pdf')
 
 if __name__ == '__main__':
     app.run(debug=True)
