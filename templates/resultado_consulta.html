@@ -1,38 +1,41 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Resultado de Consulta</title>
+  <meta charset="UTF-8">
+  <title>Resultado</title>
 </head>
 <body>
-    <h2>Resultado de la consulta</h2>
+  <h2>Resultado de la consulta</h2>
 
-    {% if encontrado %}
-        {% if estado == 'vigente' %}
-            <div style="background:#d4f4d4;padding:20px;">
-                <strong>El folio N° {{ folio }} se encuentra Vigente.</strong><br>
-                Fecha de expedición: {{ fecha_expedicion }}<br>
-                Fecha de vencimiento: {{ fecha_vencimiento }}
-            </div>
-        {% elif estado == 'vencido' %}
-            <div style="background:#f9e4b7;padding:20px;">
-                <strong>El folio N° {{ folio }} se encuentra Vencido.</strong><br>
-                Fecha de expedición: {{ fecha_expedicion }}<br>
-                Fecha de vencimiento: {{ fecha_vencimiento }}
-            </div>
-        {% endif %}
-
-        <div style="background:#eee;margin-top:20px;padding:15px;">
-            <strong>Número de serie:</strong> {{ serie }}
-        </div>
-
-        <br>
-        <a href="{{ url_for('generar_comprobante', folio=folio) }}"><button>Generar comprobante de pago</button></a>
-
-    {% else %}
-        <div style="background:#f8d7da;padding:20px;">
-            <strong>Este folio no se encuentra en nuestros registros.</strong>
-        </div>
+  {% if encontrado %}
+    {% if estado == 'Vigente' %}
+      <p style="color:green">
+        El folio Nº {{ folio }} se encuentra vigente<br>
+        Fecha de expedición: {{ fecha_expedicion }}<br>
+        Fecha de vencimiento: {{ fecha_vencimiento }}
+      </p>
+    {% elif estado == 'Vencido' %}
+      <p style="color:orange">
+        El folio Nº {{ folio }} se encuentra vencido<br>
+        Fecha de expedición: {{ fecha_expedicion }}<br>
+        Fecha de vencimiento: {{ fecha_vencimiento }}
+      </p>
     {% endif %}
+
+    <div style="background:#eee;padding:10px;margin-top:15px;">
+      <p><strong>Número de serie:</strong> {{ serie }}</p>
+    </div>
+
+    <p><strong>DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</strong></p>
+
+    <a href="/generar_comprobante/{{ folio }}">
+      <button style="background:#800000;color:white;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;">
+        Generar comprobante de pago
+      </button>
+    </a>
+  
+  {% else %}
+    <p style="color:red">Este folio no se encuentra en nuestros registros.</p>
+  {% endif %}
 </body>
 </html>
