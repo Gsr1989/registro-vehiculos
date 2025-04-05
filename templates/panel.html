@@ -1,75 +1,68 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Panel de Administración</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-      background-color: #f5f5f5;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #e6e6e6;
-      padding: 15px 30px;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 20px;
-      color: #333;
-    }
-    main {
-      max-width: 600px;
-      margin: 30px auto;
-      background: #fff;
-      padding: 30px 20px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-    h2 {
-      color: #333;
-      margin-bottom: 30px;
-    }
-    a.boton {
-      display: block;
-      background-color: #0066cc;
-      color: white;
-      padding: 12px;
-      margin: 10px auto;
-      border-radius: 5px;
-      text-decoration: none;
-      font-size: 16px;
-      width: 100%;
-      max-width: 300px;
-    }
-    a.boton.guinda {
-      background-color: #800000;
-    }
-    a.boton.negro {
-      background-color: #333;
-    }
-    @media (min-width: 768px) {
-      a.boton {
-        display: inline-block;
-        width: auto;
-        margin: 10px;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrativo - Gobierno Digital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #e6e6e6;
+            padding: 20px 30px;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 22px;
+            color: #333;
+        }
+        main {
+            max-width: 700px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        h2 {
+            font-size: 26px;
+            color: #333;
+        }
+        p {
+            font-size: 18px;
+            color: #555;
+        }
+        .boton {
+            display: inline-block;
+            background-color: #0066cc;
+            color: white;
+            padding: 12px 24px;
+            margin: 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .boton:hover {
+            background-color: #004c99;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>Panel de administración</h1>
-  </header>
-  <main>
-    <h2>¿Qué deseas hacer?</h2>
-    <a href="/admin" class="boton">Registrar nuevo folio</a>
-    <a href="/consulta" class="boton guinda">Ir a consulta</a>
-    <a href="/cerrar_sesion" class="boton negro">Cerrar sesión</a>
-  </main>
+    <header>
+        <h1>Gobierno Digital - Panel Administrativo</h1>
+    </header>
+    <main>
+        <h2>Bienvenido al Panel Administrativo</h2>
+        <p>Desde aquí puedes gestionar los folios, consultar su estatus y más.</p>
+        <a href="/registrar_folio" class="boton">Registrar folio</a>
+        <a href="/consulta" class="boton">Ir a la consulta</a>
+        <a href="/logout" class="boton">Cerrar sesión</a>
+    </main>
 </body>
 </html>
