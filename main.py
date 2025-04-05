@@ -51,7 +51,7 @@ def registrar_folio():
 
     return redirect(url_for('admin'))
 
-@app.route('/consulta')
+@app.route('/consulta', methods=['GET'])
 def consulta():
     return render_template('consulta_folio.html')
 
