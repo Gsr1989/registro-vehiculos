@@ -29,7 +29,6 @@ def crear_tabla():
 
 crear_tabla()
 
-# Ruta raíz que redirige al login
 @app.route('/')
 def inicio():
     return redirect(url_for('login'))
@@ -39,7 +38,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        if username == 'admin' and password == 'tu_contraseña':  # Aquí pon tu contraseña real
+        if username == 'admin' and password == '1234':  # Contraseña establecida
             session['logged_in'] = True
             return redirect(url_for('admin'))
         else:
