@@ -2,44 +2,60 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Resultado de Consulta</title>
+    <title>Gobierno Digital - Resultado de Consulta</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .estado-vigente { color: green; font-weight: bold; }
-        .estado-vencido { color: red; font-weight: bold; }
-        .estado-no-encontrado { color: orange; font-weight: bold; }
+        .recuadro-verde {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
         .recuadro-datos {
             background-color: #f2f2f2;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
-            margin-top: 20px;
+        }
+        .titulo {
+            font-weight: bold;
         }
     </style>
 </head>
 <body class="bg-light">
 
 <div class="container mt-5">
-    <div class="text-center mb-4">
-        <h2>Consulta de Folio</h2>
-        {% if resultado.estado == 'Vigente' %}
-            <p class="estado-vigente">ESTADO: VIGENTE</p>
-        {% elif resultado.estado == 'Vencido' %}
-            <p class="estado-vencido">ESTADO: VENCIDO</p>
-        {% elif resultado.estado == 'No encontrado' %}
-            <p class="estado-no-encontrado">ESTE FOLIO NO SE ENCUENTRA EN NUESTROS REGISTROS</p>
-        {% endif %}
+    <h4 class="mb-4 text-center">Gobierno Digital - Resultado de Consulta</h4>
+
+    <p class="text-center">La Secretaría de Movilidad de la Ciudad de México certifica que:</p>
+
+    {% if resultado.estado == 'Vigente' %}
+    <div class="recuadro-verde text-center">
+        <p>El folio N° {{ request.form['folio'] }} se encuentra <strong>Vigente</strong>.</p>
+        <p>Fecha de expedición: {{ resultado.fecha_expedicion }}</p>
+        <p>Fecha de vencimiento: {{ resultado.fecha_vencimiento }}</p>
     </div>
+    {% elif resultado.estado == 'Vencido' %}
+    <div class="alert alert-danger text-center">
+        <p>El folio N° {{ request.form['folio'] }} está <strong>Vencido</strong>.</p>
+        <p>Fecha de expedición: {{ resultado.fecha_expedicion }}</p>
+        <p>Fecha de vencimiento: {{ resultado.fecha_vencimiento }}</p>
+    </div>
+    {% else %}
+    <div class="alert alert-warning text-center">
+        <p>El folio N° {{ request.form['folio'] }} <strong>no se encuentra en nuestros registros</strong>.</p>
+    </div>
+    {% endif %}
 
     {% if resultado.estado != 'No encontrado' %}
     <div class="recuadro-datos">
-        <p><strong>Fecha de Expedición:</strong> {{ resultado.fecha_expedicion }}</p>
-        <p><strong>Fecha de Vencimiento:</strong> {{ resultado.fecha_vencimiento }}</p>
-        <p><strong>Marca:</strong> {{ resultado.marca }}</p>
-        <p><strong>Línea:</strong> {{ resultado.linea }}</p>
-        <p><strong>Año:</strong> {{ resultado.año }}</p>
-        <p><strong>Número de Serie:</strong> {{ resultado.numero_serie }}</p>
-        <p><strong>Número de Motor:</strong> {{ resultado.numero_motor }}</p>
+        <p><span class="titulo">Marca:</span> {{ resultado.marca }}</p>
+        <p><span class="titulo">Línea:</span> {{ resultado.linea }}</p>
+        <p><span class="titulo">Año:</span> {{ resultado.año }}</p>
+        <p><span class="titulo">Número de Serie:</span> {{ resultado.numero_serie }}</p>
+        <p><span class="titulo">Número de Motor:</span> {{ resultado.numero_motor }}</p>
     </div>
+
     <div class="text-center mt-4">
         <p class="fw-bold">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</p>
     </div>
