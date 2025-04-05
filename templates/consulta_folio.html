@@ -1,73 +1,126 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Consulta de Folio</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-      background-color: #f5f5f5;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #e6e6e6;
-      padding: 15px 30px;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 20px;
-      color: #333;
-    }
-    main {
-      max-width: 600px;
-      margin: 40px auto;
-      background: #fff;
-      padding: 30px 20px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-    }
-    h2 {
-      font-size: 24px;
-      color: #333;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 16px;
-    }
-    button {
-      background-color: #0066cc;
-      color: white;
-      border: none;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      width: 100%;
-    }
-    button:hover {
-      background-color: #004c99;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Folio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #e6e6e6;
+            padding: 15px 30px;
+            border-bottom: 1px solid #ccc;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+        }
+        main {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        h2 {
+            font-size: 24px;
+            color: #333;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .alert.success {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .alert.error {
+            background-color: #f44336;
+            color: white;
+        }
+        .resultado {
+            margin-top: 20px;
+        }
+        .resultado h3 {
+            font-size: 18px;
+        }
+        .resultado p {
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        .resultado .green {
+            color: green;
+        }
+        .resultado .yellow {
+            color: #ff9800;
+        }
+        .resultado .red {
+            color: red;
+        }
+        .resultado .data {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>Gobierno Digital - Consulta</h1>
-  </header>
-  <main>
-    <h2>Ingresa tu folio</h2>
-    <form method="POST" action="/resultado_consulta">
-      <input type="text" name="folio" placeholder="Folio a consultar" required>
-      <button type="submit">Consultar</button>
-    </form>
-  </main>
+    <header>
+        <h1>Gobierno Digital - Consulta de Folio</h1>
+    </header>
+    <main>
+        <h2>Consulta de folio</h2>
+        
+        <form method="POST" action="/resultado_consulta">
+            <input type="text" name="folio" placeholder="Folio a consultar" required>
+            <button type="submit">Consultar</button>
+        </form>
+
+        {% if resultado %}
+            <div class="resultado">
+                <h3>La Secretaría de Movilidad de la Ciudad de México certifica que:</h3>
+                <p class="{{ resultado.estado | lower }}">{{ resultado.estado }}</p>
+                {% if resultado.estado != 'Este folio no se encuentra en nuestros registros' %}
+                    <p>Fecha de expedición: {{ resultado.fecha_expedicion }}</p>
+                    <p>Fecha de vencimiento: {{ resultado.fecha_vencimiento }}</p>
+                    <div class="data">
+                        <p>Marca: {{ resultado.marca }}</p>
+                        <p>Línea: {{ resultado.linea }}</p>
+                        <p>Año: {{ resultado.año }}</p>
+                        <p>Número de Serie: {{ resultado.numero_serie }}</p>
+                        <p>Número de Motor: {{ resultado.numero_motor }}</p>
+                    </div>
+                    <p><strong>DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</strong></p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </main>
 </body>
 </html>
