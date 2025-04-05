@@ -1,14 +1,101 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html lang="es">
 <head>
-    <title>Consulta de folio</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Folio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #e6e6e6;
+            padding: 15px 30px;
+            text-align: left;
+            border-bottom: 1px solid #ccc;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+        }
+        main {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        form {
+            margin-top: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .resultado {
+            margin-top: 20px;
+            font-size: 18px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .vigente {
+            background-color: #e0f7e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+        .vencido, .no-encontrado {
+            background-color: #fdecea;
+            color: #c62828;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
 </head>
 <body>
-    <h2>Consulta de folio</h2>
-    <form method="POST" action="/resultado_consulta">
-        <label for="folio">Ingresa el folio:</label>
-        <input type="text" name="folio" required>
-        <button type="submit">Consultar</button>
-    </form>
+    <header>
+        <h1>Gobierno Digital - Consulta de Folio</h1>
+    </header>
+    <main>
+        <h2>Consulta el estado de tu folio</h2>
+        <form method="POST">
+            <input type="text" name="folio" placeholder="Ingresa tu folio" required>
+            <button type="submit">Consultar</button>
+        </form>{% if resultado %}
+        <div class="resultado {% if resultado.estado == 'Vigente' %}vigente{% else %}{% if resultado.estado == 'Vencido' %}vencido{% else %}no-encontrado{% endif %}{% endif %}">
+            {% if resultado.estado == 'Vigente' %}
+                <strong>Folio Vigente:</strong><br>
+                Fecha de expedición: {{ resultado.fecha_expedicion }}<br>
+                Fecha de vencimiento: {{ resultado.fecha_vencimiento }}
+            {% elif resultado.estado == 'Vencido' %}
+                <strong>Este folio está vencido.</strong>
+            {% else %}
+                <strong>Este folio no se encuentra en nuestros registros.</strong>
+            {% endif %}
+        </div>
+    {% endif %}
+</main>
+
 </body>
 </html>
