@@ -55,47 +55,18 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        .resultado {
-            margin-top: 20px;
-            font-size: 18px;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        .vigente {
-            background-color: #e0f7e9;
-            color: #2e7d32;
-            border: 1px solid #a5d6a7;
-        }
-        .vencido, .no-encontrado {
-            background-color: #fdecea;
-            color: #c62828;
-            border: 1px solid #f5c6cb;
-        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Gobierno Digital - Consulta de Folio</h1>
+        <h1>Gobierno Digital - Consulta</h1>
     </header>
     <main>
-        <h2>Consulta el estado de tu folio</h2>
-        <form method="POST">
+        <h2>Ingresa tu folio para consultar</h2>
+        <form method="POST" action="/resultado_consulta">
             <input type="text" name="folio" placeholder="Ingresa tu folio" required>
             <button type="submit">Consultar</button>
-        </form>{% if resultado %}
-        <div class="resultado {% if resultado.estado == 'Vigente' %}vigente{% else %}{% if resultado.estado == 'Vencido' %}vencido{% else %}no-encontrado{% endif %}{% endif %}">
-            {% if resultado.estado == 'Vigente' %}
-                <strong>Folio Vigente:</strong><br>
-                Fecha de expedición: {{ resultado.fecha_expedicion }}<br>
-                Fecha de vencimiento: {{ resultado.fecha_vencimiento }}
-            {% elif resultado.estado == 'Vencido' %}
-                <strong>Este folio está vencido.</strong>
-            {% else %}
-                <strong>Este folio no se encuentra en nuestros registros.</strong>
-            {% endif %}
-        </div>
-    {% endif %}
-</main>
-
+        </form>
+    </main>
 </body>
 </html>
