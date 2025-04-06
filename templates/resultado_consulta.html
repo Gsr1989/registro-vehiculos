@@ -3,62 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <title>Resultado de Consulta</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f4f8;
-            padding: 40px;
-            text-align: center;
+            padding: 20px;
+            margin: 0;
         }
         .certificado {
-            max-width: 600px;
+            max-width: 100%;
             margin: auto;
             background-color: white;
-            padding: 30px;
+            padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            text-align: left;
+            box-shadow: 0 0 10px rgba(0,0,0,0.08);
         }
         .encabezado {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
         }
         .logo {
-            max-width: 110px;
+            max-width: 165px;
         }
         .sublogo {
-            max-width: 90px;
+            max-width: 135px;
         }
         .titulo {
             text-align: center;
-            font-size: 18px;
+            font-size: 17px;
             font-weight: bold;
             text-transform: uppercase;
-            margin: 30px 0 25px 0;
+            margin: 25px 0 20px 0;
         }
         .estado {
-            padding: 18px;
+            padding: 15px;
             border-radius: 8px;
-            margin-bottom: 25px;
-            font-size: 17px;
-            line-height: 1.8;
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.7;
             font-weight: bold;
+            text-align: center;
         }
         .vigente { background-color: #d4f8d4; color: #145c14; }
         .vencido { background-color: #f8d4d4; color: #8b0000; }
         .no-encontrado { background-color: #ffd6d6; color: #8b0000; }
         .datos {
             background-color: #f1f1f1;
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
-            font-size: 16px;
-            line-height: 2.2;
-            margin-bottom: 25px;
+            font-size: 15px;
+            line-height: 2;
+            margin-bottom: 20px;
         }
         .final {
             font-weight: bold;
-            font-size: 16px;
+            font-size: 15px;
             color: #333;
             text-align: center;
         }
