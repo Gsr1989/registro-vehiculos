@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro de Folio (Administrador)</title>
+    <title>Registro de Folio (Admin)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,7 +21,6 @@
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
-            font-size: 15px;
         }
         .btn-blue {
             background-color: #007bff;
@@ -51,18 +50,18 @@
     </style>
 </head>
 <body>
-    <h2>Registro de Folios (Administrador)</h2>
+    <h2>Registro de Folios (Admin)</h2>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
+    {% if messages %}
         <div class="mensaje">
         {% for category, message in messages %}
-          <div style="color: {% if category == 'error' %}red{% else %}green{% endif %}; font-weight: bold;">
-            {{ message }}
-          </div>
+            <div style="color: {% if category == 'error' %}red{% else %}green{% endif %}; font-weight: bold;">
+                {{ message }}
+            </div>
         {% endfor %}
         </div>
-      {% endif %}
+    {% endif %}
     {% endwith %}
 
     <form method="POST" action="{{ url_for('registro_admin') }}">
@@ -92,14 +91,12 @@
         <input type="text" name="numero_motor" required>
 
         <button class="btn-blue" type="submit">Registrar</button>
-    </form>
-
-    <form method="get" action="{{ url_for('consulta') }}">
-        <button class="btn-grey" type="submit">Ir a Consulta</button>
-    </form>
-
-    <form method="get" action="{{ url_for('logout') }}">
-        <button class="btn-red" type="submit">Cerrar Sesión</button>
+        <a href="{{ url_for('consulta') }}">
+            <button class="btn-grey" type="button">Ir a Consulta</button>
+        </a>
+        <a href="{{ url_for('logout') }}">
+            <button class="btn-red" type="button">Cerrar Sesión</button>
+        </a>
     </form>
 </body>
 </html>
