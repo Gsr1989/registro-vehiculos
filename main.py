@@ -98,7 +98,12 @@ def crear_usuario():
 def registro_usuario():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('registro_usuario.html')
+
+    conn = conectar_db()
+    usuario = conn.execute('SELECT folios_asignados, folios_usados FROM usuarios WHERE id = ?', (session['user_id'],)).fetchone()
+    conn.close()
+
+    return render_template('registro_usuario.html', folios_info=usuario)
 
 @app.route('/registrar_folio', methods=['POST'])
 def registrar_folio():
