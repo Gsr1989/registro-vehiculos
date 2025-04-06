@@ -21,18 +21,21 @@
         }
         .encabezado {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
         }
         .logo {
-            max-width: 120px;
+            max-width: 110px;
+        }
+        .sublogo {
+            max-width: 90px;
         }
         .titulo {
-            flex: 1;
             text-align: center;
             font-size: 18px;
             font-weight: bold;
             text-transform: uppercase;
+            margin: 30px 0 25px 0;
         }
         .estado {
             padding: 18px;
@@ -65,8 +68,10 @@
     <div class="certificado">
         <div class="encabezado">
             <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
-            <div class="titulo">LA SECRETARÍA DE MOVILIDAD DE LA CIUDAD DE MÉXICO CERTIFICA:</div>
+            <img src="{{ url_for('static', filename='sub_logo.png') }}" class="sublogo" alt="Sub Logo">
         </div>
+
+        <div class="titulo">LA SECRETARÍA DE MOVILIDAD DE LA CIUDAD DE MÉXICO CERTIFICA:</div>
 
         {% if resultado.estado == 'Vigente' %}
             <div class="estado vigente">
