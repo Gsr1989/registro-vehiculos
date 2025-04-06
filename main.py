@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import sqlite3
 
 app = Flask(__name__)
-app.secret_key = 'clave_secreta'
+app.secret_key = 'clave_muy_segura_123456'
 
 def conectar_db():
     conn = sqlite3.connect('folios.db')
@@ -94,7 +94,7 @@ def crear_usuario():
 
     return render_template('crear_usuario.html')
 
-@app.route('/registro_usuario', methods=['GET'])
+@app.route('/registro_usuario')
 def registro_usuario():
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -111,7 +111,7 @@ def registrar_folio():
 
     if usuario['folios_usados'] >= usuario['folios_asignados']:
         conn.close()
-        flash('Ya has usado todos tus folios disponibles.', 'error')
+        flash('Ya usaste todos tus folios disponibles.', 'error')
         return redirect(url_for('registro_usuario'))
 
     folio = request.form['folio']
