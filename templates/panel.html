@@ -2,48 +2,55 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administrador</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #fdfdfd;
+            background-color: #f9f9f9;
             margin: 0;
             padding: 0;
             text-align: center;
         }
+
         header {
             background-color: #800000;
             color: white;
-            padding: 20px 10px;
+            padding: 20px;
         }
+
         h1 {
             margin: 0;
-            font-size: 24px;
         }
-        main {
-            padding: 30px 20px;
+
+        .contenido {
+            margin: 40px 20px;
         }
+
         .botones {
-            margin-top: 30px;
+            margin: 30px 0;
         }
+
         .botones a {
             display: inline-block;
             margin: 10px;
-            padding: 12px 20px;
+            padding: 12px 25px;
             background-color: #800000;
             color: white;
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 8px;
             font-weight: bold;
         }
+
         .botones a:hover {
-            background-color: #a30000;
+            background-color: #a52a2a;
         }
+
         footer {
-            margin-top: 40px;
+            margin-top: 60px;
+            background-color: #f1f1f1;
+            padding: 15px;
             color: #555;
-            font-size: 14px;
         }
     </style>
 </head>
@@ -52,18 +59,19 @@
         <h1>Validación Vehicular MX</h1>
     </header>
 
-    <main>
+    <div class="contenido">
         <h2>Bienvenido, administrador</h2>
-
         <div class="botones">
-            <a href="/registro_admin">Registrar Folio</a>
-            <a href="/consulta">Consultar Folio</a>
-            <a href="/logout">Cerrar sesión</a>
+            <a href="{{ url_for('registro_folio') }}">Registrar Folio</a>
+            <a href="{{ url_for('consulta_folio') }}">Consultar Folio</a>
+            <a href="{{ url_for('crear_usuario') }}">Crear Usuario</a>
+            <a href="{{ url_for('logout') }}">Cerrar sesión</a>
         </div>
+        <p>Documento digital válido en todo México</p>
+    </div>
 
-        <footer>
-            <p>Documento digital válido en todo México</p>
-        </footer>
-    </main>
+    <footer>
+        &copy; 2025 Validación Vehicular MX
+    </footer>
 </body>
 </html>
