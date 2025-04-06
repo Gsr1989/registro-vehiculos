@@ -24,6 +24,15 @@ def crear_tabla():
             numero_motor TEXT
         )
     ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            folios_asignados INTEGER DEFAULT 0,
+            folios_usados INTEGER DEFAULT 0
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -38,21 +47,73 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        if username == 'admin' and password == '1234':  # Contraseña establecida
-            session['logged_in'] = True
+
+        if username == 'admin' and password == '1234':
+            session['admin'] = True
             return redirect(url_for('admin'))
+
+        conn = conectar_db()
+        usuario = conn.execute('SELECT * FROM usuarios WHERE username = ? AND password = ?', (username, password)).fetchone()
+        conn.close()
+
+        if usuario:
+            session['user_id'] = usuario['id']
+            session['username'] = usuario['username']
+            return redirect(url_for('registro_usuario'))
         else:
             flash('Credenciales incorrectas', 'error')
+
     return render_template('login.html')
 
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/admin')
 def admin():
-    if 'logged_in' not in session:
+    if 'admin' not in session:
         return redirect(url_for('login'))
     return render_template('panel.html')
 
+@app.route('/crear_usuario', methods=['GET', 'POST'])
+def crear_usuario():
+    if 'admin' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        folios = int(request.form['folios'])
+
+        try:
+            conn = conectar_db()
+            conn.execute('INSERT INTO usuarios (username, password, folios_asignados) VALUES (?, ?, ?)',
+                         (username, password, folios))
+            conn.commit()
+            flash('Usuario creado exitosamente.', 'success')
+        except sqlite3.IntegrityError:
+            flash('El nombre de usuario ya existe.', 'error')
+        finally:
+            conn.close()
+
+    return render_template('crear_usuario.html')
+
+@app.route('/registro_usuario', methods=['GET'])
+def registro_usuario():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('registro_usuario.html')
+
 @app.route('/registrar_folio', methods=['POST'])
 def registrar_folio():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    conn = conectar_db()
+    usuario = conn.execute('SELECT folios_asignados, folios_usados FROM usuarios WHERE id = ?', (user_id,)).fetchone()
+
+    if usuario['folios_usados'] >= usuario['folios_asignados']:
+        conn.close()
+        flash('Ya has usado todos tus folios disponibles.', 'error')
+        return redirect(url_for('registro_usuario'))
+
     folio = request.form['folio']
     vigencia = int(request.form['vigencia'])
     marca = request.form['marca']
@@ -64,17 +125,20 @@ def registrar_folio():
     fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
 
     try:
-        conn = conectar_db()
-        conn.execute('''INSERT INTO folios (folio, fecha_expedicion, fecha_vencimiento, marca, linea, año, numero_serie, numero_motor)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', 
-                     (folio, fecha_expedicion.strftime('%Y-%m-%d'), fecha_vencimiento.strftime('%Y-%m-%d'), marca, linea, año, numero_serie, numero_motor))
+        conn.execute('''
+            INSERT INTO folios (folio, fecha_expedicion, fecha_vencimiento, marca, linea, año, numero_serie, numero_motor)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (folio, fecha_expedicion.strftime('%Y-%m-%d'), fecha_vencimiento.strftime('%Y-%m-%d'),
+              marca, linea, año, numero_serie, numero_motor))
+
+        conn.execute('UPDATE usuarios SET folios_usados = folios_usados + 1 WHERE id = ?', (user_id,))
         conn.commit()
-        conn.close()
         flash('Folio registrado exitosamente.', 'success')
     except sqlite3.IntegrityError:
         flash('Este folio ya está registrado.', 'error')
 
-    return redirect(url_for('admin'))
+    conn.close()
+    return redirect(url_for('registro_usuario'))
 
 @app.route('/consulta', methods=['GET'])
 def consulta():
@@ -118,7 +182,7 @@ def resultado_consulta():
 
 @app.route('/logout')
 def logout():
-    session.pop('logged_in', None)
+    session.clear()
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
