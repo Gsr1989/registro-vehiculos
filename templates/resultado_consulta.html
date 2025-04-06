@@ -65,6 +65,12 @@
             color: #333;
             text-align: center;
         }
+        .footer-img {
+            display: block;
+            margin: 30px auto 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
     </style>
 </head>
 <body>
@@ -105,6 +111,8 @@
         {% endif %}
 
         <div class="final">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
+
+        <img src="{{ url_for('static', filename='footer.png') }}" class="footer-img" alt="Pie de página">
     </div>
 </body>
 </html>
