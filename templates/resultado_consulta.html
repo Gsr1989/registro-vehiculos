@@ -51,13 +51,21 @@
         .vigente { background-color: #d4f8d4; color: #145c14; }
         .vencido { background-color: #f8d4d4; color: #8b0000; }
         .no-encontrado { background-color: #ffd6d6; color: #8b0000; }
-        .datos {
-            background-color: #f1f1f1;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 15px;
-            line-height: 2;
+
+        .datos-wrapper {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background-color: #ffffff;
             margin-bottom: 20px;
+        }
+        .datos {
+            padding: 20px;
+            border: 1px solid #cccccc;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            font-size: 15px;
+            line-height: 2.5;
         }
         .final {
             font-weight: bold;
@@ -101,12 +109,14 @@
         {% endif %}
 
         {% if resultado.estado != 'No encontrado' %}
-        <div class="datos">
-            <strong>Marca:</strong> {{ resultado.marca }}<br>
-            <strong>Línea:</strong> {{ resultado.linea }}<br>
-            <strong>Año:</strong> {{ resultado.año }}<br>
-            <strong>Número de Serie:</strong> {{ resultado.numero_serie }}<br>
-            <strong>Número de Motor:</strong> {{ resultado.numero_motor }}
+        <div class="datos-wrapper">
+            <div class="datos">
+                <strong>Marca:</strong> {{ resultado.marca }}<br>
+                <strong>Línea:</strong> {{ resultado.linea }}<br>
+                <strong>Año:</strong> {{ resultado.año }}<br>
+                <strong>Número de Serie:</strong> {{ resultado.numero_serie }}<br>
+                <strong>Número de Motor:</strong> {{ resultado.numero_motor }}
+            </div>
         </div>
         {% endif %}
 
