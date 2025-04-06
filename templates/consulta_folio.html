@@ -53,6 +53,10 @@
             font-size: 16px;
             padding: 12px;
         }
+        .form-box {
+            max-width: 700px;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -65,21 +69,19 @@
 
     <h4 class="titulo-oficial">LA SECRETARÍA DE MOVILIDAD DE LA CIUDAD DE MÉXICO</h4>
 
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-body">
-                    <h5 class="text-center mb-4">Consultar Folio</h5>
-                    <form method="POST" action="{{ url_for('resultado_consulta') }}">
-                        <div class="mb-3">
-                            <label for="folio" class="form-label">Folio</label>
-                            <input type="text" class="form-control" id="folio" name="folio" required>
-                        </div>
-                        <button type="submit" class="btn btn-guinda w-100">Consultar</button>
-                    </form>
-                    <div class="mt-4 text-center">
-                        <a href="{{ url_for('admin') }}" class="btn btn-outline-secondary">Volver al Panel</a>
+    <div class="form-box">
+        <div class="card shadow">
+            <div class="card-body">
+                <h5 class="text-center mb-4">Consultar Folio</h5>
+                <form method="POST" action="{{ url_for('resultado_consulta') }}">
+                    <div class="mb-3">
+                        <label for="folio" class="form-label">Folio</label>
+                        <input type="text" class="form-control" id="folio" name="folio" required>
                     </div>
+                    <button type="submit" class="btn btn-guinda w-100">Consultar</button>
+                </form>
+                <div class="mt-4 text-center">
+                    <a href="{{ url_for('admin') }}" class="btn btn-outline-secondary">Volver al Panel</a>
                 </div>
             </div>
         </div>
