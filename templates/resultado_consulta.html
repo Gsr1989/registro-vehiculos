@@ -17,15 +17,22 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+        .encabezado {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
         }
         .logo {
-            max-width: 140px;
-            margin-bottom: 10px;
+            max-width: 120px;
         }
         .titulo {
-            font-size: 20px;
+            flex: 1;
+            text-align: center;
+            font-size: 18px;
             font-weight: bold;
-            margin-bottom: 25px;
+            text-transform: uppercase;
         }
         .estado {
             padding: 18px;
@@ -37,9 +44,8 @@
         }
         .vigente { background-color: #d4f8d4; color: #145c14; }
         .vencido { background-color: #f8d4d4; color: #8b0000; }
-        .no-encontrado { background-color: #f0f0f0; color: #555; }
+        .no-encontrado { background-color: #ffd6d6; color: #8b0000; }
         .datos {
-            text-align: left;
             background-color: #f1f1f1;
             padding: 20px;
             border-radius: 8px;
@@ -51,13 +57,16 @@
             font-weight: bold;
             font-size: 16px;
             color: #333;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="certificado">
-        <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
-        <div class="titulo">Validación Vehicular MX certifica que:</div>
+        <div class="encabezado">
+            <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
+            <div class="titulo">LA SECRETARÍA DE MOVILIDAD DE LA CIUDAD DE MÉXICO CERTIFICA:</div>
+        </div>
 
         {% if resultado.estado == 'Vigente' %}
             <div class="estado vigente">
