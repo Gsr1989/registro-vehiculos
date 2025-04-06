@@ -3,59 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <title>Panel de Administración</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #eef5f9; padding: 40px; text-align: center; }
+        .boton { display: block; width: 250px; margin: 20px auto; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .azul { background-color: #007bff; color: white; }
+        .verde { background-color: #28a745; color: white; }
+        .rojo { background-color: #dc3545; color: white; }
+    </style>
 </head>
-<body class="bg-light">
-
-<div class="container mt-5">
-    <h2 class="mb-4 text-center">Registro de Folios</h2>
+<body>
+    <h1>Panel de Administración</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div style="color: {% if category == 'error' %}red{% else %}green{% endif %}; font-weight: bold;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
     {% endwith %}
 
-    <form action="{{ url_for('registrar_folio') }}" method="POST" class="card p-4 shadow-sm">
-        <div class="mb-3">
-            <label for="folio" class="form-label">Folio</label>
-            <input type="text" class="form-control" id="folio" name="folio" required>
-        </div>
-        <div class="mb-3">
-            <label for="vigencia" class="form-label">Vigencia (días)</label>
-            <select class="form-select" id="vigencia" name="vigencia" required>
-                <option value="30">30 días</option>
-                <option value="60">60 días</option>
-                <option value="90">90 días</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label for="marca" class="form-label">Marca</label>
-            <input type="text" class="form-control" id="marca" name="marca" required>
-        </div>
-        <div class="mb-3">
-            <label for="linea" class="form-label">Línea</label>
-            <input type="text" class="form-control" id="linea" name="linea" required>
-        </div>
-        <div class="mb-3">
-            <label for="año" class="form-label">Año</label>
-            <input type="text" class="form-control" id="año" name="año" required>
-        </div>
-        <div class="mb-3">
-            <label for="numero_serie" class="form-label">Número de Serie</label>
-            <input type="text" class="form-control" id="numero_serie" name="numero_serie" required>
-        </div>
-        <div class="mb-3">
-            <label for="numero_motor" class="form-label">Número de Motor</label>
-            <input type="text" class="form-control" id="numero_motor" name="numero_motor" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Registrar</button>
-        <a href="{{ url_for('consulta') }}" class="btn btn-outline-secondary ms-2">Ir a Consulta</a>
-        <a href="{{ url_for('logout') }}" class="btn btn-danger float-end">Cerrar Sesión</a>
-    </form>
-</div>
+    <a href="{{ url_for('crear_usuario') }}">
+        <button class="boton azul">Crear Nuevo Usuario</button>
+    </a>
 
+    <a href="{{ url_for('consulta') }}">
+        <button class="boton verde">Consultar Folio</button>
+    </a>
+
+    <a href="{{ url_for('logout') }}">
+        <button class="boton rojo">Cerrar Sesión</button>
+    </a>
 </body>
 </html>
