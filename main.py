@@ -22,7 +22,7 @@ def login():
 
         if username == 'admin' and password == '1234':
             session['admin'] = True
-            return redirect(url_for('panel_admin'))
+            return redirect(url_for('admin'))
 
         response = supabase.table("verificaciondigitalcdmx").select("*").eq("username", username).eq("password", password).execute()
         usuarios = response.data
@@ -36,11 +36,11 @@ def login():
 
     return render_template('login.html')
 
-@app.route('/panel_admin')
-def panel_admin():
+@app.route('/admin')
+def admin():
     if 'admin' not in session:
         return redirect(url_for('login'))
-    return render_template('panel_admin.html')
+    return render_template('panel.html')
 
 @app.route('/crear_usuario', methods=['GET', 'POST'])
 def crear_usuario():
@@ -61,7 +61,7 @@ def crear_usuario():
             }
             supabase.table("verificaciondigitalcdmx").insert(data).execute()
             flash('Usuario creado exitosamente.', 'success')
-        except Exception:
+        except Exception as e:
             flash('Error: el nombre de usuario ya existe o hubo un problema.', 'error')
 
     return render_template('crear_usuario.html')
