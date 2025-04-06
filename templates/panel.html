@@ -5,28 +5,27 @@
     <title>Panel de Administración</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
             background-color: #ffffff;
             font-family: Arial, sans-serif;
+            color: #000;
             margin: 0;
             padding: 0;
-            color: #000000;
         }
         .logo {
-            max-width: 170px;
-            height: auto;
+            max-width: 180px;
         }
         .sublogo {
-            max-width: 140px;
-            height: auto;
+            max-width: 150px;
         }
         .titulo-oficial {
             font-weight: bold;
             text-transform: uppercase;
             text-align: center;
-            margin: 25px 0 20px 0;
-            font-size: 18px;
+            margin: 30px 0 25px 0;
+            font-size: 20px;
         }
         .footer-img {
             display: block;
@@ -42,16 +41,26 @@
             padding: 14px;
             margin-bottom: 15px;
             width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         .btn-guinda:hover {
             background-color: #a00000;
         }
+        .btn-outline-secondary {
+            font-weight: bold;
+        }
         .panel-box {
-            max-width: 100%;
-            width: 100%;
             max-width: 700px;
             margin: 0 auto;
             padding: 0 15px;
+        }
+        .card-panel {
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            padding: 30px 20px;
         }
     </style>
 </head>
@@ -65,11 +74,21 @@
 
     <h5 class="titulo-oficial">LA SECRETARÍA DE MOVILIDAD DE LA CIUDAD DE MÉXICO</h5>
 
-    <div class="panel-box mt-4">
-        <a href="{{ url_for('formulario_registro') }}" class="btn btn-guinda">Registrar Folio</a>
-        <a href="{{ url_for('crear_usuario') }}" class="btn btn-guinda">Crear Usuario</a>
-        <a href="{{ url_for('consulta') }}" class="btn btn-guinda">Consultar Folio</a>
-        <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary w-100">Cerrar Sesión</a>
+    <div class="panel-box">
+        <div class="card-panel">
+            <a href="{{ url_for('formulario_registro') }}" class="btn btn-guinda">
+                <i class="bi bi-pencil-square"></i> Registrar Folio
+            </a>
+            <a href="{{ url_for('crear_usuario') }}" class="btn btn-guinda">
+                <i class="bi bi-person-plus-fill"></i> Crear Usuario
+            </a>
+            <a href="{{ url_for('consulta') }}" class="btn btn-guinda">
+                <i class="bi bi-search"></i> Consultar Folio
+            </a>
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+            </a>
+        </div>
     </div>
 
     <img src="{{ url_for('static', filename='footer.png') }}" class="footer-img" alt="Pie de página">
