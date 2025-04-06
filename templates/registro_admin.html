@@ -2,21 +2,20 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro de Folios - Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Registro de Folio (Administrador)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #ffffff;
-            padding: 20px;
+            background-color: #f2fefc;
+            padding: 40px;
         }
         form {
             max-width: 500px;
             margin: auto;
-            background-color: #ffffff;
-            padding: 25px;
+            background-color: white;
+            padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         input, select, button {
             width: 100%;
@@ -44,7 +43,6 @@
         }
         h2 {
             text-align: center;
-            margin-bottom: 20px;
         }
         .mensaje {
             text-align: center;
@@ -94,8 +92,14 @@
         <input type="text" name="numero_motor" required>
 
         <button class="btn-blue" type="submit">Registrar</button>
-        <a href="{{ url_for('consulta') }}"><button class="btn-grey" type="button">Ir a Consulta</button></a>
-        <a href="{{ url_for('logout') }}"><button class="btn-red" type="button">Cerrar Sesión</button></a>
+    </form>
+
+    <form method="get" action="{{ url_for('consulta') }}">
+        <button class="btn-grey" type="submit">Ir a Consulta</button>
+    </form>
+
+    <form method="get" action="{{ url_for('logout') }}">
+        <button class="btn-red" type="submit">Cerrar Sesión</button>
     </form>
 </body>
 </html>
