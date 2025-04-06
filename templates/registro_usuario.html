@@ -4,25 +4,26 @@
     <meta charset="UTF-8">
     <title>Registro de Folios - Usuario</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #ffffff;
             padding: 20px;
         }
-        form {
-            max-width: 500px;
+        .logo-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 800px;
             margin: auto;
-            background-color: #ffffff;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 0 12px rgba(0,0,0,0.1);
         }
-        input, select, button {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            font-size: 15px;
+        .logo-container img {
+            height: 60px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 30px auto;
         }
         .btn-blue {
             background-color: #007bff;
@@ -42,10 +43,6 @@
             font-weight: bold;
             border: none;
         }
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
         .info {
             text-align: center;
             font-weight: bold;
@@ -55,60 +52,88 @@
             text-align: center;
             margin-bottom: 15px;
         }
+        footer {
+            margin-top: 40px;
+            background-color: #f8f9fa;
+            padding: 30px 15px;
+            font-size: 14px;
+            color: #333;
+            text-align: center;
+        }
+        .footer-section {
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
-    <h2>Registro de Folios</h2>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="mensaje">
-        {% for category, message in messages %}
-          <div style="color: {% if category == 'error' %}red{% else %}green{% endif %}; font-weight: bold;">
-            {{ message }}
-          </div>
-        {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-
-    {% if folios_info %}
-    <div class="info">
-        Folios asignados: {{ folios_info.folios_asignados }}<br>
-        Folios usados: {{ folios_info.folios_usados }}<br>
-        Folios restantes: {{ folios_info.folios_asignados - folios_info.folios_usados }}
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo principal">
+        <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub logo">
     </div>
-    {% endif %}
 
-    <form method="POST" action="{{ url_for('registrar_folio') }}">
-        <label>Folio</label>
-        <input type="text" name="folio" required>
+    <div class="container">
+        <h4 class="text-center mb-4">Registro de Folios</h4>
 
-        <label>Vigencia (días)</label>
-        <select name="vigencia" required>
-            <option value="30">30 días</option>
-            <option value="60">60 días</option>
-            <option value="90">90 días</option>
-        </select>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mensaje">
+                {% for category, message in messages %}
+                    <div style="color: {% if category == 'error' %}red{% else %}green{% endif %}; font-weight: bold;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %}
 
-        <label>Marca</label>
-        <input type="text" name="marca" required>
+        {% if folios_info %}
+        <div class="info">
+            Folios asignados: {{ folios_info.folios_asignados }}<br>
+            Folios usados: {{ folios_info.folios_usados }}<br>
+            Folios restantes: {{ folios_info.folios_asignados - folios_info.folios_usados }}
+        </div>
+        {% endif %}
 
-        <label>Línea</label>
-        <input type="text" name="linea" required>
+        <form method="POST" action="{{ url_for('registrar_folio') }}">
+            <input type="text" name="folio" class="form-control mb-2" placeholder="Folio" required>
+            <select name="vigencia" class="form-control mb-2" required>
+                <option value="30">30 días</option>
+                <option value="60">60 días</option>
+                <option value="90">90 días</option>
+            </select>
+            <input type="text" name="marca" class="form-control mb-2" placeholder="Marca" required>
+            <input type="text" name="linea" class="form-control mb-2" placeholder="Línea" required>
+            <input type="text" name="año" class="form-control mb-2" placeholder="Año" required>
+            <input type="text" name="numero_serie" class="form-control mb-2" placeholder="Número de Serie" required>
+            <input type="text" name="numero_motor" class="form-control mb-3" placeholder="Número de Motor" required>
 
-        <label>Año</label>
-        <input type="text" name="año" required>
+            <button type="submit" class="btn btn-blue w-100 mb-2">Registrar</button>
+        </form>
 
-        <label>Número de Serie</label>
-        <input type="text" name="numero_serie" required>
+        <a href="{{ url_for('consulta') }}">
+            <button class="btn btn-grey w-100 mb-2">Ir a Consulta</button>
+        </a>
+        <a href="{{ url_for('logout') }}">
+            <button class="btn btn-red w-100">Cerrar Sesión</button>
+        </a>
+    </div>
 
-        <label>Número de Motor</label>
-        <input type="text" name="numero_motor" required>
+    <footer>
+        <div class="footer-section">
+            <strong>Atención ciudadana</strong><br>
+            Dirección: Avenida Álvaro Obregón 269, CDMX<br>
+            Teléfono: 56581111 (LOCATEL)<br>
+            Horarios: Lunes a viernes de 09:00 a 21:00 hrs
+        </div>
+        <div class="footer-section">
+            <strong>Redes sociales</strong><br>
+            Facebook | Twitter | YouTube | Instagram
+        </div>
+        <div class="footer-section">
+            CMS CDMX v2.8.0 2025 | Términos y Condiciones | Política de Privacidad
+        </div>
+    </footer>
 
-        <button class="btn-blue" type="submit">Registrar</button>
-        <a href="{{ url_for('consulta') }}"><button class="btn-grey" type="button">Ir a Consulta</button></a>
-        <a href="{{ url_for('logout') }}"><button class="btn-red" type="button">Cerrar Sesión</button></a>
-    </form>
 </body>
 </html>
