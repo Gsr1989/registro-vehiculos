@@ -140,6 +140,38 @@ def registrar_folio():
     conn.close()
     return redirect(url_for('registro_usuario'))
 
+@app.route('/registro_admin', methods=['GET', 'POST'])
+def registro_admin():
+    if 'admin' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        folio = request.form['folio']
+        vigencia = int(request.form['vigencia'])
+        marca = request.form['marca']
+        linea = request.form['linea']
+        año = request.form['año']
+        numero_serie = request.form['numero_serie']
+        numero_motor = request.form['numero_motor']
+        fecha_expedicion = datetime.now()
+        fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
+
+        try:
+            conn = conectar_db()
+            conn.execute('''
+                INSERT INTO folios (folio, fecha_expedicion, fecha_vencimiento, marca, linea, año, numero_serie, numero_motor)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (folio, fecha_expedicion.strftime('%Y-%m-%d'), fecha_vencimiento.strftime('%Y-%m-%d'),
+                  marca, linea, año, numero_serie, numero_motor))
+            conn.commit()
+            flash('Folio registrado correctamente (admin).', 'success')
+        except sqlite3.IntegrityError:
+            flash('Este folio ya está registrado.', 'error')
+        finally:
+            conn.close()
+
+    return render_template('registro_admin.html')
+
 @app.route('/consulta', methods=['GET'])
 def consulta():
     return render_template('consulta_folio.html')
