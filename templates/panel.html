@@ -8,12 +8,26 @@
         body {
             background-color: #ffffff;
             font-family: Arial, sans-serif;
-            padding: 40px 20px;
+            padding: 30px 10px;
+        }
+        .logo-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 800px;
+            margin: auto;
+        }
+        .logo-container img {
+            height: 60px;
         }
         .container {
             max-width: 500px;
-            margin: auto;
+            margin: 30px auto;
             text-align: center;
+        }
+        h2 {
+            font-weight: bold;
+            margin-bottom: 30px;
         }
         .btn-custom {
             width: 100%;
@@ -27,13 +41,25 @@
         .btn-blue { background-color: #007bff; color: white; }
         .btn-green { background-color: #198754; color: white; }
         .btn-red { background-color: #dc3545; color: white; }
-        h2 {
-            font-weight: bold;
-            margin-bottom: 30px;
+        footer {
+            margin-top: 40px;
+            background-color: #f8f9fa;
+            padding: 30px 15px;
+            font-size: 14px;
+            color: #333;
+        }
+        .footer-section {
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
+
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo principal">
+        <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub logo">
+    </div>
+
     <div class="container">
         <h2>Panel de Administración</h2>
 
@@ -53,5 +79,22 @@
             <button class="btn-custom btn-red">Cerrar Sesión</button>
         </a>
     </div>
+
+    <footer class="text-center">
+        <div class="footer-section">
+            <strong>Atención ciudadana</strong><br>
+            Dirección: Avenida Álvaro Obregón 269, CDMX<br>
+            Teléfono: 56581111 (LOCATEL)<br>
+            Horarios: Lunes a viernes de 09:00 a 21:00 hrs
+        </div>
+        <div class="footer-section">
+            <strong>Redes sociales</strong><br>
+            Facebook | Twitter | YouTube | Instagram
+        </div>
+        <div class="footer-section">
+            CMS CDMX v2.8.0 2025 | Términos y Condiciones | Política de Privacidad
+        </div>
+    </footer>
+
 </body>
 </html>
