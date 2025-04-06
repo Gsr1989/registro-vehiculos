@@ -4,54 +4,60 @@
     <meta charset="UTF-8">
     <title>Registro de Folio</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        form { max-width: 500px; margin: auto; }
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f2fefc; }
+        form { max-width: 500px; margin: auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         input, select, button { width: 100%; padding: 10px; margin-bottom: 15px; }
-        a { display: block; text-align: center; margin-top: 20px; }
+        button { font-weight: bold; }
+        .btn-blue { background-color: #007bff; color: white; border: none; }
+        .btn-red { background-color: #dc3545; color: white; border: none; }
+        .btn-grey { background-color: #6c757d; color: white; border: none; }
+        .mensaje { text-align: center; margin-bottom: 15px; }
     </style>
 </head>
 <body>
-    <h1>Registro de Folio</h1>
+    <h2 style="text-align: center;">Registro de Folios</h2>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
+        <div class="mensaje">
         {% for category, message in messages %}
-          <div style="color: {% if category == 'error' %}red{% else %}green{% endif %};">
+          <div style="color: {% if category == 'error' %}red{% else %}green{% endif %}; font-weight: bold;">
             {{ message }}
           </div>
         {% endfor %}
+        </div>
       {% endif %}
     {% endwith %}
 
     <form method="POST" action="{{ url_for('registrar_folio') }}">
-        <label>Folio:</label>
+        <label>Folio</label>
         <input type="text" name="folio" required>
 
-        <label>Vigencia (días):</label>
+        <label>Vigencia (días)</label>
         <select name="vigencia" required>
-            <option value="30">30</option>
-            <option value="60">60</option>
-            <option value="90">90</option>
+            <option value="30">30 días</option>
+            <option value="60">60 días</option>
+            <option value="90">90 días</option>
         </select>
 
-        <label>Marca:</label>
+        <label>Marca</label>
         <input type="text" name="marca" required>
 
-        <label>Línea:</label>
+        <label>Línea</label>
         <input type="text" name="linea" required>
 
-        <label>Año:</label>
+        <label>Año</label>
         <input type="text" name="año" required>
 
-        <label>Número de Serie:</label>
+        <label>Número de Serie</label>
         <input type="text" name="numero_serie" required>
 
-        <label>Número de Motor:</label>
+        <label>Número de Motor</label>
         <input type="text" name="numero_motor" required>
 
-        <button type="submit">Registrar Folio</button>
+        <button class="btn-blue" type="submit">Registrar</button>
+        <a href="{{ url_for('consulta') }}"><button class="btn-grey" type="button">Ir a Consulta</button></a>
+        <a href="{{ url_for('logout') }}"><button class="btn-red" type="button">Cerrar Sesión</button></a>
     </form>
-
-    <a href="{{ url_for('logout') }}">Cerrar sesión</a>
 </body>
 </html>
