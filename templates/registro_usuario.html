@@ -4,18 +4,19 @@
     <meta charset="UTF-8">
     <title>Registro de Folio</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f2fefc; }
+        body { font-family: Arial, sans-serif; background-color: #f2fefc; padding: 40px; }
         form { max-width: 500px; margin: auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         input, select, button { width: 100%; padding: 10px; margin-bottom: 15px; }
-        button { font-weight: bold; }
-        .btn-blue { background-color: #007bff; color: white; border: none; }
-        .btn-red { background-color: #dc3545; color: white; border: none; }
-        .btn-grey { background-color: #6c757d; color: white; border: none; }
+        .btn-blue { background-color: #007bff; color: white; font-weight: bold; border: none; }
+        .btn-red { background-color: #dc3545; color: white; font-weight: bold; border: none; }
+        .btn-grey { background-color: #6c757d; color: white; font-weight: bold; border: none; }
+        h2 { text-align: center; }
+        .info { text-align: center; font-weight: bold; margin-bottom: 20px; }
         .mensaje { text-align: center; margin-bottom: 15px; }
     </style>
 </head>
 <body>
-    <h2 style="text-align: center;">Registro de Folios</h2>
+    <h2>Registro de Folios</h2>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -28,6 +29,14 @@
         </div>
       {% endif %}
     {% endwith %}
+
+    {% if folios_info %}
+    <div class="info">
+        Folios disponibles: {{ folios_info.folios_asignados }}<br>
+        Folios usados: {{ folios_info.folios_usados }}<br>
+        Folios restantes: {{ folios_info.folios_asignados - folios_info.folios_usados }}
+    </div>
+    {% endif %}
 
     <form method="POST" action="{{ url_for('registrar_folio') }}">
         <label>Folio</label>
