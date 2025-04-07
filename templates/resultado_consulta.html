@@ -12,26 +12,20 @@
             padding: 0;
             color: #000000;
         }
-        header {
-            background-color: #800000;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
         .logos {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
+            padding: 10px 30px;
         }
         .logos img {
-            height: 60px;
+            height: 80px;
         }
-        .titulo {
+        .titulo-oficial {
             font-weight: bold;
             text-align: center;
-            margin: 20px 0;
-            font-size: 18px;
+            font-size: 20px;
+            margin: 30px 20px 20px;
         }
         .estado-verde {
             background-color: #d4edda;
@@ -64,30 +58,44 @@
             background-color: #f2f2f2;
             margin: 20px;
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 15px;
         }
-        footer {
-            margin-top: 30px;
+        .recuadro-datos p {
+            margin: 10px 0;
+        }
+        .documento {
             text-align: center;
-            color: #555;
-            font-size: 14px;
-            padding: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 30px 0;
+        }
+        footer {
+            margin-top: 40px;
+        }
+        footer img {
+            width: 100%;
+            display: block;
+        }
+        @media (max-width: 600px) {
+            .logos img {
+                height: 60px;
+            }
+            .titulo-oficial {
+                font-size: 18px;
+                margin: 20px;
+            }
         }
     </style>
 </head>
 <body>
-
-<header>
-    <h1>Validación Vehicular MX</h1>
-</header>
 
 <div class="logos">
     <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
     <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sublogo">
 </div>
 
-<div class="titulo">LA SECRETARÍA DE MOVILIDAD DE LA CIUDAD DE MÉXICO CERTIFICA:</div>
+<div class="titulo-oficial">LA SECRETARÍA DE MOVILIDAD DE LA CIUDAD DE MÉXICO CERTIFICA:</div>
 
 {% if resultado.estado == 'Vigente' %}
 <div class="estado-verde">
@@ -116,11 +124,11 @@
     <p><strong>Número de Motor:</strong> {{ resultado.numero_motor }}</p>
 </div>
 
-<div class="titulo">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
+<div class="documento">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
 {% endif %}
 
 <footer>
-    &copy; 2025 Validación Vehicular MX
+    <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
 </footer>
 
 </body>
