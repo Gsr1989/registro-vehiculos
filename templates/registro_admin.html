@@ -85,7 +85,7 @@
 
     <div class="titulo">Secretaría de Movilidad</div>
 
-    <form method="POST" class="formulario">
+    <form method="POST" action="{{ url_for('registro_admin') }}" class="formulario">
         <input type="text" name="folio" placeholder="Folio" required>
         <input type="text" name="marca" placeholder="Marca" required>
         <input type="text" name="linea" placeholder="Línea" required>
