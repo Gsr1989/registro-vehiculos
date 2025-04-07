@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Crear Usuario</title>
@@ -56,6 +57,21 @@
         .btn:hover {
             background-color: #a00000;
         }
+        .flash-message {
+            padding: 12px;
+            text-align: center;
+            border-radius: 6px;
+            margin: 10px auto;
+            max-width: 600px;
+            font-weight: bold;
+            color: white;
+        }
+        .success {
+            background-color: #4CAF50;
+        }
+        .error {
+            background-color: #f44336;
+        }
         footer {
             margin-top: 40px;
             width: 100%;
@@ -64,31 +80,35 @@
             width: 100%;
             display: block;
         }
-        .alert {
-            background-color: #f44336;
-            color: white;
-            padding: 12px;
-            text-align: center;
-            border-radius: 6px;
-            margin: 10px auto;
-            max-width: 600px;
-        }
-        .success {
-            background-color: #4CAF50;
-        }
     </style>
 </head>
-<body><header>
+<body>
+
+<header>
     <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
     <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
-</header><div class="titulo">Secretaría de Movilidad</div>{% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %} <div class="alert {{ 'success' if category == 'success' else '' }}">{{ message }}</div> {% endfor %} {% endif %} {% endwith %}
+</header>
+
+<div class="titulo">Secretaría de Movilidad</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="flash-message {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
 <form method="POST" class="formulario">
     <input type="text" name="username" placeholder="Nombre de usuario" required>
     <input type="password" name="password" placeholder="Contraseña" required>
     <input type="number" name="folios" placeholder="Cantidad de folios" required>
     <button type="submit" class="btn">Crear Usuario</button>
-</form><footer>
+</form>
+
+<footer>
     <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
-</footer></body>
+</footer>
+
+</body>
 </html>
