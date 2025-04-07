@@ -4,89 +4,93 @@
     <meta charset="UTF-8">
     <title>Iniciar Sesión</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
             background-color: #ffffff;
             font-family: Arial, sans-serif;
-            color: #000;
             margin: 0;
             padding: 0;
         }
-        .logo {
-            max-width: 180px;
-        }
-        .sublogo {
-            max-width: 150px;
-        }
-        .titulo-oficial {
-            font-weight: bold;
-            text-transform: uppercase;
-            text-align: center;
-            margin: 30px 0 25px 0;
-            font-size: 20px;
-        }
-        .footer-img {
-            display: block;
-            margin: 40px auto 0 auto;
-            max-width: 100%;
-            height: auto;
-        }
-        .btn-guinda {
+        header {
             background-color: #800000;
             color: white;
-            font-size: 16px;
-            font-weight: bold;
-            padding: 14px;
-            width: 100%;
+            padding: 20px;
+            text-align: center;
         }
-        .btn-guinda:hover {
-            background-color: #a00000;
-        }
-        .form-box {
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 0 15px;
-        }
-        .card-login {
+        .login-box {
+            max-width: 400px;
+            margin: 60px auto;
+            padding: 25px;
+            background-color: #f2f2f2;
             border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            padding: 30px 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        .form-label {
+        .login-box h2 {
+            margin-bottom: 20px;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            background-color: #800000;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
             font-weight: bold;
+            font-size: 16px;
+        }
+        .mensaje-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #777;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
 
-<div class="container my-4">
-    <div class="d-flex justify-content-between align-items-center mb-3 px-3">
-        <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
-        <img src="{{ url_for('static', filename='sub_logo.png') }}" class="sublogo" alt="Sublogo">
-    </div>
+<header>
+    <h1>Validación Vehicular MX</h1>
+</header>
 
-    <h5 class="titulo-oficial">LA SECRETARÍA DE MOVILIDAD DE LA CIUDAD DE MÉXICO</h5>
+<div class="login-box">
+    <h2>Iniciar Sesión</h2>
 
-    <div class="form-box">
-        <div class="card-login">
-            <form method="POST" action="{{ url_for('login') }}">
-                <div class="mb-3">
-                    <label for="username" class="form-label">Usuario</label>
-                    <input type="text" class="form-control" id="username" name="username" required>
-                </div>
-                <div class="mb-4">
-                    <label for="password" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
-                </div>
-                <button type="submit" class="btn btn-guinda"><i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión</button>
-            </form>
-        </div>
-    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="mensaje-error">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
-    <img src="{{ url_for('static', filename='footer.png') }}" class="footer-img" alt="Pie de página">
+    <form method="POST">
+        <input type="text" name="username" placeholder="Usuario" required>
+        <input type="password" name="password" placeholder="Contraseña" required>
+        <button type="submit">Entrar</button>
+    </form>
 </div>
+
+<footer>
+    &copy; 2025 Validación Vehicular MX
+</footer>
 
 </body>
 </html>
