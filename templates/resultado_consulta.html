@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html><html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Resultado de Consulta</title>
@@ -22,123 +21,90 @@
         }
         .titulo {
             text-align: center;
-            font-size: 28px;
-            margin-top: 30px;
+            font-size: 26px;
+            margin: 20px 0 5px;
             font-weight: bold;
             color: #222;
         }
-        .contenedor {
-            max-width: 600px;
-            margin: 30px auto;
-            padding: 20px;
-            border: 2px solid #ccc;
-            background-color: #fdfdfd;
-        }
-        .subcontenedor {
-            padding: 15px;
-            border: 1px solid #e0e0e0;
-            background-color: #f3f3f3;
-        }
-        .campo {
-            margin-bottom: 15px;
-        }
-        .campo label {
-            font-weight: bold;
-            display: block;
-        }
-        .campo span {
-            display: block;
-            margin-top: 5px;
-        }
-        .estado {
-            font-weight: bold;
+        .subtitulo {
             text-align: center;
-            padding: 10px;
+            font-size: 18px;
             margin-bottom: 20px;
-            border-radius: 5px;
+            color: #444;
+        }
+        .estatus {
+            text-align: center;
+            padding: 14px;
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            margin: 0 auto 20px;
+            max-width: 600px;
+            border-radius: 6px;
         }
         .verde {
-            background-color: #d4edda;
-            color: #155724;
+            background-color: #4CAF50;
         }
         .amarillo {
-            background-color: #fff3cd;
-            color: #856404;
+            background-color: #d49f00;
         }
         .rojo {
-            background-color: #f8d7da;
-            color: #721c24;
+            background-color: #e53935;
+        }
+        .recuadro {
+            background-color: #f4f4f4;
+            border: 1px solid #ccc;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            border-radius: 8px;
+        }
+        .recuadro p {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .recuadro strong {
+            display: block;
+            font-size: 17px;
+            margin-bottom: 5px;
+            color: #222;
         }
         footer {
-            margin-top: 40px;
             width: 100%;
+            margin-top: 40px;
         }
         footer img {
             width: 100%;
             display: block;
         }
-        @media (max-width: 600px) {
-            header img {
-                height: 60px;
-            }
-            .titulo {
-                font-size: 24px;
-                margin-top: 20px;
-            }
-        }
     </style>
 </head>
 <body>
+    <header>
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+        <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
+    </header><div class="titulo">Secretaría de Movilidad</div>
+<div class="subtitulo">Ciudad de México</div>
 
-<header>
-    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
-    <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
-</header>
+{% if resultado.estado == "Vigente" %}
+    <div class="estatus verde">INFORMA QUE EL FOLIO {{ resultado.folio }} ESTÁ: VIGENTE</div>
+{% elif resultado.estado == "Vencido" %}
+    <div class="estatus amarillo">INFORMA QUE EL FOLIO {{ resultado.folio }} ESTÁ: VENCIDO</div>
+{% else %}
+    <div class="estatus rojo">EL FOLIO NO SE ENCUENTRA EN NUESTROS REGISTROS</div>
+{% endif %}
 
-<div class="titulo">Secretaría de Movilidad</div>
-
-<div class="contenedor">
-    {% if resultado.estado == 'Vigente' %}
-        <div class="estado verde">Este folio está VIGENTE</div>
-    {% elif resultado.estado == 'Vencido' %}
-        <div class="estado amarillo">Este folio está VENCIDO</div>
-    {% else %}
-        <div class="estado rojo">Este folio no se encuentra en nuestros registros</div>
-    {% endif %}
-
-    {% if resultado.estado != 'No encontrado' %}
-    <div class="subcontenedor">
-        <div class="campo">
-            <label>Marca</label>
-            <span>{{ resultado.marca }}</span>
-        </div>
-        <div class="campo">
-            <label>Línea</label>
-            <span>{{ resultado.linea }}</span>
-        </div>
-        <div class="campo">
-            <label>Modelo</label>
-            <span>{{ resultado.año }}</span>
-        </div>
-        <div class="campo">
-            <label>Serie</label>
-            <span>{{ resultado.numero_serie }}</span>
-        </div>
-        <div class="campo">
-            <label>Motor</label>
-            <span>{{ resultado.numero_motor }}</span>
-        </div>
-        <div class="campo">
-            <label>Fecha de Expedición</label>
-            <span>{{ resultado.fecha_expedicion }}</span>
-        </div>
-        <div class="campo">
-            <label>Fecha de Vencimiento</label>
-            <span>{{ resultado.fecha_vencimiento }}</span>
-        </div>
-    </div>
-    {% endif %}
+{% if resultado.estado != "No encontrado" %}
+<div class="recuadro">
+    <p><strong>Marca</strong>{{ resultado.marca }}</p>
+    <p><strong>Línea</strong>{{ resultado.linea }}</p>
+    <p><strong>Modelo</strong>{{ resultado.año }}</p>
+    <p><strong>Serie</strong>{{ resultado.numero_serie }}</p>
+    <p><strong>Motor</strong>{{ resultado.numero_motor }}</p>
+    <p><strong>Fecha de Expedición</strong>{{ resultado.fecha_expedicion }}</p>
+    <p><strong>Fecha de Vencimiento</strong>{{ resultado.fecha_vencimiento }}</p>
 </div>
+{% endif %}
 
 <footer>
     <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
