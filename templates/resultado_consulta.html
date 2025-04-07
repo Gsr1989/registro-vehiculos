@@ -6,127 +6,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
-            background-color: #ffffff;
+            background-color: white;
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            text-align: center;
         }
-
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px 30px;
         }
-
         header img {
             height: 80px;
         }
-
         .titulo {
-            text-align: center;
-            font-size: 24px;
-            margin-top: 20px;
-            font-weight: bold;
-            color: #222;
-        }
-
-        .subtitulo {
-            text-align: center;
-            font-size: 18px;
-            margin-top: 5px;
-            color: #444;
-        }
-
-        .estado {
-            text-align: center;
-            font-size: 22px;
+            font-size: 26px;
             font-weight: bold;
             margin-top: 30px;
-            padding: 10px;
+        }
+        .subtitulo {
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+        .estado {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 15px 30px;
             border-radius: 10px;
-            width: 90%;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+            display: inline-block;
+            margin: 20px auto;
+        }
+        .verde {
+            background-color: #4CAF50;
             color: white;
         }
-
-        .Vigente {
-            background-color: green;
+        .cafe {
+            background-color: #A0522D;
+            color: white;
         }
-
-        .Vencido {
-            background-color: #b36b00; /* café/amarillo oscuro */
+        .rojo {
+            background-color: #f44336;
+            color: white;
         }
-
-        .No {
-            background-color: #cc0000;
-        }
-
-        .certificado {
-            border: 2px solid #ccc;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 600px;
-            margin: 30px auto;
-            background-color: #f2f2f2;
-        }
-
-        .dato {
-            margin: 8px 0;
-            font-size: 16px;
-        }
-
-        .valido {
-            text-align: center;
-            font-weight: bold;
-            margin-top: 20px;
-            color: #333;
-        }
-
-        .btn-regresar {
-            display: block;
-            width: 90%;
-            max-width: 600px;
-            margin: 30px auto;
-            text-align: center;
-        }
-
-        .btn-regresar a {
+        .btn {
+            display: inline-block;
             background-color: #800000;
             color: white;
             text-decoration: none;
-            padding: 12px 20px;
-            border-radius: 8px;
+            padding: 12px 25px;
+            border-radius: 6px;
             font-size: 16px;
-            display: inline-block;
+            margin-top: 30px;
         }
-
-        .btn-regresar a:hover {
+        .btn:hover {
             background-color: #a00000;
         }
-
         footer {
             margin-top: 40px;
-            width: 100%;
         }
-
         footer img {
             width: 100%;
             display: block;
         }
-
         @media (max-width: 600px) {
             header img {
                 height: 60px;
             }
             .titulo {
-                font-size: 20px;
-            }
-            .estado {
-                font-size: 20px;
+                font-size: 22px;
             }
         }
     </style>
@@ -141,35 +90,22 @@
     <div class="titulo">Secretaría de Movilidad</div>
     <div class="subtitulo">Ciudad de México</div>
 
-    {% if resultado.estado == "No encontrado" %}
-        <div class="estado No">
-            EL FOLIO CONSULTADO NO SE ENCUENTRA EN NUESTROS REGISTROS
-        </div>
-    {% else %}
-        <div class="estado {{ resultado.estado }}">
-            EL FOLIO {{ resultado.estado.upper() }}
-        </div>
-
-        <div class="certificado">
-            <div class="dato"><strong>Fecha de Expedición:</strong> {{ resultado.fecha_expedicion }}</div>
-            <div class="dato"><strong>Fecha de Vencimiento:</strong> {{ resultado.fecha_vencimiento }}</div>
-            <div class="dato"><strong>Marca:</strong> {{ resultado.marca }}</div>
-            <div class="dato"><strong>Línea:</strong> {{ resultado.linea }}</div>
-            <div class="dato"><strong>Año:</strong> {{ resultado.año }}</div>
-            <div class="dato"><strong>Número de Serie:</strong> {{ resultado.numero_serie }}</div>
-            <div class="dato"><strong>Número de Motor:</strong> {{ resultado.numero_motor }}</div>
-        </div>
-
-        <div class="valido">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
+    {% if resultado %}
+        {% if resultado.estado == "Vigente" %}
+            <div class="estado verde">FOLIO {{ resultado.folio }} : VIGENTE</div>
+        {% elif resultado.estado == "Vencido" %}
+            <div class="estado cafe">FOLIO {{ resultado.folio }} : VENCIDO</div>
+        {% elif resultado.estado == "No encontrado" %}
+            <div class="estado rojo">FOLIO {{ resultado.folio }} : NO SE ENCUENTRA REGISTRADO</div>
+        {% endif %}
     {% endif %}
 
-    <div class="btn-regresar">
-        <a href="https://www.semovi.cdmx.gob.mx/">Regresar</a>
-    </div>
+    <br>
+    <a href="https://www.semovi.cdmx.gob.mx/" class="btn">Regresar</a>
 
     <footer>
         <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
     </footer>
 
 </body>
-                </html>
+</html>
