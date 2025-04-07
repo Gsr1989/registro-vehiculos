@@ -52,7 +52,6 @@ def crear_usuario():
         password = request.form['password']
         folios = int(request.form['folios'])
 
-        # Verificar si ya existe un usuario con ese nombre
         existe = supabase.table("verificaciondigitalcdmx").select("id").eq("username", username).execute()
         if existe.data:
             flash('Error: el nombre de usuario ya existe.', 'error')
@@ -72,16 +71,66 @@ def crear_usuario():
 
     return render_template('crear_usuario.html')
 
-@app.route('/registro_usuario')
+@app.route('/registro_usuario', methods=['GET', 'POST'])
 def registro_usuario():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     user_id = session['user_id']
+
+    if request.method == 'POST':
+        folio = request.form['folio']
+        marca = request.form['marca']
+        linea = request.form['linea']
+        anio = request.form['anio']
+        numero_serie = request.form['serie']
+        numero_motor = request.form['motor']
+        vigencia = int(request.form['vigencia'])
+
+        existente = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
+        if existente.data:
+            flash('Error: el folio ya existe.', 'error')
+            return redirect(url_for('registro_usuario'))
+
+        usuario_data = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
+        if not usuario_data.data:
+            flash("No se pudo obtener la información del usuario.", "error")
+            return redirect(url_for('registro_usuario'))
+
+        folios = usuario_data.data[0]
+        restantes = folios['folios_asignac'] - folios['folios_usados']
+        if restantes <= 0:
+            flash("No tienes folios disponibles para registrar.", "error")
+            return redirect(url_for('registro_usuario'))
+
+        fecha_expedicion = datetime.now()
+        fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
+
+        data = {
+            "folio": folio,
+            "marca": marca,
+            "linea": linea,
+            "anio": anio,
+            "numero_serie": numero_serie,
+            "numero_motor": numero_motor,
+            "fecha_expedicion": fecha_expedicion.isoformat(),
+            "fecha_vencimiento": fecha_vencimiento.isoformat()
+        }
+
+        try:
+            supabase.table("folios_registrados").insert(data).execute()
+            supabase.table("verificaciondigitalcdmx").update({
+                "folios_usados": folios["folios_usados"] + 1
+            }).eq("id", user_id).execute()
+            flash("Folio registrado correctamente.", "success")
+        except Exception as e:
+            flash("Error al registrar el folio.", "error")
+
+        return redirect(url_for('registro_usuario'))
+
     response = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
     folios_info = response.data[0] if response.data else {}
-
-    return render_template('registro_usuario.html', folios_info=folios_info)
+    return render_template("registro_usuario.html", folios_info=folios_info)
 
 @app.route('/registro_admin', methods=['GET', 'POST'])
 def registro_admin():
@@ -97,7 +146,6 @@ def registro_admin():
         numero_motor = request.form['motor']
         vigencia = int(request.form['vigencia'])
 
-        # Validar si el folio ya existe
         existente = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
         if existente.data:
             flash('Error: el folio ya existe.', 'error')
