@@ -65,6 +65,22 @@
             width: 100%;
             display: block;
         }
+        .flash-message {
+            padding: 10px;
+            margin: 15px auto;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        .success {
+            background-color: green;
+        }
+        .error {
+            background-color: red;
+        }
         @media (max-width: 600px) {
             header img {
                 height: 60px;
@@ -85,7 +101,15 @@
 
     <div class="titulo">Secretaría de Movilidad</div>
 
-    <form method="POST" action="{{ url_for('registro_admin') }}" class="formulario">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash-message {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" class="formulario">
         <input type="text" name="folio" placeholder="Folio" required>
         <input type="text" name="marca" placeholder="Marca" required>
         <input type="text" name="linea" placeholder="Línea" required>
