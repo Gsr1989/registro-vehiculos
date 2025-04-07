@@ -42,6 +42,17 @@ def admin():
         return redirect(url_for('login'))
     return render_template('panel.html')
 
+@app.route('/registro_admin', methods=['GET', 'POST'])
+def registro_admin():
+    if 'admin' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        # Aquí iría la lógica para registrar folios o vehículos si la agregas luego
+        pass
+
+    return render_template('registro_admin.html')
+
 @app.route('/crear_usuario', methods=['GET', 'POST'])
 def crear_usuario():
     if 'admin' not in session:
