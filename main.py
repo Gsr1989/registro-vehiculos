@@ -5,7 +5,6 @@ from supabase import create_client, Client
 app = Flask(__name__)
 app.secret_key = 'clave_muy_segura_123456'
 
-# Datos de Supabase
 SUPABASE_URL = "https://xsagwqepoljfsogusubw.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWd3cWVwb2xqZnNvZ3VzdWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5NjM3NTUsImV4cCI6MjA1OTUzOTc1NX0.NUixULn0m2o49At8j6X58UqbXre2O2_JStqzls_8Gws"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -42,41 +41,6 @@ def admin():
         return redirect(url_for('login'))
     return render_template('panel.html')
 
-@app.route('/crear_usuario', methods=['GET', 'POST'])
-def crear_usuario():
-    if 'admin' not in session:
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        folios = int(request.form['folios'])
-
-        try:
-            data = {
-                "username": username,
-                "password": password,
-                "folios_asignac": folios,
-                "folios_usados": 0
-            }
-            supabase.table("verificaciondigitalcdmx").insert(data).execute()
-            flash('Usuario creado exitosamente.', 'success')
-        except Exception:
-            flash('Error: el nombre de usuario ya existe o hubo un problema.', 'error')
-
-    return render_template('crear_usuario.html')
-
-@app.route('/registro_usuario')
-def registro_usuario():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    user_id = session['user_id']
-    response = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
-    folios_info = response.data[0] if response.data else {}
-
-    return render_template('registro_usuario.html', folios_info=folios_info)
-
 @app.route('/registro_admin', methods=['GET', 'POST'])
 def registro_admin():
     if 'admin' not in session:
@@ -91,13 +55,6 @@ def registro_admin():
         numero_motor = request.form['motor']
         vigencia = int(request.form['vigencia'])
 
-        # Validar si el folio ya existe
-        existente = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
-        if existente.data:
-            flash('Error: el folio ya existe.', 'error')
-            return render_template('registro_admin.html')
-
-        # Si no existe, lo insertamos
         fecha_expedicion = datetime.now()
         fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
 
@@ -105,17 +62,23 @@ def registro_admin():
             "folio": folio,
             "marca": marca,
             "linea": linea,
-            "anio": anio,
+            "anio": int(anio),
             "numero_serie": numero_serie,
             "numero_motor": numero_motor,
             "fecha_expedicion": fecha_expedicion.isoformat(),
             "fecha_vencimiento": fecha_vencimiento.isoformat()
         }
 
+        # Validar que el folio no exista ya
+        existente = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
+        if existente.data:
+            flash('Error: el folio ya existe o hubo un problema.', 'error')
+            return render_template("registro_admin.html")
+
         try:
             supabase.table("folios_registrados").insert(data).execute()
             flash('Folio registrado correctamente.', 'success')
-        except Exception as e:
+        except Exception:
             flash('Error al registrar el folio.', 'error')
 
     return render_template('registro_admin.html')
