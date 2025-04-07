@@ -125,6 +125,18 @@
         </select>
 
         <button type="submit" class="btn">Registrar Folio</button>
+
+        <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 10px;">
+            <a href="{{ url_for('admin') }}">
+                <button type="button" class="btn">Volver al Panel</button>
+            </a>
+            <a href="{{ url_for('consulta_folio') }}">
+                <button type="button" class="btn">Consultar Folio</button>
+            </a>
+            <a href="{{ url_for('logout') }}">
+                <button type="button" class="btn">Cerrar Sesión</button>
+            </a>
+        </div>
     </form>
 
     <footer>
@@ -132,4 +144,4 @@
     </footer>
 
 </body>
-</html>
+    </html>
