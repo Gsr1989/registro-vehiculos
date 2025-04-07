@@ -6,126 +6,139 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
-            font-family: Arial, sans-serif;
             background-color: #ffffff;
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            color: #000000;
         }
-        .logos {
+        header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px 30px;
         }
-        .logos img {
+        header img {
             height: 80px;
         }
-        .titulo-oficial {
+        .titulo {
+            text-align: center;
+            font-size: 28px;
+            margin-top: 30px;
+            font-weight: bold;
+            color: #222;
+        }
+        .contenedor {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+            border: 2px solid #ccc;
+            background-color: #fdfdfd;
+        }
+        .subcontenedor {
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            background-color: #f3f3f3;
+        }
+        .campo {
+            margin-bottom: 15px;
+        }
+        .campo label {
+            font-weight: bold;
+            display: block;
+        }
+        .campo span {
+            display: block;
+            margin-top: 5px;
+        }
+        .estado {
             font-weight: bold;
             text-align: center;
-            font-size: 20px;
-            margin: 30px 20px 20px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
         }
-        .estado-verde {
+        .verde {
             background-color: #d4edda;
-            border: 2px solid #28a745;
-            padding: 15px;
-            margin: 20px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
+            color: #155724;
         }
-        .estado-rojo {
-            background-color: #f8d7da;
-            border: 2px solid #dc3545;
-            padding: 15px;
-            margin: 20px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .estado-amarillo {
+        .amarillo {
             background-color: #fff3cd;
-            border: 2px solid #ffc107;
-            padding: 15px;
-            margin: 20px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
+            color: #856404;
         }
-        .recuadro-datos {
-            background-color: #f2f2f2;
-            margin: 20px;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 15px;
-        }
-        .recuadro-datos p {
-            margin: 10px 0;
-        }
-        .documento {
-            text-align: center;
-            font-weight: bold;
-            font-size: 16px;
-            margin: 30px 0;
+        .rojo {
+            background-color: #f8d7da;
+            color: #721c24;
         }
         footer {
             margin-top: 40px;
+            width: 100%;
         }
         footer img {
             width: 100%;
             display: block;
         }
         @media (max-width: 600px) {
-            .logos img {
+            header img {
                 height: 60px;
             }
-            .titulo-oficial {
-                font-size: 18px;
-                margin: 20px;
+            .titulo {
+                font-size: 24px;
+                margin-top: 20px;
             }
         }
     </style>
 </head>
 <body>
 
-<div class="logos">
+<header>
     <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
-    <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sublogo">
-</div>
+    <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
+</header>
 
-<div class="titulo-oficial">LA SECRETARÍA DE MOVILIDAD DE LA CIUDAD DE MÉXICO CERTIFICA:</div>
+<div class="titulo">Secretaría de Movilidad</div>
 
-{% if resultado.estado == 'Vigente' %}
-<div class="estado-verde">
-    El folio N° {{ request.form['folio'] }} se encuentra <strong>VIGENTE</strong><br>
-    Fecha de expedición: {{ resultado.fecha_expedicion }}<br>
-    Fecha de vencimiento: {{ resultado.fecha_vencimiento }}
-</div>
-{% elif resultado.estado == 'Vencido' %}
-<div class="estado-rojo">
-    El folio N° {{ request.form['folio'] }} está <strong>VENCIDO</strong><br>
-    Fecha de expedición: {{ resultado.fecha_expedicion }}<br>
-    Fecha de vencimiento: {{ resultado.fecha_vencimiento }}
-</div>
-{% else %}
-<div class="estado-rojo">
-    El folio N° {{ request.form['folio'] }} <strong>NO SE ENCUENTRA EN NUESTROS REGISTROS</strong>
-</div>
-{% endif %}
+<div class="contenedor">
+    {% if resultado.estado == 'Vigente' %}
+        <div class="estado verde">Este folio está VIGENTE</div>
+    {% elif resultado.estado == 'Vencido' %}
+        <div class="estado amarillo">Este folio está VENCIDO</div>
+    {% else %}
+        <div class="estado rojo">Este folio no se encuentra en nuestros registros</div>
+    {% endif %}
 
-{% if resultado.estado != 'No encontrado' %}
-<div class="recuadro-datos">
-    <p><strong>Marca:</strong> {{ resultado.marca }}</p>
-    <p><strong>Línea:</strong> {{ resultado.linea }}</p>
-    <p><strong>Año:</strong> {{ resultado.año }}</p>
-    <p><strong>Número de Serie:</strong> {{ resultado.numero_serie }}</p>
-    <p><strong>Número de Motor:</strong> {{ resultado.numero_motor }}</p>
+    {% if resultado.estado != 'No encontrado' %}
+    <div class="subcontenedor">
+        <div class="campo">
+            <label>Marca</label>
+            <span>{{ resultado.marca }}</span>
+        </div>
+        <div class="campo">
+            <label>Línea</label>
+            <span>{{ resultado.linea }}</span>
+        </div>
+        <div class="campo">
+            <label>Modelo</label>
+            <span>{{ resultado.año }}</span>
+        </div>
+        <div class="campo">
+            <label>Serie</label>
+            <span>{{ resultado.numero_serie }}</span>
+        </div>
+        <div class="campo">
+            <label>Motor</label>
+            <span>{{ resultado.numero_motor }}</span>
+        </div>
+        <div class="campo">
+            <label>Fecha de Expedición</label>
+            <span>{{ resultado.fecha_expedicion }}</span>
+        </div>
+        <div class="campo">
+            <label>Fecha de Vencimiento</label>
+            <span>{{ resultado.fecha_vencimiento }}</span>
+        </div>
+    </div>
+    {% endif %}
 </div>
-
-<div class="documento">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
-{% endif %}
 
 <footer>
     <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
