@@ -3,76 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <title>Consulta de Folio</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #ffffff;
             margin: 0;
-            padding: 0;
-            color: #000000;
+            background-color: #fff;
         }
         header {
-            background-color: #800000;
-            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 30px;
+        }
+        header img {
+            height: 80px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-top: 30px;
+            color: #222;
+        }
+        main {
+            max-width: 500px;
+            margin: 0 auto;
             padding: 20px;
             text-align: center;
-        }
-        .form-box {
-            max-width: 400px;
-            margin: 40px auto;
-            padding: 20px;
-            border-radius: 10px;
-            background-color: #f2f2f2;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         input[type="text"] {
             width: 100%;
             padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 8px;
+            border-radius: 6px;
             border: 1px solid #ccc;
-            font-size: 16px;
+            margin-bottom: 20px;
         }
-        .btn-guinda {
+        button {
             background-color: #800000;
             color: white;
-            padding: 12px;
-            font-weight: bold;
-            width: 100%;
+            padding: 12px 20px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
+            font-size: 16px;
             cursor: pointer;
         }
-        .btn-guinda:hover {
+        button:hover {
             background-color: #a00000;
         }
         footer {
-            margin-top: 60px;
-            background-color: #f1f1f1;
-            padding: 15px;
-            text-align: center;
-            color: #555;
+            margin-top: 40px;
+            width: 100%;
+        }
+        footer img {
+            width: 100%;
+            display: block;
+        }
+        @media (max-width: 600px) {
+            header img {
+                height: 60px;
+            }
+            h1 {
+                font-size: 24px;
+                margin-top: 20px;
+            }
+            button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
+    <header>
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+        <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
+    </header>
 
-<header>
-    <h1>Validación Vehicular MX</h1>
-</header>
+    <h1>Secretaría de Movilidad</h1>
 
-<div class="form-box">
-    <h3>Consulta de Folio</h3>
-    <form method="POST" action="{{ url_for('resultado_consulta') }}">
-        <input type="text" name="folio" placeholder="Ingresa el folio" required>
-        <button type="submit" class="btn-guinda">Consultar</button>
-    </form>
-</div>
+    <main>
+        <form action="/consulta_folio" method="POST">
+            <input type="text" name="folio" placeholder="Ingresa tu folio" required>
+            <button type="submit">Consultar</button>
+        </form>
+    </main>
 
-<footer>
-    &copy; 2025 Validación Vehicular MX
-</footer>
-
+    <footer>
+        <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
+    </footer>
 </body>
 </html>
