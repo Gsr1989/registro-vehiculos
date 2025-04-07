@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.secret_key = 'clave_muy_segura_123456'
 
 SUPABASE_URL = "https://xsagwqepoljfsogusubw.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWd3cWVwb2xqZnNvZ3VzdWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5NjM3NTUsImV4cCI6MjA1OTUzOTc1NX0.NUixULn0m2o49At8j6X58UqbXre2O2_JStqzls_8Gws"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route('/')
@@ -102,14 +102,15 @@ def registro_admin():
                 "anio": anio,
                 "numero_serie": numero_serie,
                 "numero_motor": numero_motor,
+                "vigencia_dias": vigencia,
                 "fecha_expedicion": fecha_expedicion.isoformat(),
-                "fecha_vencimiento": fecha_vencimiento.isoformat()
+                "fecha_vencimiento": fecha_vencimiento.isoformat(),
+                "estado": "Vigente"
             }
             supabase.table("folios_registrados").insert(data).execute()
-            flash("Folio registrado exitosamente.", "success")
-            return redirect(url_for('registro_admin'))
+            flash('Folio registrado exitosamente.', 'success')
         except Exception as e:
-            flash("Error: el folio ya existe o hubo un problema.", "error")
+            flash('Este folio ya está registrado o hubo un error.', 'error')
 
     return render_template('registro_admin.html')
 
@@ -118,7 +119,6 @@ def consulta_folio():
     resultado = None
     if request.method == 'POST':
         folio = request.form['folio']
-
         response = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
         registros = response.data
 
@@ -129,11 +129,7 @@ def consulta_folio():
             fecha_expedicion = datetime.fromisoformat(registro['fecha_expedicion'])
             fecha_vencimiento = datetime.fromisoformat(registro['fecha_vencimiento'])
             hoy = datetime.now()
-
-            if hoy <= fecha_vencimiento:
-                estado = "Vigente"
-            else:
-                estado = "Vencido"
+            estado = "Vigente" if hoy <= fecha_vencimiento else "Vencido"
 
             resultado = {
                 "estado": estado,
