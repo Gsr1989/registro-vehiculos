@@ -52,6 +52,12 @@ def crear_usuario():
         password = request.form['password']
         folios = int(request.form['folios'])
 
+        # Verificar si ya existe un usuario con ese nombre
+        existe = supabase.table("verificaciondigitalcdmx").select("id").eq("username", username).execute()
+        if existe.data:
+            flash('Error: el nombre de usuario ya existe.', 'error')
+            return render_template('crear_usuario.html')
+
         try:
             data = {
                 "username": username,
@@ -62,7 +68,7 @@ def crear_usuario():
             supabase.table("verificaciondigitalcdmx").insert(data).execute()
             flash('Usuario creado exitosamente.', 'success')
         except Exception:
-            flash('Error: el nombre de usuario ya existe o hubo un problema.', 'error')
+            flash('Error al crear el usuario.', 'error')
 
     return render_template('crear_usuario.html')
 
