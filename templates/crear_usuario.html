@@ -5,80 +5,16 @@
     <title>Crear Usuario</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body {
-            background-color: #ffffff;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        header {
+        /* [Estilos generales aquí] */
+        .botones {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 30px;
-        }
-        header img {
-            height: 80px;
-        }
-        .titulo {
-            text-align: center;
-            font-size: 28px;
-            margin-top: 30px;
-            font-weight: bold;
-            color: #222;
-        }
-        .formulario {
+            flex-direction: column;
+            gap: 10px;
             max-width: 600px;
-            margin: 30px auto;
-            padding: 20px;
-            border-radius: 10px;
-            background-color: #f9f9f9;
+            margin: 0 auto 30px;
         }
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-        }
-        .btn {
-            background-color: #800000;
-            color: white;
-            border: none;
-            padding: 14px 22px;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            width: 100%;
-            margin-top: 15px;
-        }
-        .btn:hover {
-            background-color: #a00000;
-        }
-        .flash-message {
-            padding: 12px;
-            text-align: center;
-            border-radius: 6px;
-            margin: 10px auto;
-            max-width: 600px;
-            font-weight: bold;
-            color: white;
-        }
-        .success {
-            background-color: #4CAF50;
-        }
-        .error {
-            background-color: #f44336;
-        }
-        footer {
-            margin-top: 40px;
-            width: 100%;
-        }
-        footer img {
-            width: 100%;
-            display: block;
+        .btn-secundario {
+            background-color: #333;
         }
     </style>
 </head>
@@ -94,7 +30,7 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
-      <div class="flash-message {{ category }}">{{ message }}</div>
+      <div class="alert {{ 'success' if category == 'success' else '' }}">{{ message }}</div>
     {% endfor %}
   {% endif %}
 {% endwith %}
@@ -105,6 +41,12 @@
     <input type="number" name="folios" placeholder="Cantidad de folios" required>
     <button type="submit" class="btn">Crear Usuario</button>
 </form>
+
+<div class="botones">
+    <a href="{{ url_for('admin') }}" class="btn btn-secundario">Volver al Panel</a>
+    <a href="{{ url_for('consulta_folio') }}" class="btn btn-secundario">Consultar Folio</a>
+    <a href="{{ url_for('logout') }}" class="btn btn-secundario">Cerrar Sesión</a>
+</div>
 
 <footer>
     <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
