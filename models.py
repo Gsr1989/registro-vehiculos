@@ -4,6 +4,7 @@ from datetime import datetime
 db = SQLAlchemy()
 
 class Vehiculo(db.Model):
+    __tablename__ = 'vehiculos'  # Nombre opcional de la tabla
     id = db.Column(db.Integer, primary_key=True)
     marca = db.Column(db.String(100), nullable=False)
     linea = db.Column(db.String(100), nullable=False)
