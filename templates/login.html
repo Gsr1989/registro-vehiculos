@@ -43,19 +43,25 @@
         }
         footer {
             background-color: #f8f9fa;
-            padding: 30px 20px;
+            padding: 40px 20px;
             margin-top: 50px;
-            font-size: 13px;
+            font-size: 14px;
             color: #333;
+            width: 100%;
         }
         .footer-logo {
             display: flex;
             justify-content: center;
-            gap: 20px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         .footer-logo img {
-            height: 35px;
+            max-width: 100%;
+            height: auto;
+        }
+        .footer-text {
+            text-align: center;
+            max-width: 1000px;
+            margin: 0 auto;
         }
     </style>
 </head>
@@ -81,8 +87,10 @@
         <div class="footer-logo">
             <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer Logo">
         </div>
-        Ciudad de México · Av. Álvaro Obregón 269, Cuauhtémoc, CDMX · LOCATEL: 5658 1111<br>
-        Horario de atención: lunes a viernes de 9:00 a 21:00 hrs.
+        <div class="footer-text">
+            Ciudad de México · Av. Álvaro Obregón 269, Cuauhtémoc, CDMX · LOCATEL: 5658 1111<br>
+            Horario de atención: lunes a viernes de 9:00 a 21:00 hrs.
+        </div>
     </footer>
 
 </body>
