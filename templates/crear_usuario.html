@@ -1,14 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html><html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Crear Usuario</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
+            background-color: #ffffff;
             font-family: Arial, sans-serif;
             margin: 0;
-            background-color: #ffffff;
+            padding: 0;
         }
         header {
             display: flex;
@@ -19,35 +19,41 @@
         header img {
             height: 80px;
         }
-        h1 {
+        .titulo {
             text-align: center;
             font-size: 28px;
             margin-top: 30px;
+            font-weight: bold;
             color: #222;
         }
-        form {
-            max-width: 500px;
-            margin: 0 auto;
+        .formulario {
+            max-width: 600px;
+            margin: 30px auto;
             padding: 20px;
-            text-align: center;
+            border-radius: 10px;
+            background-color: #f9f9f9;
         }
         input {
             width: 100%;
             padding: 12px;
             margin: 10px 0;
-            border: 1px solid #ccc;
             border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 16px;
         }
-        button {
+        .btn {
             background-color: #800000;
             color: white;
-            padding: 12px 20px;
             border: none;
-            border-radius: 6px;
+            padding: 14px 22px;
             font-size: 16px;
+            border-radius: 6px;
             cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            margin-top: 15px;
         }
-        button:hover {
+        .btn:hover {
             background-color: #a00000;
         }
         footer {
@@ -58,36 +64,31 @@
             width: 100%;
             display: block;
         }
-        @media (max-width: 600px) {
-            header img {
-                height: 60px;
-            }
-            h1 {
-                font-size: 24px;
-            }
-            button {
-                width: 100%;
-            }
+        .alert {
+            background-color: #f44336;
+            color: white;
+            padding: 12px;
+            text-align: center;
+            border-radius: 6px;
+            margin: 10px auto;
+            max-width: 600px;
+        }
+        .success {
+            background-color: #4CAF50;
         }
     </style>
 </head>
-<body>
-    <header>
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
-        <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
-    </header>
+<body><header>
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+    <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
+</header><div class="titulo">Secretaría de Movilidad</div>{% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %} <div class="alert {{ 'success' if category == 'success' else '' }}">{{ message }}</div> {% endfor %} {% endif %} {% endwith %}
 
-    <h1>Secretaría de Movilidad</h1>
-
-    <form method="POST">
-        <input type="text" name="username" placeholder="Nombre de usuario" required>
-        <input type="password" name="password" placeholder="Contraseña" required>
-        <input type="number" name="folios" placeholder="Cantidad de folios" required>
-        <button type="submit">Crear Usuario</button>
-    </form>
-
-    <footer>
-        <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
-    </footer>
-</body>
+<form method="POST" class="formulario">
+    <input type="text" name="username" placeholder="Nombre de usuario" required>
+    <input type="password" name="password" placeholder="Contraseña" required>
+    <input type="number" name="folios" placeholder="Cantidad de folios" required>
+    <button type="submit" class="btn">Crear Usuario</button>
+</form><footer>
+    <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
+</footer></body>
 </html>
