@@ -7,122 +7,121 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f4f8;
-            padding: 20px;
+            background-color: #ffffff;
             margin: 0;
+            padding: 0;
+            color: #000000;
         }
-        .certificado {
-            max-width: 100%;
-            margin: auto;
-            background-color: white;
+        header {
+            background-color: #800000;
+            color: white;
+            text-align: center;
             padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.08);
         }
-        .encabezado {
+        .logos {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
+            padding: 10px 20px;
         }
-        .logo {
-            max-width: 165px;
-        }
-        .sublogo {
-            max-width: 135px;
+        .logos img {
+            height: 60px;
         }
         .titulo {
-            text-align: center;
-            font-size: 17px;
             font-weight: bold;
-            text-transform: uppercase;
-            margin: 25px 0 20px 0;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 18px;
         }
-        .estado {
+        .estado-verde {
+            background-color: #d4edda;
+            border: 2px solid #28a745;
             padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 16px;
-            line-height: 1.7;
-            font-weight: bold;
-            text-align: center;
-        }
-        .vigente { background-color: #d4f8d4; color: #145c14; }
-        .vencido { background-color: #f8d4d4; color: #8b0000; }
-        .no-encontrado { background-color: #ffd6d6; color: #8b0000; }
-
-        .datos-wrapper {
-            padding: 12px;
-            border: 2px solid #e0e0e0;
+            margin: 20px;
             border-radius: 10px;
-            background-color: #ffffff;
-            margin-bottom: 20px;
-        }
-        .datos {
-            padding: 20px;
-            border: 1px solid #cccccc;
-            border-radius: 6px;
-            background-color: #f9f9f9;
-            font-size: 15px;
-            line-height: 2.5;
-        }
-        .final {
-            font-weight: bold;
-            font-size: 15px;
-            color: #333;
             text-align: center;
+            font-weight: bold;
         }
-        .footer-img {
-            display: block;
-            margin: 30px auto 0 auto;
-            max-width: 100%;
-            height: auto;
+        .estado-rojo {
+            background-color: #f8d7da;
+            border: 2px solid #dc3545;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .estado-amarillo {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .recuadro-datos {
+            background-color: #f2f2f2;
+            margin: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 15px;
+        }
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #555;
+            font-size: 14px;
+            padding: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="certificado">
-        <div class="encabezado">
-            <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
-            <img src="{{ url_for('static', filename='sub_logo.png') }}" class="sublogo" alt="Sub Logo">
-        </div>
 
-        <div class="titulo">LA SECRETARÍA DE MOVILIDAD DE LA CIUDAD DE MÉXICO CERTIFICA:</div>
+<header>
+    <h1>Validación Vehicular MX</h1>
+</header>
 
-        {% if resultado.estado == 'Vigente' %}
-            <div class="estado vigente">
-                El folio N° {{ request.form['folio'] }} se encuentra Vigente.<br>
-                Fecha de expedición: {{ resultado.fecha_expedicion }}<br>
-                Fecha de vencimiento: {{ resultado.fecha_vencimiento }}
-            </div>
-        {% elif resultado.estado == 'Vencido' %}
-            <div class="estado vencido">
-                El folio N° {{ request.form['folio'] }} se encuentra Vencido.<br>
-                Fecha de expedición: {{ resultado.fecha_expedicion }}<br>
-                Fecha de vencimiento: {{ resultado.fecha_vencimiento }}
-            </div>
-        {% else %}
-            <div class="estado no-encontrado">
-                El folio N° {{ request.form['folio'] }} no se encuentra en nuestros registros.
-            </div>
-        {% endif %}
+<div class="logos">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+    <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sublogo">
+</div>
 
-        {% if resultado.estado != 'No encontrado' %}
-        <div class="datos-wrapper">
-            <div class="datos">
-                <strong>Marca:</strong> {{ resultado.marca }}<br>
-                <strong>Línea:</strong> {{ resultado.linea }}<br>
-                <strong>Año:</strong> {{ resultado.año }}<br>
-                <strong>Número de Serie:</strong> {{ resultado.numero_serie }}<br>
-                <strong>Número de Motor:</strong> {{ resultado.numero_motor }}
-            </div>
-        </div>
-        {% endif %}
+<div class="titulo">LA SECRETARÍA DE MOVILIDAD DE LA CIUDAD DE MÉXICO CERTIFICA:</div>
 
-        <div class="final">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
+{% if resultado.estado == 'Vigente' %}
+<div class="estado-verde">
+    El folio N° {{ request.form['folio'] }} se encuentra <strong>VIGENTE</strong><br>
+    Fecha de expedición: {{ resultado.fecha_expedicion }}<br>
+    Fecha de vencimiento: {{ resultado.fecha_vencimiento }}
+</div>
+{% elif resultado.estado == 'Vencido' %}
+<div class="estado-rojo">
+    El folio N° {{ request.form['folio'] }} está <strong>VENCIDO</strong><br>
+    Fecha de expedición: {{ resultado.fecha_expedicion }}<br>
+    Fecha de vencimiento: {{ resultado.fecha_vencimiento }}
+</div>
+{% else %}
+<div class="estado-rojo">
+    El folio N° {{ request.form['folio'] }} <strong>NO SE ENCUENTRA EN NUESTROS REGISTROS</strong>
+</div>
+{% endif %}
 
-        <img src="{{ url_for('static', filename='footer.png') }}" class="footer-img" alt="Pie de página">
-    </div>
+{% if resultado.estado != 'No encontrado' %}
+<div class="recuadro-datos">
+    <p><strong>Marca:</strong> {{ resultado.marca }}</p>
+    <p><strong>Línea:</strong> {{ resultado.linea }}</p>
+    <p><strong>Año:</strong> {{ resultado.año }}</p>
+    <p><strong>Número de Serie:</strong> {{ resultado.numero_serie }}</p>
+    <p><strong>Número de Motor:</strong> {{ resultado.numero_motor }}</p>
+</div>
+
+<div class="titulo">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
+{% endif %}
+
+<footer>
+    &copy; 2025 Validación Vehicular MX
+</footer>
+
 </body>
 </html>
