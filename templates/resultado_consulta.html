@@ -1,7 +1,175 @@
-Manda los datos queda en breve, todo el trámite es por este medio
-Mandas los datos
-Te envío el permiso
-Lo checas y pagas
-Te envío el recibo de pago expedido por la secretaria de finanzas
-E imprimes
-150 pesos por 30 días
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultado de Consulta</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            background-color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 30px;
+        }
+
+        header img {
+            height: 80px;
+        }
+
+        .titulo {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #222;
+        }
+
+        .subtitulo {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 5px;
+            color: #444;
+        }
+
+        .estado {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 30px;
+            padding: 10px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            color: white;
+        }
+
+        .Vigente {
+            background-color: green;
+        }
+
+        .Vencido {
+            background-color: #b36b00; /* café/amarillo oscuro */
+        }
+
+        .No {
+            background-color: #cc0000;
+        }
+
+        .certificado {
+            border: 2px solid #ccc;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: #f2f2f2;
+        }
+
+        .dato {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        .valido {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        .btn-regresar {
+            display: block;
+            width: 90%;
+            max-width: 600px;
+            margin: 30px auto;
+            text-align: center;
+        }
+
+        .btn-regresar a {
+            background-color: #800000;
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            display: inline-block;
+        }
+
+        .btn-regresar a:hover {
+            background-color: #a00000;
+        }
+
+        footer {
+            margin-top: 40px;
+            width: 100%;
+        }
+
+        footer img {
+            width: 100%;
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            header img {
+                height: 60px;
+            }
+            .titulo {
+                font-size: 20px;
+            }
+            .estado {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+        <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
+    </header>
+
+    <div class="titulo">Secretaría de Movilidad</div>
+    <div class="subtitulo">Ciudad de México</div>
+
+    {% if resultado.estado == "No encontrado" %}
+        <div class="estado No">
+            EL FOLIO CONSULTADO NO SE ENCUENTRA EN NUESTROS REGISTROS
+        </div>
+    {% else %}
+        <div class="estado {{ resultado.estado }}">
+            EL FOLIO {{ resultado.estado.upper() }}
+        </div>
+
+        <div class="certificado">
+            <div class="dato"><strong>Fecha de Expedición:</strong> {{ resultado.fecha_expedicion }}</div>
+            <div class="dato"><strong>Fecha de Vencimiento:</strong> {{ resultado.fecha_vencimiento }}</div>
+            <div class="dato"><strong>Marca:</strong> {{ resultado.marca }}</div>
+            <div class="dato"><strong>Línea:</strong> {{ resultado.linea }}</div>
+            <div class="dato"><strong>Año:</strong> {{ resultado.año }}</div>
+            <div class="dato"><strong>Número de Serie:</strong> {{ resultado.numero_serie }}</div>
+            <div class="dato"><strong>Número de Motor:</strong> {{ resultado.numero_motor }}</div>
+        </div>
+
+        <div class="valido">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
+    {% endif %}
+
+    <div class="btn-regresar">
+        <a href="https://www.semovi.cdmx.gob.mx/">Regresar</a>
+    </div>
+
+    <footer>
+        <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
+    </footer>
+
+</body>
+</html>
