@@ -5,7 +5,6 @@ from supabase import create_client, Client
 app = Flask(__name__)
 app.secret_key = 'clave_muy_segura_123456'
 
-# Datos de Supabase
 SUPABASE_URL = "https://xsagwqepoljfsogusubw.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWd3cWVwb2xqZnNvZ3VzdWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5NjM3NTUsImV4cCI6MjA1OTUzOTc1NX0.NUixULn0m2o49At8j6X58UqbXre2O2_JStqzls_8Gws"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -123,7 +122,7 @@ def registro_usuario():
                 "folios_usados": folios["folios_usados"] + 1
             }).eq("id", user_id).execute()
             flash("Folio registrado correctamente.", "success")
-        except Exception as e:
+        except Exception:
             flash("Error al registrar el folio.", "error")
 
         return redirect(url_for('registro_usuario'))
@@ -183,7 +182,7 @@ def consulta_folio():
         registros = response.data
 
         if not registros:
-            resultado = {"estado": "No encontrado"}
+            resultado = {"estado": "No encontrado", "folio": folio}
         else:
             registro = registros[0]
             fecha_expedicion = datetime.fromisoformat(registro['fecha_expedicion'])
@@ -194,6 +193,7 @@ def consulta_folio():
 
             resultado = {
                 "estado": estado,
+                "folio": folio,
                 "fecha_expedicion": fecha_expedicion.strftime("%d/%m/%Y"),
                 "fecha_vencimiento": fecha_vencimiento.strftime("%d/%m/%Y"),
                 "marca": registro['marca'],
