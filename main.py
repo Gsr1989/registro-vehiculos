@@ -91,6 +91,13 @@ def registro_admin():
         numero_motor = request.form['motor']
         vigencia = int(request.form['vigencia'])
 
+        # Validar si el folio ya existe
+        existente = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
+        if existente.data:
+            flash('Error: el folio ya existe.', 'error')
+            return render_template('registro_admin.html')
+
+        # Si no existe, lo insertamos
         fecha_expedicion = datetime.now()
         fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
 
@@ -108,8 +115,8 @@ def registro_admin():
         try:
             supabase.table("folios_registrados").insert(data).execute()
             flash('Folio registrado correctamente.', 'success')
-        except Exception:
-            flash('Error: el folio ya existe o hubo un problema.', 'error')
+        except Exception as e:
+            flash('Error al registrar el folio.', 'error')
 
     return render_template('registro_admin.html')
 
