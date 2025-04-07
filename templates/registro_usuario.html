@@ -2,54 +2,134 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro de Folios</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+    <title>Registro de Folio (Usuario)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            color: #000000;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 30px;
+        }
+        header img {
+            height: 80px;
+        }
+        .titulo {
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+            margin: 30px 0 20px;
+        }
+        .info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        .btn {
+            background-color: #800000;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn:hover {
+            background-color: #a00000;
+        }
+        .mensaje {
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        footer {
+            margin-top: 40px;
+            width: 100%;
+        }
+        footer img {
+            width: 100%;
+            display: block;
+        }
+        @media (max-width: 600px) {
+            header img {
+                height: 60px;
+            }
+            .titulo {
+                font-size: 22px;
+                margin-top: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <header style="background-color: #800000; padding: 10px; color: white;">
-        <h1 style="margin: 0;">Validación Vehicular MX</h1>
-    </header>
 
-    <main style="max-width: 500px; margin: 50px auto; text-align: center;">
-        <h2>Registro de Folios</h2>
+<header>
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+    <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sublogo">
+</header>
 
-        <p>Folios asignados: <strong>{{ folios_info.folios_asignac }}</strong></p>
-        <p>Folios usados: <strong>{{ folios_info.folios_usados }}</strong></p>
-        <p>Folios restantes: <strong>{{ folios_info.folios_asignac - folios_info.folios_usados }}</strong></p>
+<div class="titulo">Registro de Folio</div>
 
-        <form method="POST" action="/registro_admin">
-            <div style="margin-bottom: 10px;">
-                <input type="text" name="folio" placeholder="Folio" required style="width: 100%; padding: 10px; border-radius: 8px;">
-            </div>
-            <div style="margin-bottom: 10px;">
-                <input type="text" name="marca" placeholder="Marca" required style="width: 100%; padding: 10px; border-radius: 8px;">
-            </div>
-            <div style="margin-bottom: 10px;">
-                <input type="text" name="linea" placeholder="Línea" required style="width: 100%; padding: 10px; border-radius: 8px;">
-            </div>
-            <div style="margin-bottom: 10px;">
-                <input type="number" name="anio" placeholder="Año" required style="width: 100%; padding: 10px; border-radius: 8px;">
-            </div>
-            <div style="margin-bottom: 10px;">
-                <input type="text" name="serie" placeholder="Número de Serie" required style="width: 100%; padding: 10px; border-radius: 8px;">
-            </div>
-            <div style="margin-bottom: 10px;">
-                <input type="text" name="motor" placeholder="Número de Motor" required style="width: 100%; padding: 10px; border-radius: 8px;">
-            </div>
-            <div style="margin-bottom: 10px;">
-                <select name="vigencia" required style="width: 100%; padding: 10px; border-radius: 8px;">
-                    <option value="">Selecciona vigencia</option>
-                    <option value="30">30 días</option>
-                    <option value="60">60 días</option>
-                    <option value="90">90 días</option>
-                </select>
-            </div>
-            <div style="margin-bottom: 10px;">
-                <input type="text" name="nombre_solicitante" placeholder="Nombre del solicitante" required style="width: 100%; padding: 10px; border-radius: 8px;">
-            </div>
+<div class="info">
+    <p>Folios asignados: <strong>{{ folios_info.folios_asignac }}</strong></p>
+    <p>Folios usados: <strong>{{ folios_info.folios_usados }}</strong></p>
+    <p>Folios restantes: <strong>{{ folios_info.folios_asignac - folios_info.folios_usados }}</strong></p>
+</div>
 
-            <button type="submit" style="background-color: #800000; color: white; padding: 10px 20px; border: none; border-radius: 8px;">Registrar</button>
-        </form>
-    </main>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="mensaje">
+    {% for category, message in messages %}
+      <div style="color: {% if category == 'error' %}red{% else %}green{% endif %};">
+        {{ message }}
+      </div>
+    {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<form method="POST" action="{{ url_for('registrar_folio') }}">
+    <input type="text" name="folio" placeholder="Folio" required>
+    <input type="text" name="marca" placeholder="Marca" required>
+    <input type="text" name="linea" placeholder="Línea" required>
+    <input type="number" name="anio" placeholder="Año" required>
+    <input type="text" name="serie" placeholder="Número de Serie" required>
+    <input type="text" name="motor" placeholder="Número de Motor" required>
+    <select name="vigencia" required>
+        <option value="">Selecciona vigencia</option>
+        <option value="30">30 días</option>
+        <option value="60">60 días</option>
+        <option value="90">90 días</option>
+    </select>
+    <input type="text" name="nombre_solicitante" placeholder="Nombre del solicitante" required>
+    <button type="submit" class="btn">Registrar</button>
+</form>
+
+<footer>
+    <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
+</footer>
+
 </body>
 </html>
