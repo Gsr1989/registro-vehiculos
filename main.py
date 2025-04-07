@@ -42,17 +42,6 @@ def admin():
         return redirect(url_for('login'))
     return render_template('panel.html')
 
-@app.route('/registro_admin', methods=['GET', 'POST'])
-def registro_admin():
-    if 'admin' not in session:
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        # Aquí iría la lógica para registrar folios o vehículos si la agregas luego
-        pass
-
-    return render_template('registro_admin.html')
-
 @app.route('/crear_usuario', methods=['GET', 'POST'])
 def crear_usuario():
     if 'admin' not in session:
@@ -87,6 +76,42 @@ def registro_usuario():
     folios_info = response.data[0] if response.data else {}
 
     return render_template('registro_usuario.html', folios_info=folios_info)
+
+@app.route('/registro_admin', methods=['GET', 'POST'])
+def registro_admin():
+    if 'admin' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        folio = request.form['folio']
+        marca = request.form['marca']
+        linea = request.form['linea']
+        anio = request.form['anio']
+        numero_serie = request.form['serie']
+        numero_motor = request.form['motor']
+        vigencia = int(request.form['vigencia'])
+
+        fecha_expedicion = datetime.now()
+        fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
+
+        try:
+            data = {
+                "folio": folio,
+                "marca": marca,
+                "linea": linea,
+                "anio": anio,
+                "numero_serie": numero_serie,
+                "numero_motor": numero_motor,
+                "fecha_expedicion": fecha_expedicion.isoformat(),
+                "fecha_vencimiento": fecha_vencimiento.isoformat()
+            }
+            supabase.table("folios_registrados").insert(data).execute()
+            flash("Folio registrado exitosamente.", "success")
+            return redirect(url_for('registro_admin'))
+        except Exception as e:
+            flash("Error: el folio ya existe o hubo un problema.", "error")
+
+    return render_template('registro_admin.html')
 
 @app.route('/consulta_folio', methods=['GET', 'POST'])
 def consulta_folio():
