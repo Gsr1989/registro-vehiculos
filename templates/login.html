@@ -12,37 +12,38 @@
         .header {
             background-color: #800000;
             color: white;
-            padding: 1rem;
-            text-align: center;
+            padding: 0.5rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header img.logo {
+            height: 120px; /* 200% de 60px */
+        }
+        .header img.sub-logo {
+            height: 80px; /* 200% de 40px */
         }
         .login-container {
-            max-width: 400px;
+            max-width: 500px;
             margin: 40px auto;
             padding: 2rem;
             background: white;
             border-radius: 12px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
         }
         .footer {
             margin-top: 2rem;
             text-align: center;
-            font-size: 0.9rem;
-            color: gray;
         }
         .btn-login {
             background-color: #800000;
             color: white;
             width: 100%;
         }
-        .logo {
-            display: block;
-            margin: 0 auto 10px auto;
-            height: 60px;
-        }
-        .sub-logo {
-            display: block;
-            margin: 0 auto 10px auto;
-            height: 40px;
+        .footer img {
+            width: 100%;
+            max-width: 500px;
         }
     </style>
 </head>
@@ -50,7 +51,7 @@
 
     <div class="header">
         <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
-        <h2>Validación Vehicular MX</h2>
+        <h2 class="flex-grow-1 text-center m-0">Validación Vehicular MX</h2>
         <img src="{{ url_for('static', filename='sub_logo.png') }}" class="sub-logo">
     </div>
 
@@ -68,8 +69,8 @@
     </div>
 
     <div class="footer">
-        <p>© 2025 Validación Vehicular MX</p>
-        <img src="{{ url_for('static', filename='footer.png') }}" height="25">
+        <img src="{{ url_for('static', filename='footer.png') }}">
+        <p class="text-muted mt-2">© 2025 Validación Vehicular MX</p>
     </div>
 
 </body>
