@@ -2,15 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Resultado de Consulta</title>
+    <title>Consulta de Folio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
-            background-color: white;
+            background-color: #ffffff;
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            text-align: center;
         }
         header {
             display: flex;
@@ -22,90 +21,180 @@
             height: 80px;
         }
         .titulo {
-            font-size: 26px;
-            font-weight: bold;
+            text-align: center;
+            font-size: 28px;
             margin-top: 30px;
-        }
-        .subtitulo {
-            font-size: 18px;
-            margin-bottom: 40px;
-        }
-        .estado {
-            font-size: 20px;
             font-weight: bold;
-            padding: 15px 30px;
+            color: #222;
+        }
+        .info-folios {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .formulario {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
             border-radius: 10px;
-            display: inline-block;
-            margin: 20px auto;
+            background-color: #f9f9f9;
         }
-        .verde {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .cafe {
-            background-color: #A0522D;
-            color: white;
-        }
-        .rojo {
-            background-color: #f44336;
-            color: white;
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 16px;
         }
         .btn {
-            display: inline-block;
             background-color: #800000;
             color: white;
-            text-decoration: none;
-            padding: 12px 25px;
-            border-radius: 6px;
+            border: none;
+            padding: 14px 22px;
             font-size: 16px;
-            margin-top: 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            margin-top: 15px;
         }
         .btn:hover {
             background-color: #a00000;
         }
+        .mensaje {
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .error {
+            background-color: #f44336;
+            color: white;
+        }
         footer {
             margin-top: 40px;
+            width: 100%;
         }
         footer img {
             width: 100%;
             display: block;
         }
-        @media (max-width: 600px) {
-            header img {
-                height: 60px;
-            }
-            .titulo {
-                font-size: 22px;
-            }
+        .status {
+            padding: 10px;
+            margin: 15px auto;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .status-vigente {
+            background-color: green;
+            color: white;
+        }
+        .status-vencido {
+            background-color: #f39c12;
+            color: white;
+        }
+        .status-no-encontrado {
+            background-color: red;
+            color: white;
+        }
+        .table-container {
+            background-color: #f2f2f2;
+            border-radius: 8px;
+            margin-top: 20px;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .regresar-btn {
+            background-color: #800000;
+            color: white;
+            border: none;
+            padding: 14px 22px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+        }
+        .regresar-btn:hover {
+            background-color: #a00000;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
-        <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
-    </header>
+<header>
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+    <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
+</header>
 
-    <div class="titulo">Secretaría de Movilidad</div>
-    <div class="subtitulo">Ciudad de México</div>
+<div class="titulo">Secretaría de Movilidad</div>
+<div class="titulo">Ciudad de México</div>
 
-    {% if resultado %}
-        {% if resultado.estado == "Vigente" %}
-            <div class="estado verde">FOLIO {{ resultado.folio }} : VIGENTE</div>
-        {% elif resultado.estado == "Vencido" %}
-            <div class="estado cafe">FOLIO {{ resultado.folio }} : VENCIDO</div>
-        {% elif resultado.estado == "No encontrado" %}
-            <div class="estado rojo">FOLIO {{ resultado.folio }} : NO SE ENCUENTRA REGISTRADO</div>
-        {% endif %}
-    {% endif %}
+<div class="status {{ 'status-{}'.format(resultado['estado'].lower()) }}">
+    <p>FOLIO {{ folio }}: {{ resultado['estado'].upper() }}</p>
+</div>
 
-    <br>
-    <a href="https://www.semovi.cdmx.gob.mx/" class="btn">Regresar</a>
+<div class="table-container">
+    <table>
+        <tr>
+            <th>Marca</th>
+            <td>{{ resultado['marca'] }}</td>
+        </tr>
+        <tr>
+            <th>Línea</th>
+            <td>{{ resultado['linea'] }}</td>
+        </tr>
+        <tr>
+            <th>Año</th>
+            <td>{{ resultado['año'] }}</td>
+        </tr>
+        <tr>
+            <th>Número de Serie</th>
+            <td>{{ resultado['numero_serie'] }}</td>
+        </tr>
+        <tr>
+            <th>Número de Motor</th>
+            <td>{{ resultado['numero_motor'] }}</td>
+        </tr>
+        <tr>
+            <th>Fecha de Expedición</th>
+            <td>{{ resultado['fecha_expedicion'] }}</td>
+        </tr>
+        <tr>
+            <th>Fecha de Vencimiento</th>
+            <td>{{ resultado['fecha_vencimiento'] }}</td>
+        </tr>
+    </table>
+</div>
 
-    <footer>
-        <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
-    </footer>
+<button class="regresar-btn" onclick="window.location.href='https://www.semovi.cdmx.gob.mx/'">Regresar</button>
+
+<footer>
+    <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
+</footer>
 
 </body>
 </html>
