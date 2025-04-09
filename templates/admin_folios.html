@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrar Folios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            background-color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #000;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 30px;
+        }
+
+        header img {
+            height: 80px;
+        }
+
+        .titulo {
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            margin: 30px 0 20px;
+        }
+
+        .tabla-container {
+            max-width: 95%;
+            margin: auto;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ccc;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #800000;
+            color: white;
+        }
+
+        .btn {
+            padding: 6px 10px;
+            font-size: 13px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-editar {
+            background-color: #2a72a5;
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .btn-editar:hover {
+            background-color: #1e5b88;
+        }
+
+        .btn-eliminar {
+            background-color: #a00000;
+            color: white;
+        }
+
+        .btn-eliminar:hover {
+            background-color: #800000;
+        }
+
+        .volver {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .volver a {
+            background-color: #800000;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 15px;
+        }
+
+        .volver a:hover {
+            background-color: #a00000;
+        }
+
+        footer {
+            width: 100%;
+        }
+
+        footer img {
+            width: 100%;
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            header img {
+                height: 60px;
+            }
+
+            .titulo {
+                font-size: 22px;
+            }
+
+            th, td {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+    <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
+</header>
+
+<div class="titulo">Administración de Folios Registrados</div>
+
+<div class="tabla-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Folio</th>
+                <th>Marca</th>
+                <th>Línea</th>
+                <th>Año</th>
+                <th>Serie</th>
+                <th>Motor</th>
+                <th>Expedición</th>
+                <th>Vencimiento</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for folio in folios %}
+            <tr>
+                <td>{{ folio.folio }}</td>
+                <td>{{ folio.marca }}</td>
+                <td>{{ folio.linea }}</td>
+                <td>{{ folio.anio }}</td>
+                <td>{{ folio.numero_serie }}</td>
+                <td>{{ folio.numero_motor }}</td>
+                <td>{{ folio.fecha_expedicion[:10] }}</td>
+                <td>{{ folio.fecha_vencimiento[:10] }}</td>
+                <td>
+                    <a href="{{ url_for('editar_folio', folio=folio.folio) }}">
+                        <button class="btn btn-editar">Editar</button>
+                    </a>
+                    <form method="POST" action="{{ url_for('eliminar_folio') }}">
+                        <input type="hidden" name="folio" value="{{ folio.folio }}">
+                        <button type="submit" class="btn btn-eliminar">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="volver">
+    <a href="{{ url_for('admin') }}">Volver al Panel</a>
+</div>
+
+<footer>
+    <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
+</footer>
+
+</body>
+</html>
