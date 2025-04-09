@@ -73,23 +73,24 @@
 </head>
 <body>
 
-    <header>
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
-        <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
-    </header>
+<header>
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+    <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
+</header>
 
-    <div class="titulo">Secretaría de Movilidad</div>
+<div class="titulo">Secretaría de Movilidad</div>
 
-    <div class="botones">
-        <a href="{{ url_for('registro_admin') }}"><button class="btn">Registrar Folio</button></a>
-        <a href="{{ url_for('consulta_folio') }}"><button class="btn">Consultar Folio</button></a>
-        <a href="{{ url_for('crear_usuario') }}"><button class="btn">Crear Usuario</button></a>
-        <a href="{{ url_for('logout') }}"><button class="btn">Cerrar Sesión</button></a>
-    </div>
+<div class="botones">
+    <a href="{{ url_for('registro_admin') }}"><button class="btn">Registrar Folio</button></a>
+    <a href="{{ url_for('consulta_folio') }}"><button class="btn">Consultar Folio</button></a>
+    <a href="{{ url_for('crear_usuario') }}"><button class="btn">Crear Usuario</button></a>
+    <a href="{{ url_for('admin_folios') }}"><button class="btn">Ver Todos los Folios</button></a>
+    <a href="{{ url_for('logout') }}"><button class="btn">Cerrar Sesión</button></a>
+</div>
 
-    <footer>
-        <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
-    </footer>
+<footer>
+    <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
+</footer>
 
 </body>
-            </html>
+</html>
