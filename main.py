@@ -6,7 +6,7 @@ app = Flask(__name__)
 app.secret_key = 'clave_muy_segura_123456'
 
 SUPABASE_URL = "https://xsagwqepoljfsogusubw.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWd3cWVwb2xqZnNvZ3VzdWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5NjM3NTUsImV4cCI6MjA1OTUzOTc1NX0.NUixULn0m2o49At8j6X58UqbXre2O2_JStqzls_8Gws"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route('/')
@@ -56,17 +56,14 @@ def crear_usuario():
             flash('Error: el nombre de usuario ya existe.', 'error')
             return render_template('crear_usuario.html')
 
-        try:
-            data = {
-                "username": username,
-                "password": password,
-                "folios_asignac": folios,
-                "folios_usados": 0
-            }
-            supabase.table("verificaciondigitalcdmx").insert(data).execute()
-            flash('Usuario creado exitosamente.', 'success')
-        except Exception:
-            flash('Error al crear el usuario.', 'error')
+        data = {
+            "username": username,
+            "password": password,
+            "folios_asignac": folios,
+            "folios_usados": 0
+        }
+        supabase.table("verificaciondigitalcdmx").insert(data).execute()
+        flash('Usuario creado exitosamente.', 'success')
 
     return render_template('crear_usuario.html')
 
@@ -92,10 +89,6 @@ def registro_usuario():
             return redirect(url_for('registro_usuario'))
 
         usuario_data = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
-        if not usuario_data.data:
-            flash("No se pudo obtener la información del usuario.", "error")
-            return redirect(url_for('registro_usuario'))
-
         folios = usuario_data.data[0]
         restantes = folios['folios_asignac'] - folios['folios_usados']
         if restantes <= 0:
@@ -116,15 +109,11 @@ def registro_usuario():
             "fecha_vencimiento": fecha_vencimiento.isoformat()
         }
 
-        try:
-            supabase.table("folios_registrados").insert(data).execute()
-            supabase.table("verificaciondigitalcdmx").update({
-                "folios_usados": folios["folios_usados"] + 1
-            }).eq("id", user_id).execute()
-            flash("Folio registrado correctamente.", "success")
-        except Exception:
-            flash("Error al registrar el folio.", "error")
-
+        supabase.table("folios_registrados").insert(data).execute()
+        supabase.table("verificaciondigitalcdmx").update({
+            "folios_usados": folios["folios_usados"] + 1
+        }).eq("id", user_id).execute()
+        flash("Folio registrado correctamente.", "success")
         return redirect(url_for('registro_usuario'))
 
     response = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
@@ -164,20 +153,59 @@ def registro_admin():
             "fecha_vencimiento": fecha_vencimiento.isoformat()
         }
 
-        try:
-            supabase.table("folios_registrados").insert(data).execute()
-            flash('Folio registrado correctamente.', 'success')
-        except Exception:
-            flash('Error al registrar el folio.', 'error')
+        supabase.table("folios_registrados").insert(data).execute()
+        flash('Folio registrado correctamente.', 'success')
 
     return render_template('registro_admin.html')
+
+@app.route('/admin_folios')
+def admin_folios():
+    if 'admin' not in session:
+        return redirect(url_for('login'))
+    response = supabase.table("folios_registrados").select("*").execute()
+    folios = response.data
+    return render_template("admin_folios.html", folios=folios)
+
+@app.route('/eliminar_folio', methods=['POST'])
+def eliminar_folio():
+    if 'admin' not in session:
+        return redirect(url_for('login'))
+    folio = request.form['folio']
+    supabase.table("folios_registrados").delete().eq("folio", folio).execute()
+    flash('Folio eliminado correctamente.', 'success')
+    return redirect(url_for('admin_folios'))
+
+@app.route('/editar_folio/<folio>', methods=['GET', 'POST'])
+def editar_folio(folio):
+    if 'admin' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        data = {
+            "marca": request.form['marca'],
+            "linea": request.form['linea'],
+            "anio": request.form['anio'],
+            "numero_serie": request.form['numero_serie'],
+            "numero_motor": request.form['numero_motor'],
+            "fecha_expedicion": request.form['fecha_expedicion'],
+            "fecha_vencimiento": request.form['fecha_vencimiento']
+        }
+        supabase.table("folios_registrados").update(data).eq("folio", folio).execute()
+        flash("Folio actualizado correctamente.", "success")
+        return redirect(url_for('admin_folios'))
+
+    resultado = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
+    if resultado.data:
+        return render_template("editar_folio.html", folio=resultado.data[0])
+    else:
+        flash("Folio no encontrado.", "error")
+        return redirect(url_for('admin_folios'))
 
 @app.route('/consulta_folio', methods=['GET', 'POST'])
 def consulta_folio():
     resultado = None
     if request.method == 'POST':
         folio = request.form['folio']
-
         response = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
         registros = response.data
 
@@ -188,8 +216,7 @@ def consulta_folio():
             fecha_expedicion = datetime.fromisoformat(registro['fecha_expedicion'])
             fecha_vencimiento = datetime.fromisoformat(registro['fecha_vencimiento'])
             hoy = datetime.now()
-
-            estado = "Vigente" if hoy <= fecha_vencimiento else "Vencido"
+            estado = "Vigente" if hoy <= fecha_vencimiento else "VENCIDO"
 
             resultado = {
                 "estado": estado,
