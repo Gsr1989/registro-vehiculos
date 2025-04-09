@@ -6,12 +6,14 @@ app = Flask(__name__)
 app.secret_key = 'clave_muy_segura_123456'
 
 SUPABASE_URL = "https://xsagwqepoljfsogusubw.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWd3cWVwb2xqZnNvZ3VzdWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5NjM3NTUsImV4cCI6MjA1OTUzOTc1NX0.NUixULn0m2o49At8j6X58UqbXre2O2_JStqzls_8Gws"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 
 @app.route('/')
 def inicio():
     return redirect(url_for('login'))
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -35,11 +37,13 @@ def login():
 
     return render_template('login.html')
 
+
 @app.route('/admin')
 def admin():
     if 'admin' not in session:
         return redirect(url_for('login'))
     return render_template('panel.html')
+
 
 @app.route('/crear_usuario', methods=['GET', 'POST'])
 def crear_usuario():
@@ -67,6 +71,7 @@ def crear_usuario():
 
     return render_template('crear_usuario.html')
 
+
 @app.route('/registro_usuario', methods=['GET', 'POST'])
 def registro_usuario():
     if 'user_id' not in session:
@@ -89,6 +94,10 @@ def registro_usuario():
             return redirect(url_for('registro_usuario'))
 
         usuario_data = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
+        if not usuario_data.data:
+            flash("No se pudo obtener la información del usuario.", "error")
+            return redirect(url_for('registro_usuario'))
+
         folios = usuario_data.data[0]
         restantes = folios['folios_asignac'] - folios['folios_usados']
         if restantes <= 0:
@@ -119,6 +128,7 @@ def registro_usuario():
     response = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
     folios_info = response.data[0] if response.data else {}
     return render_template("registro_usuario.html", folios_info=folios_info)
+
 
 @app.route('/registro_admin', methods=['GET', 'POST'])
 def registro_admin():
@@ -158,22 +168,27 @@ def registro_admin():
 
     return render_template('registro_admin.html')
 
+
 @app.route('/admin_folios')
 def admin_folios():
     if 'admin' not in session:
         return redirect(url_for('login'))
+
     response = supabase.table("folios_registrados").select("*").execute()
     folios = response.data
     return render_template("admin_folios.html", folios=folios)
+
 
 @app.route('/eliminar_folio', methods=['POST'])
 def eliminar_folio():
     if 'admin' not in session:
         return redirect(url_for('login'))
+
     folio = request.form['folio']
     supabase.table("folios_registrados").delete().eq("folio", folio).execute()
     flash('Folio eliminado correctamente.', 'success')
     return redirect(url_for('admin_folios'))
+
 
 @app.route('/editar_folio/<folio>', methods=['GET', 'POST'])
 def editar_folio(folio):
@@ -201,6 +216,7 @@ def editar_folio(folio):
         flash("Folio no encontrado.", "error")
         return redirect(url_for('admin_folios'))
 
+
 @app.route('/consulta_folio', methods=['GET', 'POST'])
 def consulta_folio():
     resultado = None
@@ -216,7 +232,7 @@ def consulta_folio():
             fecha_expedicion = datetime.fromisoformat(registro['fecha_expedicion'])
             fecha_vencimiento = datetime.fromisoformat(registro['fecha_vencimiento'])
             hoy = datetime.now()
-            estado = "Vigente" if hoy <= fecha_vencimiento else "VENCIDO"
+            estado = "VIGENTE" if hoy <= fecha_vencimiento else "VENCIDO"
 
             resultado = {
                 "estado": estado,
@@ -234,10 +250,12 @@ def consulta_folio():
 
     return render_template("consulta_folio.html")
 
+
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)
