@@ -85,6 +85,16 @@
             color: white;
         }
 
+        .estado-verde {
+            color: green;
+            font-weight: bold;
+        }
+
+        .estado-rojo {
+            color: red;
+            font-weight: bold;
+        }
+
         .btn {
             padding: 6px 10px;
             font-size: 13px;
@@ -174,6 +184,13 @@
         <option value="folio" {% if criterio == 'folio' %}selected{% endif %}>Folio</option>
         <option value="numero_serie" {% if criterio == 'numero_serie' %}selected{% endif %}>Número de Serie</option>
     </select>
+    <select name="estado">
+        <option value="todos" {% if estado == 'todos' %}selected{% endif %}>Todos</option>
+        <option value="vigente" {% if estado == 'vigente' %}selected{% endif %}>Vigente</option>
+        <option value="vencido" {% if estado == 'vencido' %}selected{% endif %}>Vencido</option>
+    </select>
+    <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}">
+    <input type="date" name="fecha_fin" value="{{ fecha_fin }}">
     <select name="ordenar">
         <option value="desc" {% if ordenar == 'desc' %}selected{% endif %}>Más recientes primero</option>
         <option value="asc" {% if ordenar == 'asc' %}selected{% endif %}>Más antiguos primero</option>
@@ -193,11 +210,14 @@
                 <th>Motor</th>
                 <th>Expedición</th>
                 <th>Vencimiento</th>
+                <th>Estado</th>
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for folio in folios %}
+            {% set vencimiento = folio.fecha_vencimiento[:10] %}
+            {% set estado = 'VENCIDO' if vencimiento < now().strftime('%Y-%m-%d') else 'VIGENTE' %}
             <tr>
                 <td>{{ folio.folio }}</td>
                 <td>{{ folio.marca }}</td>
@@ -206,7 +226,12 @@
                 <td>{{ folio.numero_serie }}</td>
                 <td>{{ folio.numero_motor }}</td>
                 <td>{{ folio.fecha_expedicion[:10] }}</td>
-                <td>{{ folio.fecha_vencimiento[:10] }}</td>
+                <td>{{ vencimiento }}</td>
+                <td>
+                    <span class="{% if estado == 'VENCIDO' %}estado-rojo{% else %}estado-verde{% endif %}">
+                        {{ estado }}
+                    </span>
+                </td>
                 <td>
                     <a href="{{ url_for('editar_folio', folio=folio.folio) }}">
                         <button class="btn btn-editar">Editar</button>
@@ -231,4 +256,4 @@
 </footer>
 
 </body>
-</html>
+                        </html>
