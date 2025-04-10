@@ -169,14 +169,29 @@ def registro_admin():
     return render_template('registro_admin.html')
 
 
-@app.route('/admin_folios')
+@app.route('/admin_folios', methods=['GET'])
 def admin_folios():
     if 'admin' not in session:
         return redirect(url_for('login'))
 
-    response = supabase.table("folios_registrados").select("*").execute()
-    folios = response.data
-    return render_template("admin_folios.html", folios=folios)
+    filtro = request.args.get('filtro', '').strip()
+    criterio = request.args.get('criterio', 'folio')
+    ordenar = request.args.get('ordenar', 'desc')
+
+    query = supabase.table("folios_registrados").select("*")
+
+    if filtro:
+        if criterio == "folio":
+            query = query.ilike("folio", f"%{filtro}%")
+        elif criterio == "numero_serie":
+            query = query.ilike("numero_serie", f"%{filtro}%")
+
+    resultado = query.execute()
+    folios = resultado.data or []
+
+    folios.sort(key=lambda x: x.get("fecha_expedicion", ""), reverse=(ordenar == "desc"))
+
+    return render_template("admin_folios.html", folios=folios, filtro=filtro, criterio=criterio, ordenar=ordenar)
 
 
 @app.route('/eliminar_folio', methods=['POST'])
