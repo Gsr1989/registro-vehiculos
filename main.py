@@ -187,6 +187,7 @@ def admin_folios():
 
     hoy = datetime.now()
     filtrados = []
+
     for folio in folios:
         try:
             fecha_exp = datetime.fromisoformat(folio.get("fecha_expedicion", ""))
@@ -194,9 +195,12 @@ def admin_folios():
         except:
             continue
 
-        if estado_filtro == "vigente" and hoy > fecha_ven:
+        estado = "VIGENTE" if hoy <= fecha_ven else "VENCIDO"
+        folio["estado"] = estado
+
+        if estado_filtro == "vigente" and estado != "VIGENTE":
             continue
-        if estado_filtro == "vencido" and hoy <= fecha_ven:
+        if estado_filtro == "vencido" and estado != "VENCIDO":
             continue
 
         if fecha_inicio:
