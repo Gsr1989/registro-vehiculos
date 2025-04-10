@@ -28,7 +28,37 @@
             text-align: center;
             font-size: 26px;
             font-weight: bold;
-            margin: 30px 0 20px;
+            margin: 20px 0 10px;
+        }
+
+        .busqueda {
+            max-width: 95%;
+            margin: auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .busqueda input,
+        .busqueda select,
+        .busqueda button {
+            padding: 8px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        .busqueda button {
+            background-color: #800000;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .busqueda button:hover {
+            background-color: #a00000;
         }
 
         .tabla-container {
@@ -121,6 +151,11 @@
             th, td {
                 font-size: 12px;
             }
+
+            .busqueda {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
@@ -132,6 +167,19 @@
 </header>
 
 <div class="titulo">Administración de Folios Registrados</div>
+
+<form method="get" class="busqueda">
+    <input type="text" name="filtro" placeholder="Buscar..." value="{{ filtro }}">
+    <select name="criterio">
+        <option value="folio" {% if criterio == 'folio' %}selected{% endif %}>Folio</option>
+        <option value="numero_serie" {% if criterio == 'numero_serie' %}selected{% endif %}>Número de Serie</option>
+    </select>
+    <select name="ordenar">
+        <option value="desc" {% if ordenar == 'desc' %}selected{% endif %}>Más recientes primero</option>
+        <option value="asc" {% if ordenar == 'asc' %}selected{% endif %}>Más antiguos primero</option>
+    </select>
+    <button type="submit">Buscar</button>
+</form>
 
 <div class="tabla-container">
     <table>
