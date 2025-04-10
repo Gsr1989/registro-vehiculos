@@ -9,11 +9,9 @@ SUPABASE_URL = "https://xsagwqepoljfsogusubw.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWd3cWVwb2xqZnNvZ3VzdWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5NjM3NTUsImV4cCI6MjA1OTUzOTc1NX0.NUixULn0m2o49At8j6X58UqbXre2O2_JStqzls_8Gws"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-
 @app.route('/')
 def inicio():
     return redirect(url_for('login'))
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -37,13 +35,11 @@ def login():
 
     return render_template('login.html')
 
-
 @app.route('/admin')
 def admin():
     if 'admin' not in session:
         return redirect(url_for('login'))
     return render_template('panel.html')
-
 
 @app.route('/crear_usuario', methods=['GET', 'POST'])
 def crear_usuario():
@@ -70,7 +66,6 @@ def crear_usuario():
         flash('Usuario creado exitosamente.', 'success')
 
     return render_template('crear_usuario.html')
-
 
 @app.route('/registro_usuario', methods=['GET', 'POST'])
 def registro_usuario():
@@ -129,7 +124,6 @@ def registro_usuario():
     folios_info = response.data[0] if response.data else {}
     return render_template("registro_usuario.html", folios_info=folios_info)
 
-
 @app.route('/registro_admin', methods=['GET', 'POST'])
 def registro_admin():
     if 'admin' not in session:
@@ -168,7 +162,6 @@ def registro_admin():
 
     return render_template('registro_admin.html')
 
-
 @app.route('/admin_folios', methods=['GET'])
 def admin_folios():
     if 'admin' not in session:
@@ -177,6 +170,9 @@ def admin_folios():
     filtro = request.args.get('filtro', '').strip()
     criterio = request.args.get('criterio', 'folio')
     ordenar = request.args.get('ordenar', 'desc')
+    estado_filtro = request.args.get('estado', 'todos')
+    fecha_inicio = request.args.get('fecha_inicio', '')
+    fecha_fin = request.args.get('fecha_fin', '')
 
     query = supabase.table("folios_registrados").select("*")
 
@@ -189,10 +185,49 @@ def admin_folios():
     resultado = query.execute()
     folios = resultado.data or []
 
-    folios.sort(key=lambda x: x.get("fecha_expedicion", ""), reverse=(ordenar == "desc"))
+    hoy = datetime.now()
+    filtrados = []
+    for folio in folios:
+        try:
+            fecha_exp = datetime.fromisoformat(folio.get("fecha_expedicion", ""))
+            fecha_ven = datetime.fromisoformat(folio.get("fecha_vencimiento", ""))
+        except:
+            continue
 
-    return render_template("admin_folios.html", folios=folios, filtro=filtro, criterio=criterio, ordenar=ordenar)
+        if estado_filtro == "vigente" and hoy > fecha_ven:
+            continue
+        if estado_filtro == "vencido" and hoy <= fecha_ven:
+            continue
 
+        if fecha_inicio:
+            try:
+                fi = datetime.strptime(fecha_inicio, "%Y-%m-%d")
+                if fecha_exp < fi:
+                    continue
+            except:
+                pass
+        if fecha_fin:
+            try:
+                ff = datetime.strptime(fecha_fin, "%Y-%m-%d")
+                if fecha_exp > ff:
+                    continue
+            except:
+                pass
+
+        filtrados.append(folio)
+
+    filtrados.sort(key=lambda x: x.get("fecha_expedicion", ""), reverse=(ordenar == "desc"))
+
+    return render_template(
+        "admin_folios.html",
+        folios=filtrados,
+        filtro=filtro,
+        criterio=criterio,
+        ordenar=ordenar,
+        estado=estado_filtro,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin
+    )
 
 @app.route('/eliminar_folio', methods=['POST'])
 def eliminar_folio():
@@ -203,7 +238,6 @@ def eliminar_folio():
     supabase.table("folios_registrados").delete().eq("folio", folio).execute()
     flash('Folio eliminado correctamente.', 'success')
     return redirect(url_for('admin_folios'))
-
 
 @app.route('/editar_folio/<folio>', methods=['GET', 'POST'])
 def editar_folio(folio):
@@ -230,7 +264,6 @@ def editar_folio(folio):
     else:
         flash("Folio no encontrado.", "error")
         return redirect(url_for('admin_folios'))
-
 
 @app.route('/consulta_folio', methods=['GET', 'POST'])
 def consulta_folio():
@@ -265,12 +298,10 @@ def consulta_folio():
 
     return render_template("consulta_folio.html")
 
-
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
-
 
 if __name__ == '__main__':
     app.run(debug=True)
