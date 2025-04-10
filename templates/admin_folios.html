@@ -216,8 +216,6 @@
         </thead>
         <tbody>
             {% for folio in folios %}
-            {% set vencimiento = folio.fecha_vencimiento[:10] %}
-            {% set estado = 'VENCIDO' if vencimiento < now().strftime('%Y-%m-%d') else 'VIGENTE' %}
             <tr>
                 <td>{{ folio.folio }}</td>
                 <td>{{ folio.marca }}</td>
@@ -226,10 +224,10 @@
                 <td>{{ folio.numero_serie }}</td>
                 <td>{{ folio.numero_motor }}</td>
                 <td>{{ folio.fecha_expedicion[:10] }}</td>
-                <td>{{ vencimiento }}</td>
+                <td>{{ folio.fecha_vencimiento[:10] }}</td>
                 <td>
-                    <span class="{% if estado == 'VENCIDO' %}estado-rojo{% else %}estado-verde{% endif %}">
-                        {{ estado }}
+                    <span class="{% if folio.estado == 'VIGENTE' %}estado-verde{% else %}estado-rojo{% endif %}">
+                        {{ folio.estado }}
                     </span>
                 </td>
                 <td>
@@ -256,4 +254,4 @@
 </footer>
 
 </body>
-                        </html>
+</html>
