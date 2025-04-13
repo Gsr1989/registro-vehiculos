@@ -234,10 +234,13 @@
                     <a href="{{ url_for('editar_folio', folio=folio.folio) }}">
                         <button class="btn btn-editar">Editar</button>
                     </a>
-                    <form method="POST" action="{{ url_for('eliminar_folio') }}">
+                    <form method="POST" action="{{ url_for('eliminar_folio') }}" style="margin-top: 5px;">
                         <input type="hidden" name="folio" value="{{ folio.folio }}">
                         <button type="submit" class="btn btn-eliminar">Eliminar</button>
                     </form>
+                    <a href="{{ url_for('generar_pdf', folio=folio.folio) }}" target="_blank" style="display:inline-block; margin-top:5px;">
+                        <button class="btn btn-editar" style="background-color: #28a745;">Generar PDF</button>
+                    </a>
                 </td>
             </tr>
             {% endfor %}
