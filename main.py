@@ -3,6 +3,46 @@ from datetime import datetime, timedelta
 from supabase import create_client, Client
 
 app = Flask(__name__)
+
+
+@app.route('/generar_pdf/<folio>')
+def generar_pdf(folio):
+    resultado = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
+    if not resultado.data:
+        flash("Folio no encontrado.", "error")
+        return redirect(url_for('admin_folios'))
+
+    datos = resultado.data[0]
+    plantilla = "cdmxdigital20252.pdf"
+    doc = fitz.open(plantilla)
+    page = doc[0]
+
+    page.insert_text((180.47, 291.00), folio, fontsize=10)
+    page.insert_text((159.67, 233.59), folio[-4:], fontsize=10)
+    page.insert_text((247.05, 262.15), datetime.fromisoformat(datos['fecha_expedicion']).strftime("%d DE %B DE %Y"), fontsize=10)
+    page.insert_text((175.45, 542.22), datos['marca'], fontsize=10)
+    page.insert_text((283, 542.22), datos['linea'], fontsize=10)
+    page.insert_text((390, 542.22), datos['anio'], fontsize=10)
+    page.insert_text((175.45, 650.22), datos['numero_serie'], fontsize=10)
+    page.insert_text((283, 650.22), datos['numero_motor'], fontsize=10)
+    page.insert_text((390, 650.22), datetime.fromisoformat(datos['fecha_vencimiento']).strftime("%d/%m/%Y"), fontsize=10)
+    page.insert_text((390, 625.22), "DOCUMENTO DIGITAL", fontsize=10)
+
+    qr_data = f"https://validacion.cdmx.mx/folio/{folio}"
+    qr_img = qrcode.make(qr_data)
+    qr_path = f"temp_qr_{folio}.png"
+    qr_img.save(qr_path)
+    page.insert_image(fitz.Rect(460, 720, 560, 820), filename=qr_path)
+
+    salida = f"static/permiso_{folio}.pdf"
+    doc.save(salida)
+    doc.close()
+
+    if os.path.exists(qr_path):
+        os.remove(qr_path)
+
+    return redirect(url_for('static', filename=f'permiso_{folio}.pdf'))
+
 app.secret_key = 'clave_muy_segura_123456'
 
 SUPABASE_URL = "https://xsagwqepoljfsogusubw.supabase.co"
@@ -90,7 +130,7 @@ def registro_usuario():
 
         usuario_data = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
         if not usuario_data.data:
-            flash("No se pudo obtener la información del usuario.", "error")
+            flash("No se pudo obtener la informaciÃ³n del usuario.", "error")
             return redirect(url_for('registro_usuario'))
 
         folios = usuario_data.data[0]
@@ -293,7 +333,7 @@ def consulta_folio():
                 "fecha_vencimiento": fecha_vencimiento.strftime("%d/%m/%Y"),
                 "marca": registro['marca'],
                 "linea": registro['linea'],
-                "año": registro['anio'],
+                "aÃ±o": registro['anio'],
                 "numero_serie": registro['numero_serie'],
                 "numero_motor": registro['numero_motor']
             }
