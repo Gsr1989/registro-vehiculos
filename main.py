@@ -165,14 +165,15 @@ def registro_admin():
         plantilla = fitz.open("cdmxdigital2025web.pdf")
         page = plantilla[0]
 
-        page.insert_text((120, 120), f"FOLIO: {folio}", fontsize=11)
-        page.insert_text((120, 140), f"Marca: {marca}", fontsize=11)
-        page.insert_text((120, 160), f"Línea: {linea}", fontsize=11)
-        page.insert_text((120, 180), f"Año: {anio}", fontsize=11)
-        page.insert_text((120, 200), f"Serie: {numero_serie}", fontsize=11)
-        page.insert_text((120, 220), f"Motor: {numero_motor}", fontsize=11)
-        page.insert_text((120, 240), f"Expedición: {fecha_expedicion.strftime('%d/%m/%Y')}", fontsize=11)
-        page.insert_text((120, 260), f"Vencimiento: {fecha_vencimiento.strftime('%d/%m/%Y')}", fontsize=11)
+        # Usamos las coordenadas que me diste en un solo mensaje
+        page.insert_text((113.39, 127.56), f"FOLIO: {folio}", fontsize=10)
+        page.insert_text((135.04, 138.52), f"{marca}", fontsize=9)
+        page.insert_text((135.04, 150.15), f"{linea}", fontsize=9)
+        page.insert_text((135.04, 160.78), f"{anio}", fontsize=9)
+        page.insert_text((135.04, 171.41), f"{numero_serie}", fontsize=9)
+        page.insert_text((135.04, 182.04), f"{numero_motor}", fontsize=9)
+        page.insert_text((135.04, 192.67), f"{fecha_expedicion.strftime('%d/%m/%Y')}", fontsize=9)
+        page.insert_text((135.04, 203.30), f"{fecha_vencimiento.strftime('%d/%m/%Y')}", fontsize=9)
 
         if not os.path.exists("documentos"):
             os.makedirs("documentos")
