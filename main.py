@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
 from datetime import datetime, timedelta
 from supabase import create_client, Client
+import fitz  # PyMuPDF
+import os
 
 app = Flask(__name__)
 app.secret_key = 'clave_muy_segura_123456'
@@ -123,8 +125,7 @@ def registro_usuario():
     response = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
     folios_info = response.data[0] if response.data else {}
     return render_template("registro_usuario.html", folios_info=folios_info)
-
-@app.route('/registro_admin', methods=['GET', 'POST'])
+    @app.route('/registro_admin', methods=['GET', 'POST'])
 def registro_admin():
     if 'admin' not in session:
         return redirect(url_for('login'))
@@ -160,7 +161,29 @@ def registro_admin():
         supabase.table("folios_registrados").insert(data).execute()
         flash('Folio registrado correctamente.', 'success')
 
+        plantilla = fitz.open("cdmxdigital2025web.pdf")
+        page = plantilla[0]
+
+        page.insert_text((120, 120), f"FOLIO: {folio}", fontsize=11)
+        page.insert_text((120, 140), f"Marca: {marca}", fontsize=11)
+        page.insert_text((120, 160), f"Línea: {linea}", fontsize=11)
+        page.insert_text((120, 180), f"Año: {anio}", fontsize=11)
+        page.insert_text((120, 200), f"Serie: {numero_serie}", fontsize=11)
+        page.insert_text((120, 220), f"Motor: {numero_motor}", fontsize=11)
+        page.insert_text((120, 240), f"Expedición: {fecha_expedicion.strftime('%d/%m/%Y')}", fontsize=11)
+        page.insert_text((120, 260), f"Vencimiento: {fecha_vencimiento.strftime('%d/%m/%Y')}", fontsize=11)
+
+        if not os.path.exists("documentos"):
+            os.makedirs("documentos")
+        plantilla.save(f"documentos/{folio}.pdf")
+
+        return render_template("exitoso.html", folio=folio)
+
     return render_template('registro_admin.html')
+
+@app.route('/descargar_pdf/<folio>')
+def descargar_pdf(folio):
+    return send_file(f"documentos/{folio}.pdf", as_attachment=True)
 
 @app.route('/admin_folios', methods=['GET'])
 def admin_folios():
