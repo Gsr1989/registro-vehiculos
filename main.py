@@ -125,7 +125,8 @@ def registro_usuario():
     response = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
     folios_info = response.data[0] if response.data else {}
     return render_template("registro_usuario.html", folios_info=folios_info)
-    @app.route('/registro_admin', methods=['GET', 'POST'])
+
+@app.route('/registro_admin', methods=['GET', 'POST'])
 def registro_admin():
     if 'admin' not in session:
         return redirect(url_for('login'))
