@@ -141,20 +141,6 @@ def registro_admin():
         }
         supabase.table("folios_registrados").insert(data).execute()
 
-        doc = fitz.open("cdmxdigital2025web.pdf")
-        page = doc[0]
-        page.insert_text((150.25, 141.75), fecha_expedicion.strftime('%d/%m/%Y'), fontsize=12)
-        page.insert_text((283.78, 99.23), marca, fontsize=12)
-        page.insert_text((285.48, 99.23), linea, fontsize=12)
-        page.insert_text((312.7, 99.23), anio, fontsize=12)
-        page.insert_text((283.78, 369.4), numero_serie, fontsize=12)
-        page.insert_text((285.48, 369.4), numero_motor, fontsize=12)
-        page.insert_text((312.7, 369.4), f"{vigencia} días", fontsize=12)
-        page.insert_text((314.4, 314.4), session.get('username', ''), fontsize=12)
-        if not os.path.exists("documentos"):
-            os.makedirs("documentos")
-        doc.save(f"documentos/{folio}.pdf")
-
         return render_template("exitoso.html", folio=folio)
     return render_template('registro_admin.html')
     @app.route('/consulta_folio', methods=['GET', 'POST'])
