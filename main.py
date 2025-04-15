@@ -140,7 +140,14 @@ def registro_admin():
             "fecha_vencimiento": fecha_vencimiento.isoformat()
         }
         supabase.table("folios_registrados").insert(data).execute()
+doc = fitz.open("elbueno.pdf")
+page = doc[0]
+page.insert_text((149.018, 193.880), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
+page.insert_text((190, 324), fecha_expedicion.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0, 0, 0))
 
+if not os.path.exists("documentos"):
+    os.makedirs("documentos")
+doc.save(f"documentos/{folio}.pdf")
         return render_template("exitoso.html", folio=folio)
     return render_template('registro_admin.html')
     @app.route('/consulta_folio', methods=['GET', 'POST'])
