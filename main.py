@@ -1,16 +1,15 @@
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 import fitz
 import os
-import io
-import qrcode
 
 app = Flask(__name__)
 app.secret_key = 'clave_muy_segura_123456'
 
 SUPABASE_URL = "https://xsagwqepoljfsogusubw.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWd3cWVwb2xqZnNvZ3VzdWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5NjM3NTUsImV4cCI6MjA1OTUzOTc1NX0.NUixULn0m2o49At8j6X58UqbXre2O2_JStqzls_8Gws"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route('/')
@@ -110,3 +109,45 @@ def registro_usuario():
     response = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
     folios_info = response.data[0] if response.data else {}
     return render_template("registro_usuario.html", folios_info=folios_info)
+
+@app.route('/registro_admin', methods=['GET', 'POST'])
+def registro_admin():
+    if 'admin' not in session:
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        folio = request.form['folio']
+        marca = request.form['marca']
+        linea = request.form['linea']
+        anio = request.form['anio']
+        numero_serie = request.form['serie']
+        numero_motor = request.form['motor']
+        vigencia = int(request.form['vigencia'])
+        existente = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
+        if existente.data:
+            flash('Error: el folio ya existe.', 'error')
+            return render_template('registro_admin.html')
+        fecha_expedicion = datetime.now()
+        fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
+        data = {
+            "folio": folio,
+            "marca": marca,
+            "linea": linea,
+            "anio": anio,
+            "numero_serie": numero_serie,
+            "numero_motor": numero_motor,
+            "fecha_expedicion": fecha_expedicion.isoformat(),
+            "fecha_vencimiento": fecha_vencimiento.isoformat()
+        }
+        supabase.table("folios_registrados").insert(data).execute()
+
+        doc = fitz.open("elbueno.pdf")
+        page = doc[0]
+        page.insert_text((149.018, 193.880), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
+        page.insert_text((190, 324), fecha_expedicion.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0, 0, 0))
+
+        if not os.path.exists("documentos"):
+            os.makedirs("documentos")
+        doc.save(f"documentos/{folio}.pdf")
+
+        return render_template("exitoso.html", folio=folio)
+    return render_template('registro_admin.html')
