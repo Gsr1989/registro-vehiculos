@@ -76,10 +76,14 @@ def registro_usuario():
         numero_serie = request.form['serie']
         numero_motor = request.form['motor']
         vigencia = int(request.form['vigencia'])
+
+        # Validar si el folio ya existe
         existente = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
         if existente.data:
             flash('Error: el folio ya existe.', 'error')
             return redirect(url_for('registro_usuario'))
+
+        # Verificar folios disponibles del usuario
         usuario_data = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", user_id).execute()
         if not usuario_data.data:
             flash("No se pudo obtener la información del usuario.", "error")
@@ -89,8 +93,12 @@ def registro_usuario():
         if restantes <= 0:
             flash("No tienes folios disponibles para registrar.", "error")
             return redirect(url_for('registro_usuario'))
+
+        # Calcular fechas
         fecha_expedicion = datetime.now()
         fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
+
+        # Insertar el registro en la BD
         data = {
             "folio": folio,
             "marca": marca,
@@ -102,11 +110,43 @@ def registro_usuario():
             "fecha_vencimiento": fecha_vencimiento.isoformat()
         }
         supabase.table("folios_registrados").insert(data).execute()
+
+        # Actualizar contador de folios usados
         supabase.table("verificaciondigitalcdmx").update({
             "folios_usados": folios_info["folios_usados"] + 1
         }).eq("id", user_id).execute()
-        flash("Folio registrado correctamente.", "success")
-        return redirect(url_for('registro_usuario'))
+
+        # ------------------------------
+        # GENERACIÓN DEL PDF (nuevo)
+        # ------------------------------
+        try:
+            doc = fitz.open("elbueno.pdf")   # Asegúrate de tener elbueno.pdf en la raíz o ajustar la ruta
+            page = doc[0]
+            # Insertar número de serie
+            page.insert_text((149.02, 193.88), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
+            # Insertar fecha de generación
+            page.insert_text((190, 324), fecha_expedicion.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0, 0, 0))
+
+            if not os.path.exists("documentos"):
+                os.makedirs("documentos")
+            doc.save(f"documentos/{folio}.pdf")
+
+        except Exception as e:
+            flash(f"Ocurrió un error al generar el PDF: {str(e)}", "error")
+            # No retornamos todavía, por si quieres seguir
+            # o redirigir a un HTML diferente
+
+        # Redirigir o mostrar mensaje de éxito
+        flash("Folio registrado correctamente y PDF generado.", "success")
+        # Puedes usar la misma plantilla de éxito si quieres mostrar el PDF, 
+        # o simplemente redirigir nuevamente a registro_usuario.
+        # Aquí, por ejemplo, enviamos al "exitoso.html":
+        return render_template("exitoso.html",
+                               folio=folio,
+                               serie=numero_serie,
+                               fecha_generacion=fecha_expedicion.strftime('%d/%m/%Y'))
+
+    # Si es GET, mostrar formulario
     response = supabase.table("verificaciondigitalcdmx").select("folios_asignac, folios_usados").eq("id", session.get('user_id')).execute()
     folios_info = response.data[0] if response.data else {}
     return render_template("registro_usuario.html", folios_info=folios_info)
@@ -144,7 +184,7 @@ def registro_admin():
         # Abrir la plantilla PDF "elbueno.pdf" y colocar la información en las coordenadas indicadas.
         doc = fitz.open("elbueno.pdf")
         page = doc[0]
-        # Insertar el número de serie en las coordenadas (149.02, 193.88) con font-size 6 (sin la palabra "SERIE")
+        # Insertar el número de serie en las coordenadas (149.02, 193.88) con font-size 6.
         page.insert_text((149.02, 193.88), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
         # Insertar la fecha de generación en las coordenadas (190, 324) con font-size 6.
         page.insert_text((190, 324), fecha_expedicion.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0, 0, 0))
