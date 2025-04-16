@@ -82,6 +82,9 @@
 <div class="contenido">
   <h2>Registro Exitoso</h2>
   <p>Tu documento ha sido generado correctamente.</p>
+  <!-- Nuevas líneas para mostrar la información agregada -->
+  <p>Número de Serie: {{ serie }}</p>
+  <p>Fecha de Generación: {{ fecha_generacion }}</p>
   <a href="{{ url_for('descargar_pdf', folio=folio) }}" class="btn">Descargar PDF</a>
   <br>
   <a href="{{ url_for('consulta_folio') }}" class="btn">Consultar Folio</a>
