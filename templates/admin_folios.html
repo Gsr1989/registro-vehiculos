@@ -12,25 +12,21 @@
             padding: 0;
             color: #000;
         }
-
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px 30px;
         }
-
         header img {
             height: 80px;
         }
-
         .titulo {
             text-align: center;
             font-size: 26px;
             font-weight: bold;
             margin: 20px 0 10px;
         }
-
         .busqueda {
             max-width: 95%;
             margin: auto;
@@ -40,7 +36,6 @@
             gap: 10px;
             margin-bottom: 20px;
         }
-
         .busqueda input,
         .busqueda select,
         .busqueda button {
@@ -49,52 +44,43 @@
             border-radius: 6px;
             border: 1px solid #ccc;
         }
-
         .busqueda button {
             background-color: #800000;
             color: white;
             border: none;
             cursor: pointer;
         }
-
         .busqueda button:hover {
             background-color: #a00000;
         }
-
         .tabla-container {
             max-width: 95%;
             margin: auto;
             overflow-x: auto;
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 40px;
         }
-
         th, td {
             padding: 12px;
             border: 1px solid #ccc;
             text-align: center;
             font-size: 14px;
         }
-
         th {
             background-color: #800000;
             color: white;
         }
-
         .estado-verde {
             color: green;
             font-weight: bold;
         }
-
         .estado-rojo {
             color: red;
             font-weight: bold;
         }
-
         .btn {
             padding: 6px 10px;
             font-size: 13px;
@@ -102,31 +88,33 @@
             border-radius: 5px;
             cursor: pointer;
         }
-
         .btn-editar {
             background-color: #2a72a5;
             color: white;
             margin-bottom: 5px;
         }
-
         .btn-editar:hover {
             background-color: #1e5b88;
         }
-
         .btn-eliminar {
             background-color: #a00000;
             color: white;
         }
-
         .btn-eliminar:hover {
             background-color: #800000;
         }
-
+        .btn-descargar {
+            background-color: #228B22;
+            color: white;
+            margin-top: 5px;
+        }
+        .btn-descargar:hover {
+            background-color: #1c6e1c;
+        }
         .volver {
             text-align: center;
             margin-bottom: 20px;
         }
-
         .volver a {
             background-color: #800000;
             color: white;
@@ -135,33 +123,26 @@
             text-decoration: none;
             font-size: 15px;
         }
-
         .volver a:hover {
             background-color: #a00000;
         }
-
         footer {
             width: 100%;
         }
-
         footer img {
             width: 100%;
             display: block;
         }
-
         @media (max-width: 600px) {
             header img {
                 height: 60px;
             }
-
             .titulo {
                 font-size: 22px;
             }
-
             th, td {
                 font-size: 12px;
             }
-
             .busqueda {
                 flex-direction: column;
                 align-items: center;
@@ -234,10 +215,13 @@
                     <a href="{{ url_for('editar_folio', folio=folio.folio) }}">
                         <button class="btn btn-editar">Editar</button>
                     </a>
-                    <form method="POST" action="{{ url_for('eliminar_folio') }}">
+                    <form method="POST" action="{{ url_for('eliminar_folio') }}" style="display:inline;">
                         <input type="hidden" name="folio" value="{{ folio.folio }}">
                         <button type="submit" class="btn btn-eliminar">Eliminar</button>
                     </form>
+                    <a href="{{ url_for('static', filename='pdfs/' + folio.folio + '.pdf') }}" target="_blank">
+                        <button class="btn btn-descargar">Descargar PDF</button>
+                    </a>
                 </td>
             </tr>
             {% endfor %}
@@ -254,4 +238,4 @@
 </footer>
 
 </body>
-    </html>
+</html>
