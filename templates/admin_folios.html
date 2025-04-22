@@ -219,7 +219,7 @@
                         <input type="hidden" name="folio" value="{{ folio.folio }}">
                         <button type="submit" class="btn btn-eliminar">Eliminar</button>
                     </form>
-                    <a href="{{ url_for('static', filename='pdfs/' + folio.folio + '.pdf') }}" target="_blank">
+                    <a href="/static/pdfs/cdmx/{{ folio.folio }}.pdf" target="_blank">
                         <button class="btn btn-descargar">Descargar PDF</button>
                     </a>
                 </td>
@@ -238,4 +238,4 @@
 </footer>
 
 </body>
-</html>
+    </html>
