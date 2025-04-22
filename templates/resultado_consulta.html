@@ -91,24 +91,14 @@
             margin: 20px auto;
             text-align: center;
         }
-        .btn-descargar a,
         .btn-regresar a {
             display: inline-block;
             padding: 12px 20px;
             border-radius: 8px;
             font-size: 16px;
             color: white;
-            text-decoration: none;
-            margin: 5px;
-        }
-        .btn-descargar a {
-            background-color: #228B22;
-        }
-        .btn-descargar a:hover {
-            background-color: #1c6e1c;
-        }
-        .btn-regresar a {
             background-color: #800000;
+            text-decoration: none;
         }
         .btn-regresar a:hover {
             background-color: #a00000;
@@ -164,20 +154,13 @@
           <div class="dato"><strong>NÚMERO DE MOTOR</strong>{{ resultado.numero_motor }}</div>
         </div>
       </div>
-
-      <div class="acciones btn-descargar">
-        <a href="{{ url_for('descargar_pdf', estado=resultado.estado|lower, folio=resultado.folio) }}"
-           target="_blank">
-          Descargar PDF
-        </a>
-      </div>
     {% endif %}
+
+    <div class="valido">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
 
     <div class="acciones btn-regresar">
       <a href="{{ url_for('consulta_folio') }}">Regresar</a>
     </div>
-
-    <div class="valido">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
 
     <footer>
       <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
