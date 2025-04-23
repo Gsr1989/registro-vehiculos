@@ -45,15 +45,9 @@
             margin: 30px auto 0;
             color: white;
         }
-        .verde {
-            background-color: #28a745;    /* vigente */
-        }
-        .vencido {
-            background-color: #b38b00;    /* ámbar */
-        }
-        .no-encontrado {
-            background-color: #a00000;    /* rojo */
-        }
+        .verde { background-color: #28a745; }       /* vigente */
+        .vencido { background-color: #b38b00; }     /* ámbar */
+        .no-encontrado { background-color: #a00000; }/* rojo */
         .certificado {
             border: 2px solid #ccc;
             padding: 20px;
@@ -145,13 +139,13 @@
     {% if resultado.estado != "NO SE ENCUENTRA REGISTRADO" %}
       <div class="certificado">
         <div class="recuadro-interno">
-          <div class="dato"><strong>FECHA DE EXPEDICIÓN</strong>{{ resultado.fecha_expedicion }}</div>
-          <div class="dato"><strong>FECHA DE VENCIMIENTO</strong>{{ resultado.fecha_vencimiento }}</div>
-          <div class="dato"><strong>MARCA</strong>{{ resultado.marca }}</div>
-          <div class="dato"><strong>LÍNEA</strong>{{ resultado.linea }}</div>
-          <div class="dato"><strong>AÑO</strong>{{ resultado.año }}</div>
-          <div class="dato"><strong>NÚMERO DE SERIE</strong>{{ resultado.numero_serie }}</div>
-          <div class="dato"><strong>NÚMERO DE MOTOR</strong>{{ resultado.numero_motor }}</div>
+          <div class="dato"><strong>FECHA DE EXPEDICIÓN</strong> {{ resultado.fecha_expedicion }}</div>
+          <div class="dato"><strong>FECHA DE VENCIMIENTO</strong> {{ resultado.fecha_vencimiento }}</div>
+          <div class="dato"><strong>MARCA</strong> {{ resultado.marca }}</div>
+          <div class="dato"><strong>LÍNEA</strong> {{ resultado.linea }}</div>
+          <div class="dato"><strong>AÑO</strong> {{ resultado.año }}</div>
+          <div class="dato"><strong>NÚMERO DE SERIE</strong> {{ resultado.numero_serie }}</div>
+          <div class="dato"><strong>NÚMERO DE MOTOR</strong> {{ resultado.numero_motor }}</div>
         </div>
       </div>
     {% endif %}
@@ -159,7 +153,7 @@
     <div class="valido">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
 
     <div class="acciones btn-regresar">
-      <a href="{{ url_for('consulta_folio') }}">Regresar</a>
+      <a href="https://www.semovi.cdmx.gob.mx/">Regresar</a>
     </div>
 
     <footer>
