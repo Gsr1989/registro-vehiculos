@@ -123,7 +123,7 @@ def registro_usuario():
             doc = fitz.open("elbueno.pdf")   # Asegúrate de tener elbueno.pdf en la raíz o ajustar la ruta
             page = doc[0]
             # Insertar número de serie
-            page.insert_text((149.02, 193.88), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
+            page.insert_text((140.02, 193.88), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
             # Insertar fecha de generación
             page.insert_text((190, 324), fecha_expedicion.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0, 0, 0))
 
