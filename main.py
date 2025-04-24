@@ -184,8 +184,8 @@ def registro_admin():
         # Abrir la plantilla PDF "elbueno.pdf" y colocar la información en las coordenadas indicadas.
         doc = fitz.open("elbueno.pdf")
         page = doc[0]
-        # Insertar el número de serie en las coordenadas (130.02, 193.88) con font-size 6.
-        page.insert_text((130.02, 193.88), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
+        # Insertar el número de serie en las coordenadas (135.02, 193.88) con font-size 6.
+        page.insert_text((135.02, 193.88), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
         # Insertar la fecha de generación en las coordenadas (190, 324) con font-size 6.
         page.insert_text((190, 324), fecha_expedicion.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0, 0, 0))
         
