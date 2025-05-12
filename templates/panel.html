@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Panel de Administración</title>
@@ -37,28 +38,31 @@
         .flash-message.success { background-color: #28a745; color: #fff; }
         .flash-message.error   { background-color: #dc3545; color: #fff; }
         .flash-message.info    { background-color: #17a2b8; color: #fff; }
+
         .botones {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 10px;
             margin: 30px auto;
             flex-wrap: wrap;
             max-width: 700px;
         }
         .btn {
             background-color: #800000;
-            color: white;
+            color: #fff;
             border: none;
-            padding: 14px 22px;
-            font-size: 16px;
-            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 14px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
             text-decoration: none;
+            white-space: nowrap;
+            transition: background-color 0.2s ease;
         }
         .btn:hover {
             background-color: #a00000;
         }
+
         footer {
             margin-top: 40px;
             width: 100%;
@@ -67,17 +71,34 @@
             width: 100%;
             display: block;
         }
+
         @media (max-width: 600px) {
             header img { height: 60px; }
             .titulo { font-size: 24px; margin-top: 20px; }
-            .btn { width: 100%; text-align: center; }
+            .btn {
+                padding: 6px 10px;
+                font-size: 16px;
+                width: auto;
+            }
         }
     </style>
 </head>
-<body><header>
+<body>
+
+<header>
     <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
     <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
-</header><div class="titulo">Secretaría de Movilidad - Panel Principal</div>{% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %} <div class="flash-message {{ category }}">{{ message }}</div> {% endfor %} {% endif %} {% endwith %}
+</header>
+
+<div class="titulo">Secretaría de Movilidad - Panel Principal</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="flash-message {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
 <div class="botones">
     <a href="{{ url_for('registro_admin') }}" class="btn">Registrar Folio</a>
@@ -88,7 +109,11 @@
       <button type="submit" class="btn">Enviar SMS Vencidos</button>
     </form>
     <a href="{{ url_for('logout') }}" class="btn">Cerrar Sesión</a>
-</div><footer>
+</div>
+
+<footer>
     <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
-</footer></body>
+</footer>
+
+</body>
 </html>
