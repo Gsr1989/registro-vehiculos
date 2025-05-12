@@ -40,7 +40,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        # Admin
+        # Admin hardcode
         if username == 'Gsr89roja.' and password == 'serg890105':
             session['admin'] = True
             return redirect(url_for('admin'))
@@ -139,7 +139,10 @@ def registro_usuario():
         except Exception as e:
             flash(f"Error al generar PDF: {e}", 'error')
         flash('Folio registrado y PDF generado.', 'success')
-        return render_template('exitoso.html', folio=folio, serie=numero_serie, fecha_generacion=ahora.strftime('%d/%m/%Y'))
+        return render_template('exitoso.html',
+                               folio=folio,
+                               serie=numero_serie,
+                               fecha_generacion=ahora.strftime('%d/%m/%Y'))
     return render_template('registro_usuario.html')
 
 @app.route('/registro_admin', methods=['GET', 'POST'])
@@ -184,7 +187,10 @@ def registro_admin():
         except Exception as e:
             flash(f"Error al generar PDF: {e}", 'error')
         flash('Folio admin registrado.', 'success')
-        return render_template('exitoso.html', folio=folio, serie=numero_serie, fecha_generacion=ahora.strftime('%d/%m/%Y'))
+        return render_template('exitoso.html',
+                               folio=folio,
+                               serie=numero_serie,
+                               fecha_generacion=ahora.strftime('%d/%m/%Y'))
     return render_template('registro_admin.html')
 
 @app.route('/consulta_folio', methods=['GET','POST'])
@@ -241,18 +247,17 @@ def admin_folios():
             fv = datetime.fromisoformat(fol['fecha_vencimiento'])
         except:
             continue
-        est="VIGENTE" if hoy<=fv else "VENCIDO"
-        fol["estado"]=est
-        if estado_filtro=="vigente" and est!="VIGENTE": continue
-        if estado_filtro=="vencido" and est!="VENCIDO": continue
+        fol["estado"] = "VIGENTE" if hoy<=fv else "VENCIDO"
+        if estado_filtro=="vigente" and fol["estado"]!="VIGENTE": continue
+        if estado_filtro=="vencido" and fol["estado"]!="VENCIDO": continue
         if fecha_inicio:
             try:
-                fi=datetime.strptime(fecha_inicio,"%Y-%m-%d")
+                fi = datetime.strptime(fecha_inicio,"%Y-%m-%d")
                 if fe<fi: continue
             except: pass
         if fecha_fin:
             try:
-                ff=datetime.strptime(fecha_fin,"%Y-%m-%d")
+                ff = datetime.strptime(fecha_fin,"%Y-%m-%d")
                 if fe>ff: continue
             except: pass
         filtrados.append(fol)
@@ -271,27 +276,28 @@ def enviar_sms_manual():
     if not session.get('admin'):
         return redirect(url_for('login'))
     folio = request.form['folio']
-    numero = request.form['telefono']
+    telefono = request.form.get('telefono')
     try:
-        enviar_sms(numero, folio)
-        flash(f"SMS enviado al {numero} para el folio {folio}.", "success")
+        enviar_sms(telefono, folio)
+        flash(f"SMS enviado al {telefono} para el folio {folio}.", "success")
     except Exception as e:
         flash(f"Error al enviar SMS: {e}", "error")
     return redirect(url_for('admin_folios'))
 
-@app.route('/enviar_alertas')
+@app.route('/enviar_alertas', methods=['POST'])
 def enviar_alertas():
     if not session.get('admin'):
         return redirect(url_for('login'))
     hoy = datetime.now().date()
-    enviados=0
+    enviados = 0
     for r in supabase.table("folios_registrados").select("*").execute().data:
         try:
             if datetime.fromisoformat(r['fecha_vencimiento']).date()<=hoy and r.get('numero_telefono'):
-                enviar_sms(r['numero_telefono'],r['folio'])
-                enviados+=1
-        except: pass
-    flash(f"Se enviaron {enviados} SMS de alerta.","success")
+                enviar_sms(r['numero_telefono'], r['folio'])
+                enviados += 1
+        except:
+            pass
+    flash(f"Se enviaron {enviados} SMS de alerta.", "success")
     return redirect(url_for('admin_folios'))
 
 @app.route('/editar_folio/<folio>', methods=['GET','POST'])
@@ -299,19 +305,19 @@ def editar_folio(folio):
     if not session.get('admin'):
         return redirect(url_for('login'))
     if request.method=='POST':
-        data={
-            "marca":request.form['marca'],
-            "linea":request.form['linea'],
-            "anio":request.form['anio'],
-            "numero_serie":request.form['serie'],
-            "numero_motor":request.form['motor'],
-            "fecha_expedicion":request.form['fecha_expedicion'],
-            "fecha_vencimiento":request.form['fecha_vencimiento']
+        data = {
+            "marca": request.form['marca'],
+            "linea": request.form['linea'],
+            "anio": request.form['anio'],
+            "numero_serie": request.form['serie'],
+            "numero_motor": request.form['motor'],
+            "fecha_expedicion": request.form['fecha_expedicion'],
+            "fecha_vencimiento": request.form['fecha_vencimiento']
         }
         supabase.table("folios_registrados").update(data).eq("folio",folio).execute()
         flash("Folio actualizado correctamente.","success")
         return redirect(url_for('admin_folios'))
-    resp=supabase.table("folios_registrados").select("*").eq("folio",folio).execute().data
+    resp = supabase.table("folios_registrados").select("*").eq("folio",folio).execute().data
     if resp:
         return render_template('editar_folio.html', folio=resp[0])
     flash("Folio no encontrado.","error")
@@ -321,7 +327,7 @@ def editar_folio(folio):
 def eliminar_folio():
     if not session.get('admin'):
         return redirect(url_for('login'))
-    folio=request.form['folio']
+    folio = request.form['folio']
     supabase.table("folios_registrados").delete().eq("folio",folio).execute()
     flash("Folio eliminado correctamente.","success")
     return redirect(url_for('admin_folios'))
