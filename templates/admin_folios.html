@@ -218,9 +218,17 @@
     <table>
         <thead>
             <tr>
-                <th>Folio</th><th>Marca</th><th>Línea</th><th>Año</th>
-                <th>Serie</th><th>Motor</th><th>Expedición</th>
-                <th>Vencimiento</th><th>Estado</th><th>Acciones</th>
+                <th>Folio</th>
+                <th>Marca</th>
+                <th>Línea</th>
+                <th>Año</th>
+                <th>Serie</th>
+                <th>Motor</th>
+                <th>Teléfono</th>      <!-- Nueva columna -->
+                <th>Expedición</th>
+                <th>Vencimiento</th>
+                <th>Estado</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -232,6 +240,7 @@
                 <td>{{ folio.anio }}</td>
                 <td>{{ folio.numero_serie }}</td>
                 <td>{{ folio.numero_motor }}</td>
+                <td>{{ folio.numero_telefono or '—' }}</td>  <!-- Mostramos el teléfono -->
                 <td>{{ folio.fecha_expedicion[:10] }}</td>
                 <td>{{ folio.fecha_vencimiento[:10] }}</td>
                 <td>
