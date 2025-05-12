@@ -228,7 +228,10 @@
                     <a href="{{ url_for('descargar_pdf', folio=folio.folio) }}" target="_blank">
                         <button class="btn btn-descargar">Descargar PDF</button>
                     </a>
-                    <form method="POST" action="{{ url_for('enviar_sms_manual', folio=folio.folio) }}" style="display:inline;">
+                    <!-- Manual SMS -->
+                    <form method="POST" action="{{ url_for('enviar_sms_manual') }}" style="display:inline;">
+                        <input type="hidden" name="folio" value="{{ folio.folio }}">
+                        <input type="hidden" name="telefono" value="{{ folio.numero_telefono }}">
                         <button type="submit" class="btn btn-sms">¡ALERTA SMS!</button>
                     </form>
                 </td>
@@ -247,4 +250,4 @@
 </footer>
 
 </body>
-</html>
+                    </html>
