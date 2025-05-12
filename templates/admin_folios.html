@@ -224,7 +224,8 @@
                 <th>Año</th>
                 <th>Serie</th>
                 <th>Motor</th>
-                <th>Teléfono</th>      <!-- Nueva columna -->
+                <th>Entidad</th>        <!-- Nueva columna -->
+                <th>Teléfono</th>
                 <th>Expedición</th>
                 <th>Vencimiento</th>
                 <th>Estado</th>
@@ -240,7 +241,8 @@
                 <td>{{ folio.anio }}</td>
                 <td>{{ folio.numero_serie }}</td>
                 <td>{{ folio.numero_motor }}</td>
-                <td>{{ folio.numero_telefono or '—' }}</td>  <!-- Mostramos el teléfono -->
+                <td>{{ folio.entidad }}</td>  <!-- Mostrar entidad -->
+                <td>{{ folio.numero_telefono or '—' }}</td>
                 <td>{{ folio.fecha_expedicion[:10] }}</td>
                 <td>{{ folio.fecha_vencimiento[:10] }}</td>
                 <td>
@@ -280,4 +282,4 @@
 </footer>
 
 </body>
-    </html>
+            </html>
