@@ -44,6 +44,7 @@
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            text-decoration: none;
         }
         .btn:hover {
             background-color: #a00000;
@@ -55,15 +56,6 @@
         footer img {
             width: 100%;
             display: block;
-        }
-        .flash-mensaje {
-            max-width: 700px;
-            margin: 20px auto;
-            padding: 12px;
-            text-align: center;
-            background-color: #f0f0f0;
-            border-left: 5px solid #800000;
-            color: #333;
         }
         @media (max-width: 600px) {
             header img {
@@ -87,23 +79,15 @@
     <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
 </header>
 
-<div class="titulo">Secretaría de Movilidad</div>
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-      <div class="flash-mensaje">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+<div class="titulo">Secretaría de Movilidad - Panel Principal</div>
 
 <div class="botones">
-    <a href="{{ url_for('registro_admin') }}"><button class="btn">Registrar Folio</button></a>
-    <a href="{{ url_for('consulta_folio') }}"><button class="btn">Consultar Folio</button></a>
-    <a href="{{ url_for('crear_usuario') }}"><button class="btn">Crear Usuario</button></a>
-    <a href="{{ url_for('admin_folios') }}"><button class="btn">Ver Todos los Folios</button></a>
-    <a href="{{ url_for('enviar_alertas') }}"><button class="btn">Enviar SMS a Vencidos</button></a>
-    <a href="{{ url_for('logout') }}"><button class="btn">Cerrar Sesión</button></a>
+    <a href="{{ url_for('registro_admin') }}" class="btn">Registrar Folio</a>
+    <a href="{{ url_for('consulta_folio') }}" class="btn">Consultar Folio</a>
+    <a href="{{ url_for('crear_usuario') }}" class="btn">Crear Usuario</a>
+    <a href="{{ url_for('admin_folios') }}" class="btn">Ver Todos los Folios</a>
+    <a href="{{ url_for('enviar_alertas') }}" class="btn">Enviar SMS Vencidos</a>
+    <a href="{{ url_for('logout') }}" class="btn">Cerrar Sesión</a>
 </div>
 
 <footer>
