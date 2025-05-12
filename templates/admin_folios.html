@@ -87,11 +87,11 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin: 2px 0;
         }
         .btn-editar {
             background-color: #2a72a5;
             color: white;
-            margin-bottom: 5px;
         }
         .btn-editar:hover {
             background-color: #1e5b88;
@@ -106,10 +106,16 @@
         .btn-descargar {
             background-color: #228B22;
             color: white;
-            margin-top: 5px;
         }
         .btn-descargar:hover {
             background-color: #1c6e1c;
+        }
+        .btn-sms {
+            background-color: #ff9900;
+            color: white;
+        }
+        .btn-sms:hover {
+            background-color: #cc7a00;
         }
         .volver {
             text-align: center;
@@ -219,9 +225,12 @@
                         <input type="hidden" name="folio" value="{{ folio.folio }}">
                         <button type="submit" class="btn btn-eliminar">Eliminar</button>
                     </form>
-                    <a href="/static/pdfs/cdmx/{{ folio.folio }}.pdf" target="_blank">
+                    <a href="{{ url_for('descargar_pdf', folio=folio.folio) }}" target="_blank">
                         <button class="btn btn-descargar">Descargar PDF</button>
                     </a>
+                    <form method="POST" action="{{ url_for('enviar_sms_manual', folio=folio.folio) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sms">¡ALERTA SMS!</button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
@@ -238,4 +247,4 @@
 </footer>
 
 </body>
-    </html>
+</html>
