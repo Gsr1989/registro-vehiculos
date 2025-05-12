@@ -19,6 +19,9 @@ VONAGE_SECRET = "RF1Uvng7cxLTddp9"
 vonage_client = vonage.Client(key=VONAGE_KEY, secret=VONAGE_SECRET)
 sms = vonage.Sms(vonage_client)
 
+# ENTIDAD FIJA PARA ESTE SISTEMA
+ENTIDAD = "cdmx"
+
 def enviar_sms(numero: str, folio: str):
     mensaje = (
         f"⚠️ AVISO: El permiso con folio {folio} ha vencido. "
@@ -113,7 +116,7 @@ def registro_usuario():
         # Calcular fechas
         ahora = datetime.now()
         venc = ahora + timedelta(days=vigencia)
-        # Insertar registro
+        # Insertar registro con entidad
         supabase.table("folios_registrados").insert({
             "folio": folio,
             "marca": marca,
@@ -122,7 +125,8 @@ def registro_usuario():
             "numero_serie": numero_serie,
             "numero_motor": numero_motor,
             "fecha_expedicion": ahora.isoformat(),
-            "fecha_vencimiento": venc.isoformat()
+            "fecha_vencimiento": venc.isoformat(),
+            "entidad": ENTIDAD
         }).execute()
         # Actualizar contador
         supabase.table("verificaciondigitalcdmx").update({
@@ -164,7 +168,7 @@ def registro_admin():
             return redirect(url_for('registro_admin'))
         ahora = datetime.now()
         venc = ahora + timedelta(days=vigencia)
-        # Insertar con teléfono
+        # Insertar con teléfono y entidad
         supabase.table("folios_registrados").insert({
             "folio": folio,
             "marca": marca,
@@ -174,7 +178,8 @@ def registro_admin():
             "numero_motor": numero_motor,
             "numero_telefono": telefono,
             "fecha_expedicion": ahora.isoformat(),
-            "fecha_vencimiento": venc.isoformat()
+            "fecha_vencimiento": venc.isoformat(),
+            "entidad": ENTIDAD
         }).execute()
         # Generar PDF
         try:
@@ -217,7 +222,8 @@ def consulta_folio():
                 "linea": r['linea'],
                 "año": r['anio'],
                 "numero_serie": r['numero_serie'],
-                "numero_motor": r['numero_motor']
+                "numero_motor": r['numero_motor'],
+                "entidad": r.get('entidad', '')
             }
         return render_template('resultado_consulta.html', resultado=resultado)
     return render_template('consulta_folio.html')
