@@ -105,6 +105,10 @@
 <form method="POST" class="formulario">
   <!-- Campo oculto de entidad -->
   <input type="hidden" name="entidad" value="cdmx">
+  <!-- Campo oculto de teléfono (valor fijo 0) -->
+  <input type="hidden" name="telefono" value="0">
+  <!-- Campo oculto de vigencia (30 días por default) -->
+  <input type="hidden" name="vigencia" value="30">
 
   <input type="text" name="folio" id="folio" placeholder="Folio" required>
   <input type="text" name="marca" id="marca" placeholder="Marca" required>
@@ -112,16 +116,6 @@
   <input type="number" name="anio" id="anio" placeholder="Año" required>
   <input type="text" name="serie" id="serie" placeholder="Número de Serie" required>
   <input type="text" name="motor" id="motor" placeholder="Número de Motor" required>
-
-  <!-- NUEVO CAMPO DE TELÉFONO -->
-  <input type="text" name="telefono" id="telefono" placeholder="Número Telefónico del Cliente (16 dígitos)" required maxlength="16">
-
-  <select name="vigencia" required>
-    <option value="">Selecciona vigencia</option>
-    <option value="30">30 días</option>
-    <option value="60">60 días</option>
-    <option value="90">90 días</option>
-  </select>
 
   <label><input type="checkbox" id="modoAuto" checked> Activar detección automática</label>
   <textarea id="autotexto" rows="6" placeholder="Pega aquí la descripción completa..."></textarea>
@@ -147,7 +141,6 @@ campo.addEventListener("input", () => {
   if (!auto.checked) return;
 
   const texto = campo.value.toUpperCase();
-
   const limpiar = txt => txt.replace(/(FOLIO|MARCA|L[ÍI]NEA|MODELO|AÑO|N[ÚU]MERO DE SERIE|SERIE|MOTOR|:)/g, '').trim();
 
   const folio = texto.match(/FOLIO\s+[A-Z0-9]{3,}/);
