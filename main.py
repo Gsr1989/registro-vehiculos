@@ -8,7 +8,7 @@ import vonage
 app = Flask(__name__)
 app.secret_key = 'clave_muy_segura_123456'
 
-# Supabase configuration
+# Supabase config
 SUPABASE_URL = "https://xsagwqepoljfsogusubw.supabase.co"
 SUPABASE_KEY = (
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
@@ -24,7 +24,6 @@ VONAGE_SECRET = "RF1Uvng7cxLTddp9"
 vonage_client = vonage.Client(key=VONAGE_KEY, secret=VONAGE_SECRET)
 sms = vonage.Sms(vonage_client)
 
-# Template definitions and coordinates for non-CDMX entities
 PLANTILLAS = {
     "guerrero": {
         "file": "recibo_permiso_guerrero_img.pdf",
@@ -71,7 +70,6 @@ PLANTILLAS = {
     },
 }
 
-# Default entity for CDMX (Matrix)
 ENTIDAD = "cdmx"
 
 def enviar_sms(numero: str, folio: str):
@@ -154,7 +152,6 @@ def registro_usuario():
         vigencia     = int(request.form['vigencia'])
         entidad      = request.form.get('entidad', ENTIDAD).lower().strip()
 
-        # Único
         if supabase.table("folios_registrados")\
             .select("*").eq("folio", folio).execute().data:
             flash('Folio existe.', 'error')
@@ -186,7 +183,6 @@ def registro_usuario():
             "folios_usados": usr['folios_usados'] + 1
         }).eq("id", session['user_id']).execute()
 
-        # Generar PDF
         try:
             if entidad == "cdmx":
                 doc = fitz.open("elbueno.pdf")
@@ -237,12 +233,11 @@ def registro_usuario():
                                fecha_generacion=ahora.strftime('%d/%m/%Y'))
 
     return render_template('registro_usuario.html')
-
-@app.route('/registro_admin', methods=['GET','POST'])
+    @app.route('/registro_admin', methods=['GET','POST'])
 def registro_admin():
     if not session.get('admin'):
         return redirect(url_for('login'))
-    # Similar a registro_usuario, con teléfono y ENTIDAD
+    # Aquí pon tu lógica si quieres registro de admin (idéntico a usuario pero con teléfono y entidad)
     return render_template('registro_admin.html')
 
 @app.route('/consulta_folio', methods=['GET','POST'])
@@ -343,7 +338,7 @@ def eliminar_folio():
     supabase.table("folios_registrados").delete().eq("folio", folio).execute()
     path = f"documentos/{folio}.pdf"
     if os.path.exists(path): os.remove(path)
-    # también borra folio_entidad.pdf si existe
+    # Borra folio_entidad.pdf si existe
     for e in PLANTILLAS.keys():
         p = f"documentos/{folio}_{e}.pdf"
         if os.path.exists(p): os.remove(p)
