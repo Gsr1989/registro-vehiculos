@@ -93,20 +93,18 @@ def inicio():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        # Admin hardcoded
-        if username == 'Gsr89roja.' and password == 'serg890105':
+        user = request.form['username']
+        pwd  = request.form['password']
+        if user == 'Gsr89roja.' and pwd == 'serg890105':
             session['admin'] = True
             return redirect(url_for('admin'))
-        # Normal user
-        resp = supabase.table("verificaciondigitalcdmx") \
-            .select("*") \
-            .eq("username", username) \
-            .eq("password", password) \
+        resp = supabase.table("verificaciondigitalcdmx")\
+            .select("*")\
+            .eq("username", user)\
+            .eq("password", pwd)\
             .execute()
         if resp.data:
-            session['user_id'] = resp.data[0]['id']
+            session['user_id']  = resp.data[0]['id']
             session['username'] = resp.data[0]['username']
             return redirect(url_for('registro_usuario'))
         flash('Credenciales incorrectas', 'error')
@@ -118,209 +116,256 @@ def admin():
         return redirect(url_for('login'))
     return render_template('panel.html')
 
-@app.route('/crear_usuario', methods=['GET', 'POST'])
+@app.route('/crear_usuario', methods=['GET','POST'])
 def crear_usuario():
     if not session.get('admin'):
         return redirect(url_for('login'))
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        user   = request.form['username']
+        pwd    = request.form['password']
         folios = int(request.form['folios'])
-        existe = supabase.table("verificaciondigitalcdmx").select("id") \
-            .eq("username", username).execute()
-        if existe.data:
-            flash('Error: el nombre de usuario ya existe.', 'error')
+        ex = supabase.table("verificaciondigitalcdmx")\
+            .select("id")\
+            .eq("username", user)\
+            .execute()
+        if ex.data:
+            flash('Usuario ya existe.', 'error')
         else:
             supabase.table("verificaciondigitalcdmx").insert({
-                "username": username,
-                "password": password,
+                "username": user,
+                "password": pwd,
                 "folios_asignac": folios,
                 "folios_usados": 0
             }).execute()
-            flash('Usuario creado exitosamente.', 'success')
+            flash('Usuario creado.', 'success')
     return render_template('crear_usuario.html')
 
-@app.route('/registro_usuario', methods=['GET', 'POST'])
+@app.route('/registro_usuario', methods=['GET','POST'])
 def registro_usuario():
     if not session.get('user_id'):
         return redirect(url_for('login'))
     if request.method == 'POST':
-        folio = request.form['folio']
-        marca = request.form['marca']
-        linea = request.form['linea']
-        anio = request.form['anio']
-        numero_serie = request.form['serie']
-        numero_motor = request.form['motor']
-        vigencia = int(request.form['vigencia'])
-        entidad = request.form.get('entidad', ENTIDAD).lower().strip()
+        folio        = request.form['folio']
+        marca        = request.form['marca']
+        linea        = request.form['linea']
+        anio         = request.form['anio']
+        serie        = request.form['serie']
+        motor        = request.form['motor']
+        vigencia     = int(request.form['vigencia'])
+        entidad      = request.form.get('entidad', ENTIDAD).lower().strip()
 
-        # Unique folio check
-        if supabase.table("folios_registrados").select("*").eq("folio", folio).execute().data:
-            flash('Error: el folio ya existe.', 'error')
+        # Único
+        if supabase.table("folios_registrados")\
+            .select("*").eq("folio", folio).execute().data:
+            flash('Folio existe.', 'error')
             return redirect(url_for('registro_usuario'))
 
-        # Folios availability
-        usr = supabase.table("verificaciondigitalcdmx") \
-            .select("folios_asignac, folios_usados") \
+        usr = supabase.table("verificaciondigitalcdmx")\
+            .select("folios_asignac, folios_usados")\
             .eq("id", session['user_id']).execute().data[0]
         if usr['folios_asignac'] - usr['folios_usados'] <= 0:
-            flash('No tienes folios disponibles.', 'error')
+            flash('Sin folios.', 'error')
             return redirect(url_for('registro_usuario'))
 
         ahora = datetime.now()
-        venc = ahora + timedelta(days=vigencia)
+        venc  = ahora + timedelta(days=vigencia)
 
-        # Insert record
         supabase.table("folios_registrados").insert({
             "folio": folio,
             "marca": marca,
             "linea": linea,
             "anio": anio,
-            "numero_serie": numero_serie,
-            "numero_motor": numero_motor,
+            "numero_serie": serie,
+            "numero_motor": motor,
             "fecha_expedicion": ahora.isoformat(),
             "fecha_vencimiento": venc.isoformat(),
             "entidad": entidad
         }).execute()
 
-        # Increment used folios
         supabase.table("verificaciondigitalcdmx").update({
             "folios_usados": usr['folios_usados'] + 1
         }).eq("id", session['user_id']).execute()
 
-        # PDF generation
+        # Generar PDF
         try:
             if entidad == "cdmx":
-                # Matrix CDMX logic unchanged
                 doc = fitz.open("elbueno.pdf")
-                page = doc[0]
-                page.insert_text((110.02,193.88), numero_serie,
-                                 fontsize=6, fontname="helv", color=(0,0,0))
-                page.insert_text((190,324), ahora.strftime('%d/%m/%Y'),
-                                 fontsize=6, fontname="helv", color=(0,0,0))
+                p = doc[0]
+                p.insert_text((110.02,193.88), serie, fontsize=6, fontname="helv", color=(0,0,0))
+                p.insert_text((190,324), ahora.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0,0,0))
                 os.makedirs("documentos", exist_ok=True)
                 doc.save(f"documentos/{folio}.pdf")
             elif entidad in PLANTILLAS:
-                plantilla = PLANTILLAS[entidad]
-                doc = fitz.open(plantilla["file"])
-                page = doc[0]
-                coords = plantilla["coords"]
-                # Guerrero
+                tpl = PLANTILLAS[entidad]
+                doc = fitz.open(tpl["file"])
+                p   = doc[0]
+                c   = tpl["coords"]
                 if entidad == "guerrero":
-                    page.insert_text(coords["folio"][:2], folio,
-                                     fontsize=coords["folio"][2], fontname="helv")
-                    page.insert_text(coords["fecha_expedicion"][:2],
-                                     ahora.strftime('%d/%m/%Y'),
-                                     fontsize=coords["fecha_expedicion"][2],
-                                     fontname="helv")
-                    page.insert_text(coords["fecha_vencimiento"][:2],
-                                     venc.strftime('%d/%m/%Y'),
-                                     fontsize=coords["fecha_vencimiento"][2],
-                                     fontname="helv")
-                    page.insert_text(coords["contribuyente"][:2],
-                                     session.get("username", "").upper(),
-                                     fontsize=coords["contribuyente"][2],
-                                     fontname="helv")
-                # Oaxaca
+                    p.insert_text(c["folio"][:2], folio, fontsize=c["folio"][2], fontname="helv")
+                    p.insert_text(c["fecha_expedicion"][:2], ahora.strftime('%d/%m/%Y'), fontsize=c["fecha_expedicion"][2], fontname="helv")
+                    p.insert_text(c["fecha_vencimiento"][:2], venc.strftime('%d/%m/%Y'), fontsize=c["fecha_vencimiento"][2], fontname="helv")
+                    p.insert_text(c["contribuyente"][:2], session.get("username","").upper(), fontsize=c["contribuyente"][2], fontname="helv")
                 elif entidad == "oaxaca":
-                    page.insert_text(coords["fecha_expedicion"][:2],
-                                     ahora.strftime("%d/%m/%Y"),
-                                     fontsize=coords["fecha_expedicion"][2])
-                    page.insert_text(coords["numero_serie"][:2],
-                                     numero_serie,
-                                     fontsize=coords["numero_serie"][2])
-                    page.insert_text(coords["hora"][:2],
-                                     ahora.strftime("%H:%M:%S"),
-                                     fontsize=coords["hora"][2])
-                # Edomex
+                    p.insert_text(c["fecha_expedicion"][:2], ahora.strftime("%d/%m/%Y"), fontsize=c["fecha_expedicion"][2])
+                    p.insert_text(c["numero_serie"][:2], serie, fontsize=c["numero_serie"][2])
+                    p.insert_text(c["hora"][:2], ahora.strftime("%H:%M:%S"), fontsize=c["hora"][2])
                 elif entidad == "edomex":
-                    page.insert_text(coords["fecha_1"][:2],
-                                     ahora.strftime("%d/%m/%Y"),
-                                     fontsize=coords["fecha_1"][2],
-                                     fontname="helv")
-                    page.insert_text(coords["fecha_2"][:2],
-                                     ahora.strftime("%d/%m/%Y"),
-                                     fontsize=coords["fecha_2"][2],
-                                     fontname="helv")
-                    page.insert_text(coords["fecha_3"][:2],
-                                     ahora.strftime("%d/%m/%Y"),
-                                     fontsize=coords["fecha_3"][2],
-                                     fontname="helv")
-                    page.insert_text(coords["fecha_4"][:2],
-                                     ahora.strftime("%d/%m/%Y"),
-                                     fontsize=coords["fecha_4"][2],
-                                     fontname="helv")
-                    page.insert_text(coords["numero_serie"][:2],
-                                     numero_serie,
-                                     fontsize=coords["numero_serie"][2],
-                                     fontname="helv")
-                # GTO
+                    p.insert_text(c["fecha_1"][:2], ahora.strftime("%d/%m/%Y"), fontsize=c["fecha_1"][2], fontname="helv")
+                    p.insert_text(c["fecha_2"][:2], ahora.strftime("%d/%m/%Y"), fontsize=c["fecha_2"][2], fontname="helv")
+                    p.insert_text(c["fecha_3"][:2], ahora.strftime("%d/%m/%Y"), fontsize=c["fecha_3"][2], fontname="helv")
+                    p.insert_text(c["fecha_4"][:2], ahora.strftime("%d/%m/%Y"), fontsize=c["fecha_4"][2], fontname="helv")
+                    p.insert_text(c["numero_serie"][:2], serie, fontsize=c["numero_serie"][2], fontname="helv")
                 elif entidad == "gto":
-                    page.insert_text(coords["numero_serie"][:2],
-                                     numero_serie,
-                                     fontsize=coords["numero_serie"][2],
-                                     fontname="helv")
-                    page.insert_text(coords["fecha_expedicion"][:2],
-                                     ahora.strftime("%d/%m/%Y"),
-                                     fontsize=coords["fecha_expedicion"][2],
-                                     fontname="helv")
-                # Morelos
+                    p.insert_text(c["numero_serie"][:2], serie, fontsize=c["numero_serie"][2], fontname="helv")
+                    p.insert_text(c["fecha_expedicion"][:2], ahora.strftime("%d/%m/%Y"), fontsize=c["fecha_expedicion"][2], fontname="helv")
                 elif entidad == "morelos":
-                    page.insert_text(coords["nombre"][:2],
-                                     session.get("username", ""),
-                                     fontsize=coords["nombre"][2],
-                                     fontname="helv")
-                    page.insert_text(coords["folio"][:2],
-                                     folio,
-                                     fontsize=coords["folio"][2],
-                                     fontname="helv")
-                    page.insert_text(coords["fecha_expedicion"][:2],
-                                     ahora.strftime("%d/%m/%Y"),
-                                     fontsize=coords["fecha_expedicion"][2],
-                                     fontname="helv")
-                    page.insert_text(coords["hora"][:2],
-                                     ahora.strftime("%H:%M:%S"),
-                                     fontsize=coords["hora"][2],
-                                     fontname="helv")
+                    p.insert_text(c["nombre"][:2], session.get("username",""), fontsize=c["nombre"][2], fontname="helv")
+                    p.insert_text(c["folio"][:2], folio, fontsize=c["folio"][2], fontname="helv")
+                    p.insert_text(c["fecha_expedicion"][:2], ahora.strftime("%d/%m/%Y"), fontsize=c["fecha_expedicion"][2], fontname="helv")
+                    p.insert_text(c["hora"][:2], ahora.strftime("%H:%M:%S"), fontsize=c["hora"][2], fontname="helv")
                 os.makedirs("documentos", exist_ok=True)
                 doc.save(f"documentos/{folio}_{entidad}.pdf")
             else:
                 raise Exception("Entidad no reconocida")
         except Exception as e:
-            flash(f"Error al generar PDF: {e}", 'error')
+            flash(f"Error PDF: {e}", 'error')
 
         flash('Folio registrado y PDF generado.', 'success')
         return render_template('exitoso.html',
                                folio=folio,
-                               serie=numero_serie,
+                               serie=serie,
                                fecha_generacion=ahora.strftime('%d/%m/%Y'))
+
     return render_template('registro_usuario.html')
 
-@app.route('/registro_admin', methods=['GET', 'POST'])
+@app.route('/registro_admin', methods=['GET','POST'])
 def registro_admin():
     if not session.get('admin'):
         return redirect(url_for('login'))
-    # Implementación similar a registro_usuario, usando PLANTILLAS
-    return redirect(url_for('admin'))
+    # Similar a registro_usuario, con teléfono y ENTIDAD
+    return render_template('registro_admin.html')
+
+@app.route('/consulta_folio', methods=['GET','POST'])
+def consulta_folio():
+    resultado = None
+    if request.method == 'POST':
+        folio = request.form['folio'].strip().upper()
+        data = supabase.table("folios_registrados")\
+            .select("*")\
+            .eq("folio", folio)\
+            .execute().data
+        if not data:
+            resultado = {"estado":"NO SE ENCUENTRA REGISTRADO","color":"rojo","folio":folio}
+        else:
+            r = data[0]
+            fexp = datetime.fromisoformat(r['fecha_expedicion'])
+            fven = datetime.fromisoformat(r['fecha_vencimiento'])
+            estado = "VIGENTE" if datetime.now() <= fven else "VENCIDO"
+            color  = "verde" if estado=="VIGENTE" else "cafe"
+            resultado = {
+                "estado": estado,
+                "color": color,
+                "folio": folio,
+                "fecha_expedicion": fexp.strftime('%d/%m/%Y'),
+                "fecha_vencimiento": fven.strftime('%d/%m/%Y'),
+                "marca": r['marca'],
+                "linea": r['linea'],
+                "anio": r['anio'],
+                "numero_serie": r['numero_serie'],
+                "numero_motor": r['numero_motor'],
+                "entidad": r.get('entidad','')
+            }
+    return render_template('consulta_folio.html', resultado=resultado)
+
+@app.route('/admin_folios')
+def admin_folios():
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    registros = supabase.table("folios_registrados")\
+        .select("*").execute().data or []
+    return render_template('admin_folios.html', folios=registros)
+
+@app.route('/enviar_sms_manual', methods=['POST'])
+def enviar_sms_manual():
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    folio = request.form['folio']
+    tel   = request.form['telefono']
+    try:
+        enviar_sms(tel, folio)
+        flash(f"SMS enviado a {tel}.", "success")
+    except Exception as e:
+        flash(f"Error SMS: {e}", "error")
+    return redirect(url_for('admin_folios'))
+
+@app.route('/enviar_alertas', methods=['POST'])
+def enviar_alertas():
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    enviados = 0
+    hoy = datetime.now().date()
+    for r in supabase.table("folios_registrados").select("*").execute().data:
+        if r.get('numero_telefono'):
+            if datetime.fromisoformat(r['fecha_vencimiento']).date() <= hoy:
+                enviar_sms(r['numero_telefono'], r['folio'])
+                enviados += 1
+    flash(f"Enviados {enviados} alertas.", "success")
+    return redirect(url_for('admin_folios'))
+
+@app.route('/editar_folio/<folio>', methods=['GET','POST'])
+def editar_folio(folio):
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        datos = {
+            "marca": request.form['marca'],
+            "linea": request.form['linea'],
+            "anio": request.form['anio'],
+            "numero_serie": request.form['serie'],
+            "numero_motor": request.form['motor'],
+            "fecha_expedicion": request.form['fecha_expedicion'],
+            "fecha_vencimiento": request.form['fecha_vencimiento'],
+        }
+        supabase.table("folios_registrados").update(datos).eq("folio", folio).execute()
+        flash("Folio actualizado.", "success")
+        return redirect(url_for('admin_folios'))
+    r = supabase.table("folios_registrados").select("*").eq("folio", folio).execute().data
+    if not r:
+        flash("No encontrado.", "error")
+        return redirect(url_for('admin_folios'))
+    return render_template('editar_folio.html', folio=r[0])
+
+@app.route('/eliminar_folio', methods=['POST'])
+def eliminar_folio():
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    folio = request.form['folio']
+    supabase.table("folios_registrados").delete().eq("folio", folio).execute()
+    path = f"documentos/{folio}.pdf"
+    if os.path.exists(path): os.remove(path)
+    # también borra folio_entidad.pdf si existe
+    for e in PLANTILLAS.keys():
+        p = f"documentos/{folio}_{e}.pdf"
+        if os.path.exists(p): os.remove(p)
+    flash("Folio eliminado.", "success")
+    return redirect(url_for('admin_folios'))
 
 @app.route('/descargar_pdf/<folio>')
 def descargar_pdf(folio):
-    reg = supabase.table("folios_registrados") \
-        .select("entidad") \
-        .eq("folio", folio) \
-        .execute().data
+    reg = supabase.table("folios_registrados").select("entidad")\
+        .eq("folio", folio).execute().data
     if not reg:
-        flash("No se encontró el folio en registros.", "error")
-        return redirect(request.referrer or url_for('admin'))
-    entidad = reg[0]['entidad'].lower()
-    if entidad == "cdmx":
-        pdf_path = f"documentos/{folio}.pdf"
+        flash("No registrado.", "error")
+        return redirect(request.referrer or url_for('admin_folios'))
+    e = reg[0]['entidad'].lower()
+    if e == "cdmx":
+        ruta = f"documentos/{folio}.pdf"
     else:
-        pdf_path = f"documentos/{folio}_{entidad}.pdf"
-    if not os.path.exists(pdf_path):
-        flash("PDF no encontrado o ya fue eliminado.", "error")
-        return redirect(request.referrer or url_for('admin'))
-    return send_file(pdf_path, as_attachment=True)
+        ruta = f"documentos/{folio}_{e}.pdf"
+    if not os.path.exists(ruta):
+        flash("PDF no existe.", "error")
+        return redirect(request.referrer or url_for('admin_folios'))
+    return send_file(ruta, as_attachment=True)
 
 @app.route('/logout')
 def logout():
