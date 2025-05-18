@@ -8,15 +8,18 @@ import vonage
 app = Flask(__name__)
 app.secret_key = 'clave_muy_segura_123456'
 
+# Supabase config
 SUPABASE_URL = "https://xsagwqepoljfsogusubw.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWd3cWVwb2xqZnNvZ3VzdWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5NjM3NTUsImV4cCI6MjA1OTUzOTc1NX0.NUixULn0m2o49At8j6X58UqbXre2O2_JStqzls_8Gws"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# Vonage
 VONAGE_KEY = "3a43e40b"
 VONAGE_SECRET = "RF1Uvng7cxLTddp9"
 vonage_client = vonage.Client(key=VONAGE_KEY, secret=VONAGE_SECRET)
 sms = vonage.Sms(vonage_client)
 
+# ENTIDAD FIJA PARA ESTE SISTEMA
 ENTIDAD = "cdmx"
 
 def enviar_sms(numero: str, folio: str):
@@ -40,9 +43,11 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        # Admin hardcode
         if username == 'Gsr89roja.' and password == 'serg890105':
             session['admin'] = True
             return redirect(url_for('admin'))
+        # Usuario normal
         resp = supabase.table("verificaciondigitalcdmx")\
             .select("*")\
             .eq("username", username)\
@@ -101,14 +106,17 @@ def registro_usuario():
         if supabase.table("folios_registrados").select("*").eq("folio", folio).execute().data:
             flash('Error: el folio ya existe.', 'error')
             return redirect(url_for('registro_usuario'))
+        # Verificar folios disponibles
         usr = supabase.table("verificaciondigitalcdmx")\
             .select("folios_asignac, folios_usados")\
             .eq("id", session['user_id']).execute().data[0]
         if usr['folios_asignac'] - usr['folios_usados'] <= 0:
             flash('No tienes folios disponibles.', 'error')
             return redirect(url_for('registro_usuario'))
+        # Calcular fechas
         ahora = datetime.now()
         venc = ahora + timedelta(days=vigencia)
+        # Insertar registro con entidad
         supabase.table("folios_registrados").insert({
             "folio": folio,
             "marca": marca,
@@ -120,9 +128,11 @@ def registro_usuario():
             "fecha_vencimiento": venc.isoformat(),
             "entidad": ENTIDAD
         }).execute()
+        # Actualizar contador
         supabase.table("verificaciondigitalcdmx").update({
             "folios_usados": usr['folios_usados'] + 1
         }).eq("id", session['user_id']).execute()
+        # Generar PDF
         try:
             doc = fitz.open("elbueno.pdf")
             page = doc[0]
@@ -134,9 +144,9 @@ def registro_usuario():
             flash(f"Error al generar PDF: {e}", 'error')
         flash('Folio registrado y PDF generado.', 'success')
         return render_template('exitoso.html',
-            folio=folio,
-            serie=numero_serie,
-            fecha_generacion=ahora.strftime('%d/%m/%Y'))
+                               folio=folio,
+                               serie=numero_serie,
+                               fecha_generacion=ahora.strftime('%d/%m/%Y'))
     return render_template('registro_usuario.html')
 
 @app.route('/registro_admin', methods=['GET', 'POST'])
@@ -152,11 +162,13 @@ def registro_admin():
         numero_motor = request.form['motor']
         vigencia = int(request.form['vigencia'])
         telefono = request.form['telefono']
+        # Validar folio único
         if supabase.table("folios_registrados").select("*").eq("folio", folio).execute().data:
             flash('Error: el folio ya existe.', 'error')
             return redirect(url_for('registro_admin'))
         ahora = datetime.now()
         venc = ahora + timedelta(days=vigencia)
+        # Insertar con teléfono y entidad
         supabase.table("folios_registrados").insert({
             "folio": folio,
             "marca": marca,
@@ -169,6 +181,7 @@ def registro_admin():
             "fecha_vencimiento": venc.isoformat(),
             "entidad": ENTIDAD
         }).execute()
+        # Generar PDF
         try:
             doc = fitz.open("elbueno.pdf")
             page = doc[0]
@@ -180,9 +193,9 @@ def registro_admin():
             flash(f"Error al generar PDF: {e}", 'error')
         flash('Folio admin registrado.', 'success')
         return render_template('exitoso.html',
-            folio=folio,
-            serie=numero_serie,
-            fecha_generacion=ahora.strftime('%d/%m/%Y'))
+                               folio=folio,
+                               serie=numero_serie,
+                               fecha_generacion=ahora.strftime('%d/%m/%Y'))
     return render_template('registro_admin.html')
 
 @app.route('/consulta_folio', methods=['GET','POST'])
@@ -207,7 +220,7 @@ def consulta_folio():
                 "fecha_vencimiento": fven.strftime('%d/%m/%Y'),
                 "marca": r['marca'],
                 "linea": r['linea'],
-                "anio": r['anio'],
+                "año": r['anio'],
                 "numero_serie": r['numero_serie'],
                 "numero_motor": r['numero_motor'],
                 "entidad": r.get('entidad', '')
@@ -262,7 +275,8 @@ def admin_folios():
         ordenar=ordenar,
         estado=estado_filtro,
         fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin)
+        fecha_fin=fecha_fin
+    )
 
 @app.route('/enviar_sms_manual', methods=['POST'])
 def enviar_sms_manual():
@@ -322,17 +336,25 @@ def eliminar_folio():
         return redirect(url_for('login'))
     folio = request.form['folio']
     supabase.table("folios_registrados").delete().eq("folio",folio).execute()
-    pdf_path = f"documentos/{folio}.pdf"
-    if os.path.exists(pdf_path):
-        os.remove(pdf_path)
     flash("Folio eliminado correctamente.","success")
     return redirect(url_for('admin_folios'))
 
+# --- AQUÍ VA TU NUEVA FUNCIÓN DE DESCARGA UNIVERSAL ---
 @app.route('/descargar_pdf/<folio>')
 def descargar_pdf(folio):
-    pdf_path = f"documentos/{folio}.pdf"
+    # Busca entidad para el folio
+    registro = supabase.table("folios_registrados").select("entidad").eq("folio", folio).execute().data
+    if not registro:
+        flash("No se encontró el folio.", "error")
+        return redirect(request.referrer or url_for('admin_folios'))
+    entidad = registro[0].get('entidad', '').lower()
+    # CDMX
+    if entidad == "cdmx":
+        pdf_path = f"documentos/{folio}.pdf"
+    else:
+        pdf_path = f"documentos/{folio}_{entidad}.pdf"
     if not os.path.exists(pdf_path):
-        flash("PDF no existe.", "error")
+        flash("PDF no existe para este folio y entidad.", "error")
         return redirect(request.referrer or url_for('admin_folios'))
     return send_file(pdf_path, as_attachment=True)
 
