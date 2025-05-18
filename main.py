@@ -335,12 +335,20 @@ def eliminar_folio():
         return redirect(url_for('login'))
     folio = request.form['folio']
     supabase.table("folios_registrados").delete().eq("folio",folio).execute()
+    # También intenta borrar el PDF físico si existe
+    pdf_path = f"documentos/{folio}.pdf"
+    if os.path.exists(pdf_path):
+        os.remove(pdf_path)
     flash("Folio eliminado correctamente.","success")
     return redirect(url_for('admin_folios'))
 
 @app.route('/descargar_pdf/<folio>')
 def descargar_pdf(folio):
-    return send_file(f"documentos/{folio}.pdf", as_attachment=True)
+    pdf_path = f"documentos/{folio}.pdf"
+    if not os.path.exists(pdf_path):
+        flash("PDF no encontrado o ya fue eliminado.", "error")
+        return redirect(request.referrer or url_for('admin_folios'))
+    return send_file(pdf_path, as_attachment=True)
 
 @app.route('/logout')
 def logout():
