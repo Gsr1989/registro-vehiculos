@@ -8,12 +8,10 @@ import vonage
 app = Flask(__name__)
 app.secret_key = 'clave_muy_segura_123456'
 
-# Supabase config
 SUPABASE_URL = "https://xsagwqepoljfsogusubw.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWd3cWVwb2xqZnNvZ3VzdWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5NjM3NTUsImV4cCI6MjA1OTUzOTc1NX0.NUixULn0m2o49At8j6X58UqbXre2O2_JStqzls_8Gws"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Vonage config
 VONAGE_KEY = "3a43e40b"
 VONAGE_SECRET = "RF1Uvng7cxLTddp9"
 vonage_client = vonage.Client(key=VONAGE_KEY, secret=VONAGE_SECRET)
@@ -103,7 +101,6 @@ def registro_usuario():
         if supabase.table("folios_registrados").select("*").eq("folio", folio).execute().data:
             flash('Error: el folio ya existe.', 'error')
             return redirect(url_for('registro_usuario'))
-        # Verificar folios disponibles
         usr = supabase.table("verificaciondigitalcdmx")\
             .select("folios_asignac, folios_usados")\
             .eq("id", session['user_id']).execute().data[0]
@@ -137,9 +134,9 @@ def registro_usuario():
             flash(f"Error al generar PDF: {e}", 'error')
         flash('Folio registrado y PDF generado.', 'success')
         return render_template('exitoso.html',
-                               folio=folio,
-                               serie=numero_serie,
-                               fecha_generacion=ahora.strftime('%d/%m/%Y'))
+            folio=folio,
+            serie=numero_serie,
+            fecha_generacion=ahora.strftime('%d/%m/%Y'))
     return render_template('registro_usuario.html')
 
 @app.route('/registro_admin', methods=['GET', 'POST'])
@@ -183,9 +180,9 @@ def registro_admin():
             flash(f"Error al generar PDF: {e}", 'error')
         flash('Folio admin registrado.', 'success')
         return render_template('exitoso.html',
-                               folio=folio,
-                               serie=numero_serie,
-                               fecha_generacion=ahora.strftime('%d/%m/%Y'))
+            folio=folio,
+            serie=numero_serie,
+            fecha_generacion=ahora.strftime('%d/%m/%Y'))
     return render_template('registro_admin.html')
 
 @app.route('/consulta_folio', methods=['GET','POST'])
@@ -265,8 +262,7 @@ def admin_folios():
         ordenar=ordenar,
         estado=estado_filtro,
         fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin
-    )
+        fecha_fin=fecha_fin)
 
 @app.route('/enviar_sms_manual', methods=['POST'])
 def enviar_sms_manual():
@@ -326,12 +322,19 @@ def eliminar_folio():
         return redirect(url_for('login'))
     folio = request.form['folio']
     supabase.table("folios_registrados").delete().eq("folio",folio).execute()
+    pdf_path = f"documentos/{folio}.pdf"
+    if os.path.exists(pdf_path):
+        os.remove(pdf_path)
     flash("Folio eliminado correctamente.","success")
     return redirect(url_for('admin_folios'))
 
 @app.route('/descargar_pdf/<folio>')
 def descargar_pdf(folio):
-    return send_file(f"documentos/{folio}.pdf", as_attachment=True)
+    pdf_path = f"documentos/{folio}.pdf"
+    if not os.path.exists(pdf_path):
+        flash("PDF no existe.", "error")
+        return redirect(request.referrer or url_for('admin_folios'))
+    return send_file(pdf_path, as_attachment=True)
 
 @app.route('/logout')
 def logout():
