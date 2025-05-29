@@ -34,7 +34,7 @@
       border-radius: 10px;
       background-color: #f9f9f9;
     }
-    input, select, textarea {
+    input, textarea {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
@@ -103,11 +103,8 @@
 {% endwith %}
 
 <form method="POST" class="formulario">
-  <!-- Campo oculto de entidad -->
   <input type="hidden" name="entidad" value="cdmx">
-  <!-- Campo oculto de teléfono (valor fijo 0) -->
   <input type="hidden" name="telefono" value="0">
-  <!-- Campo oculto de vigencia (30 días por default) -->
   <input type="hidden" name="vigencia" value="30">
 
   <input type="text" name="folio" id="folio" placeholder="Folio" required>
@@ -134,6 +131,21 @@
 </footer>
 
 <script>
+async function decodificarVIN(vin) {
+  if (!vin || vin.length < 11) return;
+  const url = `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const result = data.Results[0];
+    if (result.Make)      document.getElementById("marca").value = result.Make.toUpperCase();
+    if (result.Model)     document.getElementById("linea").value = result.Model.toUpperCase();
+    if (result.ModelYear) document.getElementById("anio").value = result.ModelYear;
+  } catch (err) {
+    console.log("Error al decodificar VIN:", err);
+  }
+}
+
 const campo = document.getElementById("autotexto");
 const auto = document.getElementById("modoAuto");
 
@@ -156,7 +168,10 @@ campo.addEventListener("input", () => {
   if (anio) document.getElementById("anio").value = anio[0];
 
   const serie = texto.match(/\b[A-HJ-NPR-Z0-9]{11,17}\b/);
-  if (serie) document.getElementById("serie").value = serie[0];
+  if (serie) {
+    document.getElementById("serie").value = serie[0];
+    decodificarVIN(serie[0]);
+  }
 
   const motor = texto.match(/(MOTOR|HECHO EN|FABRICADO EN|SIN NÚMERO|S\/N|NO TIENE|NO CUENTA)\s*[A-Z0-9ÁÉÍÓÚÑ\s]+/);
   if (motor) document.getElementById("motor").value = limpiar(motor[0]);
