@@ -54,8 +54,8 @@ def login():
             .eq("password", password)\
             .execute()
         if resp.data:
-            session['user_id'] = resp.data[0]['id']
-            session['username'] = resp.data[0]['username']
+            session['username'] = resp.data[0]
+            ['username']
             return redirect(url_for('registro_usuario'))
         flash('Credenciales incorrectas', 'error')
     return render_template('login.html')
