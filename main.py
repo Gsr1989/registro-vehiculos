@@ -43,23 +43,28 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        
         # Admin hardcode
         if username == 'Gsr89roja.' and password == 'serg890105':
             session['admin'] = True
             return redirect(url_for('admin'))
+
         # Usuario normal
         resp = supabase.table("verificaciondigitalcdmx")\
             .select("*")\
             .eq("username", username)\
             .eq("password", password)\
             .execute()
-        if resp.data:
-            session['username'] = resp.data[0]
-            ['username']
-            return redirect(url_for('registro_usuario'))
-        flash('Credenciales incorrectas', 'error')
-    return render_template('login.html')
 
+        if resp.data:
+            session['user_id'] = resp.data[0]['id']
+            session['username'] = resp.data[0]['username']
+            return redirect(url_for('registro_usuario'))
+
+        flash('Credenciales incorrectas', 'error')
+
+    return render_template('login.html')
+    
 @app.route('/admin')
 def admin():
     if not session.get('admin'):
