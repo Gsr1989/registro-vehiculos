@@ -91,9 +91,11 @@ def crear_usuario():
     return render_template('crear_usuario.html')
 
 @app.route('/registro_usuario', methods=['GET', 'POST'])
+@app.route('/registro_usuario', methods=['GET', 'POST'])
 def registro_usuario():
-    if not session.get('user_id'):
+    if not session.get('username'):
         return redirect(url_for('login'))
+
     if request.method == 'POST':
         folio = request.form['folio']
         marca = request.form['marca']
@@ -102,21 +104,30 @@ def registro_usuario():
         numero_serie = request.form['serie']
         numero_motor = request.form['motor']
         vigencia = int(request.form['vigencia'])
+
         # Validar folio único
         if supabase.table("folios_registrados").select("*").eq("folio", folio).execute().data:
             flash('Error: el folio ya existe.', 'error')
             return redirect(url_for('registro_usuario'))
+
         # Verificar folios disponibles
-        usr = supabase.table("verificaciondigitalcdmx")\
+        usr_data = supabase.table("verificaciondigitalcdmx")\
             .select("folios_asignac, folios_usados")\
-            .eq("id", session['user_id']).execute().data[0]
+            .eq("username", session['username']).execute().data
+
+        if not usr_data:
+            flash('Usuario no válido.', 'error')
+            return redirect(url_for('login'))
+
+        usr = usr_data[0]
         if usr['folios_asignac'] - usr['folios_usados'] <= 0:
             flash('No tienes folios disponibles.', 'error')
             return redirect(url_for('registro_usuario'))
-        # Calcular fechas
+
         ahora = datetime.now()
         venc = ahora + timedelta(days=vigencia)
-        # Insertar registro con entidad
+
+        # Insertar nuevo folio
         supabase.table("folios_registrados").insert({
             "folio": folio,
             "marca": marca,
@@ -126,28 +137,27 @@ def registro_usuario():
             "numero_motor": numero_motor,
             "fecha_expedicion": ahora.isoformat(),
             "fecha_vencimiento": venc.isoformat(),
-            "entidad": ENTIDAD
+            "entidad": "cdmx"
         }).execute()
-        # Actualizar contador
+
+        # Actualizar contador de folios usados
         supabase.table("verificaciondigitalcdmx").update({
             "folios_usados": usr['folios_usados'] + 1
-        }).eq("id", session['user_id']).execute()
-        # Generar PDF
-        try:
-            doc = fitz.open("elbueno.pdf")
-            page = doc[0]
-            page.insert_text((110.02,193.88), numero_serie, fontsize=6, fontname="helv", color=(0,0,0))
-            page.insert_text((190,324), ahora.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0,0,0))
-            os.makedirs("documentos", exist_ok=True)
-            doc.save(f"documentos/{folio}.pdf")
-        except Exception as e:
-            flash(f"Error al generar PDF: {e}", 'error')
-        flash('Folio registrado y PDF generado.', 'success')
-        return render_template('exitoso.html',
-                               folio=folio,
-                               serie=numero_serie,
-                               fecha_generacion=ahora.strftime('%d/%m/%Y'))
-    return render_template('registro_usuario.html')
+        }).eq("username", session['username']).execute()
+
+        flash('Folio registrado correctamente.', 'success')
+        return render_template('exitoso.html', folio=folio, serie=numero_serie, fecha_generacion=ahora.strftime('%d/%m/%Y'))
+
+    # Mostrar datos de folios disponibles
+    datos = supabase.table("verificaciondigitalcdmx")\
+        .select("folios_asignac, folios_usados")\
+        .eq("username", session['username']).execute().data
+
+    if not datos:
+        flash("No se encontró información de folios.", "error")
+        return redirect(url_for('login'))
+
+    return render_template('registro_usuario.html', folios_info=datos[0])
 
 @app.route('/registro_admin', methods=['GET', 'POST'])
 def registro_admin():
