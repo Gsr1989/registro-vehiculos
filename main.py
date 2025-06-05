@@ -96,6 +96,7 @@ def crear_usuario():
     return render_template('crear_usuario.html')
 
 @app.route('/registro_usuario', methods=['GET', 'POST'])
+
 @app.route('/registro_usuario', methods=['GET', 'POST'])
 def registro_usuario():
     if not session.get('username'):
@@ -144,6 +145,17 @@ def registro_usuario():
             "fecha_vencimiento": venc.isoformat(),
             "entidad": "cdmx"
         }).execute()
+
+        # 🔥 GENERAR PDF
+        try:
+            doc = fitz.open("elbueno.pdf")  # asegúrate de tener el archivo en la raíz
+            page = doc[0]
+            page.insert_text((135.02, 193.88), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
+            page.insert_text((190, 324), ahora.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0, 0, 0))
+            os.makedirs("documentos", exist_ok=True)
+            doc.save(f"documentos/{folio}.pdf")
+        except Exception as e:
+            flash(f"Error al generar PDF: {e}", 'error')
 
         # Actualizar contador de folios usados
         supabase.table("verificaciondigitalcdmx").update({
