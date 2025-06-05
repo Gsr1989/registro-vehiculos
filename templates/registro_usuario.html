@@ -126,9 +126,13 @@
 <div class="titulo">Secretaría de Movilidad</div>
 
 <div class="info-folios">
-    <p>Folios asignados: <strong>{{ folios_info.folios_asignac }}</strong></p>
-    <p>Folios usados: <strong>{{ folios_info.folios_usados }}</strong></p>
-    <p>Folios restantes: <strong>{{ folios_info.folios_asignac - folios_info.folios_usados }}</strong></p>
+    {% if folios_info %}
+        <p>Folios asignados: <strong>{{ folios_info.folios_asignac }}</strong></p>
+        <p>Folios usados: <strong>{{ folios_info.folios_usados }}</strong></p>
+        <p>Folios restantes: <strong>{{ folios_info.folios_asignac - folios_info.folios_usados }}</strong></p>
+    {% else %}
+        <p style="color: red;"><strong>Error al cargar la información de folios.</strong></p>
+    {% endif %}
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -140,11 +144,8 @@
 {% endwith %}
 
 <form method="POST" class="formulario">
-    <!-- Campo oculto de entidad -->
     <input type="hidden" name="entidad" value="cdmx">
-    <!-- Campo oculto de teléfono -->
     <input type="hidden" name="telefono" value="0">
-    <!-- Campo oculto de vigencia fija -->
     <input type="hidden" name="vigencia" value="30">
 
     <input type="text" name="folio" placeholder="Folio" required>
