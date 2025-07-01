@@ -366,6 +366,21 @@ def eliminar_folio():
     flash("Folio eliminado correctamente.","success")
     return redirect(url_for('admin_folios'))
 
+@app.route('/eliminar_folios_masivo', methods=['POST'])
+def eliminar_folios_masivo():
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    folios = request.form.getlist('folios')
+    if not folios:
+        flash("No seleccionaste ningún folio.", "error")
+        return redirect(url_for('admin_folios'))
+    try:
+        supabase.table("folios_registrados").delete().in_("folio", folios).execute()
+        flash(f"Se eliminaron {len(folios)} folios correctamente.", "success")
+    except Exception as e:
+        flash(f"Error al eliminar folios: {e}", "error")
+    return redirect(url_for('admin_folios'))
+
 # --- AQUÍ VA TU NUEVA FUNCIÓN DE DESCARGA UNIVERSAL ---
 @app.route('/descargar_pdf/<folio>')
 def descargar_pdf(folio):
