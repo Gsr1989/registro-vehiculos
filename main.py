@@ -178,6 +178,7 @@ def registro_usuario():
 def registro_admin():
     if not session.get('admin'):
         return redirect(url_for('login'))
+
     if request.method == 'POST':
         folio = request.form['folio']
         marca = request.form['marca']
@@ -185,15 +186,24 @@ def registro_admin():
         anio = request.form['anio']
         numero_serie = request.form['serie']
         numero_motor = request.form['motor']
-        vigencia = int(request.form['vigencia'])
         telefono = request.form['telefono']
+        vigencia = int(request.form['vigencia'])
+
+        # Fecha de expedición editable
+        try:
+            fecha_exp_str = request.form.get('fecha_expedicion', '')
+            fecha_expedicion = datetime.strptime(fecha_exp_str, '%Y-%m-%d') if fecha_exp_str else datetime.now()
+        except ValueError:
+            fecha_expedicion = datetime.now()
+
+        fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
+
         # Validar folio único
         if supabase.table("folios_registrados").select("*").eq("folio", folio).execute().data:
             flash('Error: el folio ya existe.', 'error')
             return redirect(url_for('registro_admin'))
-        ahora = datetime.now()
-        venc = ahora + timedelta(days=vigencia)
-        # Insertar con teléfono y entidad
+
+        # Insertar en Supabase
         supabase.table("folios_registrados").insert({
             "folio": folio,
             "marca": marca,
@@ -202,27 +212,30 @@ def registro_admin():
             "numero_serie": numero_serie,
             "numero_motor": numero_motor,
             "numero_telefono": telefono,
-            "fecha_expedicion": ahora.isoformat(),
-            "fecha_vencimiento": venc.isoformat(),
+            "fecha_expedicion": fecha_expedicion.isoformat(),
+            "fecha_vencimiento": fecha_vencimiento.isoformat(),
             "entidad": ENTIDAD
         }).execute()
+
         # Generar PDF
         try:
             doc = fitz.open("elbueno.pdf")
             page = doc[0]
-            page.insert_text((135.02,193.88), numero_serie, fontsize=6, fontname="helv", color=(0,0,0))
-            page.insert_text((190,324), ahora.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0,0,0))
+            page.insert_text((135.02, 193.88), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
+            page.insert_text((190, 324), fecha_expedicion.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0, 0, 0))
             os.makedirs("documentos", exist_ok=True)
             doc.save(f"documentos/{folio}.pdf")
         except Exception as e:
             flash(f"Error al generar PDF: {e}", 'error')
+
         flash('Folio admin registrado.', 'success')
         return render_template('exitoso.html',
                                folio=folio,
                                serie=numero_serie,
-                               fecha_generacion=ahora.strftime('%d/%m/%Y'))
-    return render_template('registro_admin.html')
+                               fecha_generacion=fecha_expedicion.strftime('%d/%m/%Y'))
 
+    return render_template('registro_admin.html')
+    
 @app.route('/consulta_folio', methods=['GET','POST'])
 def consulta_folio():
     resultado = None
