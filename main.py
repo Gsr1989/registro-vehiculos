@@ -414,5 +414,37 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+@app.route('/consulta/<folio>')
+def consulta_folio_directo(folio):
+    """Ruta para QR dinámicos CDMX"""
+    
+    row = supabase.table("folios_registrados").select("*").eq("folio", folio).eq("entidad", "cdmx").execute().data
+    
+    if not row:
+        return render_template("resultado_consulta.html", resultado={
+            "estado": "NO SE ENCUENTRA REGISTRADO",
+            "folio": folio
+        })
+    
+    r = row[0]
+    fe = datetime.fromisoformat(r['fecha_expedicion'])
+    fv = datetime.fromisoformat(r['fecha_vencimiento'])
+    estado = "VIGENTE" if datetime.now() <= fv else "VENCIDO"
+    
+    resultado = {
+        "estado": estado,
+        "folio": folio,
+        "fecha_expedicion": fe.strftime("%d/%m/%Y"),
+        "fecha_vencimiento": fv.strftime("%d/%m/%Y"),
+        "marca": r['marca'],
+        "linea": r['linea'],
+        "año": r['anio'],
+        "numero_serie": r['numero_serie'],
+        "numero_motor": r['numero_motor'],
+        "entidad": r.get('entidad', '')
+    }
+    
+    return render_template("resultado_consulta.html", resultado=resultado)
+
 if __name__ == '__main__':
     app.run(debug=True)
