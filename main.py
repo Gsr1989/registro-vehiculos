@@ -416,9 +416,10 @@ def logout():
 
 @app.route('/consulta/<folio>')
 def consulta_folio_directo(folio):
-    """Ruta para QR dinámicos CDMX"""
+    """Ruta para QR dinámicos - versión flexible"""
     
-    row = supabase.table("folios_registrados").select("*").eq("folio", folio).eq("entidad", "cdmx").execute().data
+    # Buscar sin filtro de entidad primero
+    row = supabase.table("folios_registrados").select("*").eq("folio", folio).execute().data
     
     if not row:
         return render_template("resultado_consulta.html", resultado={
@@ -445,6 +446,6 @@ def consulta_folio_directo(folio):
     }
     
     return render_template("resultado_consulta.html", resultado=resultado)
-
+    
 if __name__ == '__main__':
     app.run(debug=True)
