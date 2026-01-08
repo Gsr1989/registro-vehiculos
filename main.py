@@ -4,6 +4,9 @@ from supabase import create_client, Client
 import fitz
 import os
 import vonage
+import qrcode
+from PIL import Image
+from io import BytesIO
 
 app = Flask(__name__)
 app.secret_key = 'clave_muy_segura_123456'
@@ -22,6 +25,16 @@ sms = vonage.Sms(vonage_client)
 # ENTIDAD FIJA PARA ESTE SISTEMA
 ENTIDAD = "cdmx"
 
+# URL BASE PARA QR DINÁMICOS
+URL_CONSULTA_BASE = "https://semovidigitalgob.onrender.com"
+
+# PLANTILLAS PDF
+OUTPUT_DIR = "documentos"
+PLANTILLA_PRINCIPAL = "cdmxdigital2025ppp.pdf"
+PLANTILLA_SECUNDARIA = "elbueno.pdf"
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 def enviar_sms(numero: str, folio: str):
     mensaje = (
         f"⚠️ AVISO: El permiso con folio {folio} ha vencido. "
@@ -35,7 +48,32 @@ def enviar_sms(numero: str, folio: str):
     })
 
 # =========================================
-# 🔥 NUEVA FUNCIÓN: GENERACIÓN AUTOMÁTICA DE FOLIOS
+# 🔥 GENERACIÓN DE QR DINÁMICO (DEL BOT)
+# =========================================
+def generar_qr_dinamico_cdmx(folio):
+    """Genera QR con URL dinámica para consulta del folio"""
+    try:
+        url_directa = f"{URL_CONSULTA_BASE}/consulta/{folio}"
+
+        qr = qrcode.QRCode(
+            version=2,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=4,
+            border=1
+        )
+        qr.add_data(url_directa)
+        qr.make(fit=True)
+
+        img_qr = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+        print(f"[QR CDMX] Generado para folio {folio} -> {url_directa}")
+        return img_qr, url_directa
+
+    except Exception as e:
+        print(f"[ERROR QR CDMX] {e}")
+        return None, None
+
+# =========================================
+# 🔥 GENERACIÓN AUTOMÁTICA DE FOLIOS (122 + CONSECUTIVO)
 # =========================================
 def generar_folio_automatico():
     """
@@ -81,6 +119,7 @@ def generar_folio_automatico():
         
         if not existe:
             # ¡FOLIO DISPONIBLE!
+            print(f"[FOLIO GENERADO] {folio_candidato} (intento {intento + 1})")
             return folio_candidato
         
         # Si está ocupado, probar el siguiente
@@ -88,6 +127,109 @@ def generar_folio_automatico():
     
     # Si después de 100,000 intentos no encontró nada
     raise Exception("No se pudo generar folio después de 100,000 intentos")
+
+# =========================================
+# 🔥 GENERACIÓN PDF UNIFICADO (2 PÁGINAS EN 1 ARCHIVO)
+# =========================================
+def generar_pdf_unificado_cdmx(datos: dict) -> str:
+    """
+    Genera UN SOLO PDF con ambas plantillas (2 páginas)
+    Página 1: cdmxdigital2025ppp.pdf con todos los datos + QR
+    Página 2: elbueno.pdf con serie y fecha
+    """
+    filename = f"{OUTPUT_DIR}/{datos['folio']}.pdf"
+    
+    try:
+        # ===== PÁGINA 1: PLANTILLA PRINCIPAL =====
+        if not os.path.exists(PLANTILLA_PRINCIPAL):
+            print(f"[WARNING] No se encuentra {PLANTILLA_PRINCIPAL}, usando plantilla simple")
+            doc_principal = fitz.open(PLANTILLA_SECUNDARIA)
+        else:
+            doc_principal = fitz.open(PLANTILLA_PRINCIPAL)
+        
+        page_principal = doc_principal[0]
+
+        # Insertar datos en coordenadas específicas (del bot)
+        page_principal.insert_text((50, 130), "FOLIO: ", fontsize=12, fontname="helv", color=(0, 0, 0))
+        page_principal.insert_text((100, 130), datos["folio"], fontsize=12, fontname="helv", color=(1, 0, 0))
+        page_principal.insert_text((130, 145), datos["fecha"], fontsize=12, fontname="helv", color=(0, 0, 0))
+        page_principal.insert_text((87, 290), datos["marca"], fontsize=11, fontname="helv", color=(0, 0, 0))
+        page_principal.insert_text((375, 290), datos["numero_serie"], fontsize=11, fontname="helv", color=(0, 0, 0))
+        page_principal.insert_text((87, 307), datos["linea"], fontsize=11, fontname="helv", color=(0, 0, 0))
+        page_principal.insert_text((375, 307), datos["numero_motor"], fontsize=11, fontname="helv", color=(0, 0, 0))
+        page_principal.insert_text((87, 323), datos["anio"], fontsize=11, fontname="helv", color=(0, 0, 0))
+        page_principal.insert_text((375, 323), datos["vigencia"], fontsize=11, fontname="helv", color=(0, 0, 0))
+        
+        # Insertar nombre si existe
+        if "nombre" in datos and datos["nombre"]:
+            page_principal.insert_text((375, 340), datos["nombre"], fontsize=11, fontname="helv", color=(0, 0, 0))
+
+        # QR dinámico
+        img_qr, url_qr = generar_qr_dinamico_cdmx(datos["folio"])
+
+        if img_qr:
+            buf = BytesIO()
+            img_qr.save(buf, format="PNG")
+            buf.seek(0)
+            qr_pix = fitz.Pixmap(buf.read())
+
+            # Coordenadas del QR (del bot)
+            x_qr = 49
+            y_qr = 653
+            ancho_qr = 96
+            alto_qr = 96
+
+            page_principal.insert_image(
+                fitz.Rect(x_qr, y_qr, x_qr + ancho_qr, y_qr + alto_qr),
+                pixmap=qr_pix,
+                overlay=True
+            )
+            print(f"[QR CDMX] Insertado en página 1 en coordenadas ({x_qr}, {y_qr})")
+
+        # ===== PÁGINA 2: PLANTILLA SECUNDARIA =====
+        if os.path.exists(PLANTILLA_SECUNDARIA):
+            doc_secundario = fitz.open(PLANTILLA_SECUNDARIA)
+            page_secundaria = doc_secundario[0]
+            
+            # Insertar datos en coordenadas específicas (del Flask original)
+            page_secundaria.insert_text(
+                (135.02, 193.88), 
+                datos["numero_serie"], 
+                fontsize=6, 
+                fontname="helv", 
+                color=(0, 0, 0)
+            )
+            page_secundaria.insert_text(
+                (190, 324), 
+                datos["fecha_expedicion"].strftime('%d/%m/%Y'), 
+                fontsize=6, 
+                fontname="helv", 
+                color=(0, 0, 0)
+            )
+
+            # ===== UNIR AMBAS PÁGINAS =====
+            doc_principal.insert_pdf(doc_secundario)
+            doc_secundario.close()
+            print(f"[PDF UNIFICADO] Página 2 agregada desde {PLANTILLA_SECUNDARIA}")
+        else:
+            print(f"[WARNING] No se encuentra {PLANTILLA_SECUNDARIA}, PDF tendrá solo 1 página")
+
+        doc_principal.save(filename)
+        doc_principal.close()
+        
+        print(f"[PDF UNIFICADO CDMX] ✅ Generado: {filename}")
+        
+    except Exception as e:
+        print(f"[ERROR] Generando PDF unificado CDMX: {e}")
+        # Crear PDF de respaldo con error
+        doc_fallback = fitz.open()
+        page = doc_fallback.new_page()
+        page.insert_text((50, 50), f"ERROR - Folio: {datos['folio']}", fontsize=12)
+        page.insert_text((50, 80), f"Contacte al soporte técnico", fontsize=10)
+        doc_fallback.save(filename)
+        doc_fallback.close()
+    
+    return filename
 
 @app.route('/')
 def inicio():
@@ -115,7 +257,7 @@ def login():
         if resp.data:
             session['user_id'] = resp.data[0]['id']
             session['username'] = resp.data[0]['username']
-            session['admin'] = False  # Marcar como no-admin
+            session['admin'] = False
             return redirect(url_for('registro_usuario'))
         else:
             flash('Usuario o contraseña incorrectos.', 'error')
@@ -159,14 +301,14 @@ def crear_usuario():
     return render_template('crear_usuario.html')
 
 # =========================================
-# 🔥 MODIFICADO: REGISTRO USUARIO CON FOLIO AUTOMÁTICO
+# 🔥 REGISTRO USUARIO CON PDF UNIFICADO
 # =========================================
 @app.route('/registro_usuario', methods=['GET', 'POST'])
 def registro_usuario():
     if not session.get('username'):
         return redirect(url_for('login'))
     
-    # Bloquear si es admin (debe usar /registro_admin)
+    # Bloquear si es admin
     if session.get('admin'):
         return redirect(url_for('admin'))
 
@@ -178,12 +320,12 @@ def registro_usuario():
             flash(f'Error al generar folio: {e}', 'error')
             return redirect(url_for('registro_usuario'))
         
-        marca = request.form['marca']
-        linea = request.form['linea']
+        marca = request.form['marca'].upper()
+        linea = request.form['linea'].upper()
         anio = request.form['anio']
-        numero_serie = request.form['serie']
-        numero_motor = request.form['motor']
-        vigencia = int(request.form['vigencia'])
+        numero_serie = request.form['serie'].upper()
+        numero_motor = request.form['motor'].upper()
+        vigencia_dias = int(request.form.get('vigencia', 30))
         fecha_expedicion_str = request.form.get('fecha_expedicion')
 
         try:
@@ -191,7 +333,7 @@ def registro_usuario():
         except:
             fecha_expedicion = datetime.now()
 
-        fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
+        fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia_dias)
 
         # Obtener datos del usuario
         usr_data = supabase.table("verificaciondigitalcdmx")\
@@ -209,6 +351,27 @@ def registro_usuario():
             flash('No tienes folios disponibles. Contacta al administrador.', 'error')
             return redirect(url_for('registro_usuario'))
 
+        # Preparar datos para PDF unificado
+        hoy = fecha_expedicion
+        meses = {
+            1: "enero", 2: "febrero", 3: "marzo", 4: "abril",
+            5: "mayo", 6: "junio", 7: "julio", 8: "agosto",
+            9: "septiembre", 10: "octubre", 11: "noviembre", 12: "diciembre"
+        }
+        
+        datos_pdf = {
+            "folio": folio,
+            "marca": marca,
+            "linea": linea,
+            "anio": anio,
+            "numero_serie": numero_serie,
+            "numero_motor": numero_motor,
+            "fecha": f"{hoy.day} de {meses[hoy.month]} del {hoy.year}",
+            "vigencia": fecha_vencimiento.strftime("%d/%m/%Y"),
+            "fecha_expedicion": fecha_expedicion,
+            "nombre": ""  # Usuarios normales no tienen nombre
+        }
+
         # Insertar en BD
         supabase.table("folios_registrados").insert({
             "folio": folio,
@@ -222,14 +385,9 @@ def registro_usuario():
             "entidad": "cdmx"
         }).execute()
 
-        # Generar PDF
+        # ✅ GENERAR PDF UNIFICADO (2 PÁGINAS)
         try:
-            doc = fitz.open("elbueno.pdf")
-            page = doc[0]
-            page.insert_text((135.02, 193.88), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
-            page.insert_text((190, 324), fecha_expedicion.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0, 0, 0))
-            os.makedirs("documentos", exist_ok=True)
-            doc.save(f"documentos/{folio}.pdf")
+            generar_pdf_unificado_cdmx(datos_pdf)
         except Exception as e:
             flash(f"Error al generar PDF: {e}", 'error')
 
@@ -266,7 +424,7 @@ def registro_usuario():
                          porcentaje=porcentaje)
 
 # =========================================
-# 🔥 MODIFICADO: REGISTRO ADMIN CON FOLIO AUTOMÁTICO
+# 🔥 REGISTRO ADMIN CON PDF UNIFICADO
 # =========================================
 @app.route('/registro_admin', methods=['GET', 'POST'])
 def registro_admin():
@@ -282,13 +440,13 @@ def registro_admin():
             flash(f'Error al generar folio: {e}', 'error')
             return redirect(url_for('registro_admin'))
         
-        marca = request.form['marca']
-        linea = request.form['linea']
+        marca = request.form['marca'].upper()
+        linea = request.form['linea'].upper()
         anio = request.form['anio']
-        numero_serie = request.form['serie']
-        numero_motor = request.form['motor']
-        telefono = request.form['telefono']
-        vigencia = int(request.form['vigencia'])
+        numero_serie = request.form['serie'].upper()
+        numero_motor = request.form['motor'].upper()
+        telefono = request.form.get('telefono', '0')
+        vigencia_dias = int(request.form['vigencia'])
 
         # Fecha de expedición editable
         try:
@@ -297,7 +455,28 @@ def registro_admin():
         except ValueError:
             fecha_expedicion = datetime.now()
 
-        fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
+        fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia_dias)
+
+        # Preparar datos para PDF unificado
+        hoy = fecha_expedicion
+        meses = {
+            1: "enero", 2: "febrero", 3: "marzo", 4: "abril",
+            5: "mayo", 6: "junio", 7: "julio", 8: "agosto",
+            9: "septiembre", 10: "octubre", 11: "noviembre", 12: "diciembre"
+        }
+        
+        datos_pdf = {
+            "folio": folio,
+            "marca": marca,
+            "linea": linea,
+            "anio": anio,
+            "numero_serie": numero_serie,
+            "numero_motor": numero_motor,
+            "fecha": f"{hoy.day} de {meses[hoy.month]} del {hoy.year}",
+            "vigencia": fecha_vencimiento.strftime("%d/%m/%Y"),
+            "fecha_expedicion": fecha_expedicion,
+            "nombre": ""  # Puede agregar campo nombre si lo deseas
+        }
 
         # Insertar en Supabase
         supabase.table("folios_registrados").insert({
@@ -313,14 +492,9 @@ def registro_admin():
             "entidad": ENTIDAD
         }).execute()
 
-        # Generar PDF
+        # ✅ GENERAR PDF UNIFICADO (2 PÁGINAS)
         try:
-            doc = fitz.open("elbueno.pdf")
-            page = doc[0]
-            page.insert_text((135.02, 193.88), numero_serie, fontsize=6, fontname="helv", color=(0, 0, 0))
-            page.insert_text((190, 324), fecha_expedicion.strftime('%d/%m/%Y'), fontsize=6, fontname="helv", color=(0, 0, 0))
-            os.makedirs("documentos", exist_ok=True)
-            doc.save(f"documentos/{folio}.pdf")
+            generar_pdf_unificado_cdmx(datos_pdf)
         except Exception as e:
             flash(f"Error al generar PDF: {e}", 'error')
 
@@ -502,20 +676,13 @@ def eliminar_folios_masivo():
 
 @app.route('/descargar_pdf/<folio>')
 def descargar_pdf(folio):
-    # Busca entidad para el folio
-    registro = supabase.table("folios_registrados").select("entidad").eq("folio", folio).execute().data
-    if not registro:
-        flash("No se encontró el folio.", "error")
-        return redirect(request.referrer or url_for('admin_folios'))
-    entidad = registro[0].get('entidad', '').lower()
-    # CDMX
-    if entidad == "cdmx":
-        pdf_path = f"documentos/{folio}.pdf"
-    else:
-        pdf_path = f"documentos/{folio}_{entidad}.pdf"
+    # Busca el PDF unificado
+    pdf_path = f"{OUTPUT_DIR}/{folio}.pdf"
+    
     if not os.path.exists(pdf_path):
-        flash("PDF no existe para este folio y entidad.", "error")
+        flash("PDF no existe para este folio.", "error")
         return redirect(request.referrer or url_for('admin_folios'))
+    
     return send_file(pdf_path, as_attachment=True)
 
 @app.route('/logout')
