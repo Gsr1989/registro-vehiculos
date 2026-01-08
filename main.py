@@ -163,6 +163,7 @@ def generar_pdf_unificado_cdmx(datos: dict) -> str:
         # Insertar nombre si existe
         if "nombre" in datos and datos["nombre"]:
             page_principal.insert_text((375, 340), datos["nombre"], fontsize=11, fontname="helv", color=(0, 0, 0))
+            print(f"[PDF] Nombre insertado: {datos['nombre']}")
 
         # QR dinámico
         img_qr, url_qr = generar_qr_dinamico_cdmx(datos["folio"])
@@ -301,7 +302,7 @@ def crear_usuario():
     return render_template('crear_usuario.html')
 
 # =========================================
-# 🔥 REGISTRO USUARIO CON PDF UNIFICADO
+# 🔥 REGISTRO USUARIO CON PDF UNIFICADO - CORREGIDO
 # =========================================
 @app.route('/registro_usuario', methods=['GET', 'POST'])
 def registro_usuario():
@@ -325,6 +326,7 @@ def registro_usuario():
         anio = request.form['anio']
         numero_serie = request.form['serie'].upper()
         numero_motor = request.form['motor'].upper()
+        nombre = request.form['nombre'].upper()  # ✅ CAPTURAR NOMBRE
         vigencia_dias = int(request.form.get('vigencia', 30))
         fecha_expedicion_str = request.form.get('fecha_expedicion')
 
@@ -369,7 +371,7 @@ def registro_usuario():
             "fecha": f"{hoy.day} de {meses[hoy.month]} del {hoy.year}",
             "vigencia": fecha_vencimiento.strftime("%d/%m/%Y"),
             "fecha_expedicion": fecha_expedicion,
-            "nombre": ""  # Usuarios normales no tienen nombre
+            "nombre": nombre  # ✅ NOMBRE REAL, NO CADENA VACÍA
         }
 
         # Insertar en BD
@@ -380,6 +382,7 @@ def registro_usuario():
             "anio": anio,
             "numero_serie": numero_serie,
             "numero_motor": numero_motor,
+            "nombre": nombre,  # ✅ GUARDAR NOMBRE EN BD
             "fecha_expedicion": fecha_expedicion.isoformat(),
             "fecha_vencimiento": fecha_vencimiento.isoformat(),
             "entidad": "cdmx"
@@ -475,7 +478,7 @@ def registro_admin():
             "fecha": f"{hoy.day} de {meses[hoy.month]} del {hoy.year}",
             "vigencia": fecha_vencimiento.strftime("%d/%m/%Y"),
             "fecha_expedicion": fecha_expedicion,
-            "nombre": ""  # Puede agregar campo nombre si lo deseas
+            "nombre": ""  # Admin no captura nombre (puedes agregarlo si quieres)
         }
 
         # Insertar en Supabase
