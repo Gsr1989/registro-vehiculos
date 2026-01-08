@@ -34,6 +34,61 @@ def enviar_sms(numero: str, folio: str):
         "text": mensaje,
     })
 
+# =========================================
+# 🔥 NUEVA FUNCIÓN: GENERACIÓN AUTOMÁTICA DE FOLIOS
+# =========================================
+def generar_folio_automatico():
+    """
+    Genera folio con prefijo fijo 122 + consecutivo
+    Formato: 1221, 1222, 1223... 12210, 12211... infinito
+    Intenta 100,000 veces hasta encontrar uno disponible
+    """
+    PREFIJO = "122"
+    
+    # 1. Buscar todos los folios que empiezan con 122
+    todos = supabase.table("folios_registrados")\
+        .select("folio")\
+        .execute().data
+    
+    consecutivos = []
+    for f in todos:
+        folio_str = str(f['folio'])
+        if folio_str.startswith(PREFIJO):
+            try:
+                # Extraer el número después de "122"
+                # "1221" → 1, "12210" → 10, "122100" → 100
+                num = int(folio_str[3:])
+                consecutivos.append(num)
+            except:
+                pass
+    
+    # 2. Si no hay folios, empezar en 1
+    if not consecutivos:
+        consecutivo_actual = 1
+    else:
+        # Si hay folios, empezar desde el más alto + 1
+        consecutivo_actual = max(consecutivos) + 1
+    
+    # 3. Intentar hasta 100,000 veces encontrar folio disponible
+    for intento in range(100000):
+        folio_candidato = f"{PREFIJO}{consecutivo_actual}"
+        
+        # Verificar si existe en BD
+        existe = supabase.table("folios_registrados")\
+            .select("folio")\
+            .eq("folio", folio_candidato)\
+            .execute().data
+        
+        if not existe:
+            # ¡FOLIO DISPONIBLE!
+            return folio_candidato
+        
+        # Si está ocupado, probar el siguiente
+        consecutivo_actual += 1
+    
+    # Si después de 100,000 intentos no encontró nada
+    raise Exception("No se pudo generar folio después de 100,000 intentos")
+
 @app.route('/')
 def inicio():
     return redirect(url_for('login'))
@@ -47,6 +102,7 @@ def login():
         # Admin hardcode
         if username == 'Serg890105tm3' and password == 'Serg890105tm3':
             session['admin'] = True
+            session['username'] = 'Serg890105tm3'
             return redirect(url_for('admin'))
 
         # Usuario normal
@@ -59,28 +115,36 @@ def login():
         if resp.data:
             session['user_id'] = resp.data[0]['id']
             session['username'] = resp.data[0]['username']
+            session['admin'] = False  # Marcar como no-admin
             return redirect(url_for('registro_usuario'))
-            return render_template('bloqueado.html')
+        else:
+            flash('Usuario o contraseña incorrectos.', 'error')
+    
     return render_template('login.html')
 
 @app.route('/admin')
 def admin():
     if not session.get('admin'):
+        flash('Acceso denegado. Solo administradores.', 'error')
         return redirect(url_for('login'))
     return render_template('panel.html')
 
 @app.route('/crear_usuario', methods=['GET', 'POST'])
 def crear_usuario():
     if not session.get('admin'):
+        flash('Acceso denegado. Solo administradores.', 'error')
         return redirect(url_for('login'))
+    
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         folios = int(request.form['folios'])
+        
         existe = supabase.table("verificaciondigitalcdmx")\
             .select("id")\
             .eq("username", username)\
             .execute()
+        
         if existe.data:
             flash('Error: el nombre de usuario ya existe.', 'error')
         else:
@@ -91,15 +155,29 @@ def crear_usuario():
                 "folios_usados": 0
             }).execute()
             flash('Usuario creado exitosamente.', 'success')
+    
     return render_template('crear_usuario.html')
 
+# =========================================
+# 🔥 MODIFICADO: REGISTRO USUARIO CON FOLIO AUTOMÁTICO
+# =========================================
 @app.route('/registro_usuario', methods=['GET', 'POST'])
 def registro_usuario():
     if not session.get('username'):
         return redirect(url_for('login'))
+    
+    # Bloquear si es admin (debe usar /registro_admin)
+    if session.get('admin'):
+        return redirect(url_for('admin'))
 
     if request.method == 'POST':
-        folio = request.form['folio']
+        # ✅ GENERAR FOLIO AUTOMÁTICO
+        try:
+            folio = generar_folio_automatico()
+        except Exception as e:
+            flash(f'Error al generar folio: {e}', 'error')
+            return redirect(url_for('registro_usuario'))
+        
         marca = request.form['marca']
         linea = request.form['linea']
         anio = request.form['anio']
@@ -115,11 +193,7 @@ def registro_usuario():
 
         fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
 
-        # Validar folio único
-        if supabase.table("folios_registrados").select("*").eq("folio", folio).execute().data:
-            flash('Error: el folio ya existe.', 'error')
-            return redirect(url_for('registro_usuario'))
-
+        # Obtener datos del usuario
         usr_data = supabase.table("verificaciondigitalcdmx")\
             .select("folios_asignac, folios_usados")\
             .eq("username", session['username']).execute().data
@@ -129,10 +203,13 @@ def registro_usuario():
             return redirect(url_for('login'))
 
         usr = usr_data[0]
+        
+        # Verificar si tiene folios disponibles
         if usr['folios_asignac'] - usr['folios_usados'] <= 0:
-            flash('No tienes folios disponibles.', 'error')
+            flash('No tienes folios disponibles. Contacta al administrador.', 'error')
             return redirect(url_for('registro_usuario'))
 
+        # Insertar en BD
         supabase.table("folios_registrados").insert({
             "folio": folio,
             "marca": marca,
@@ -145,6 +222,7 @@ def registro_usuario():
             "entidad": "cdmx"
         }).execute()
 
+        # Generar PDF
         try:
             doc = fitz.open("elbueno.pdf")
             page = doc[0]
@@ -155,13 +233,18 @@ def registro_usuario():
         except Exception as e:
             flash(f"Error al generar PDF: {e}", 'error')
 
+        # Actualizar contador de folios usados
         supabase.table("verificaciondigitalcdmx").update({
             "folios_usados": usr['folios_usados'] + 1
         }).eq("username", session['username']).execute()
 
         flash('Folio registrado correctamente.', 'success')
-        return render_template('exitoso.html', folio=folio, serie=numero_serie, fecha_generacion=fecha_expedicion.strftime('%d/%m/%Y'))
+        return render_template('exitoso.html', 
+                             folio=folio, 
+                             serie=numero_serie, 
+                             fecha_generacion=fecha_expedicion.strftime('%d/%m/%Y'))
 
+    # GET - Obtener datos de folios del usuario
     datos = supabase.table("verificaciondigitalcdmx")\
         .select("folios_asignac, folios_usados")\
         .eq("username", session['username']).execute().data
@@ -169,16 +252,36 @@ def registro_usuario():
     if not datos:
         flash("No se encontró información de folios.", "error")
         return redirect(url_for('login'))
-
-    return render_template('registro_usuario.html', folios_info=datos[0])
     
+    usr = datos[0]
+    folios_asignados = usr['folios_asignac']
+    folios_usados = usr['folios_usados']
+    folios_disponibles = folios_asignados - folios_usados
+    porcentaje = (folios_usados / folios_asignados * 100) if folios_asignados > 0 else 0
+
+    return render_template('registro_usuario.html', 
+                         folios_asignados=folios_asignados,
+                         folios_usados=folios_usados,
+                         folios_disponibles=folios_disponibles,
+                         porcentaje=porcentaje)
+
+# =========================================
+# 🔥 MODIFICADO: REGISTRO ADMIN CON FOLIO AUTOMÁTICO
+# =========================================
 @app.route('/registro_admin', methods=['GET', 'POST'])
 def registro_admin():
     if not session.get('admin'):
+        flash('Acceso denegado. Solo administradores.', 'error')
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        folio = request.form['folio']
+        # ✅ GENERAR FOLIO AUTOMÁTICO
+        try:
+            folio = generar_folio_automatico()
+        except Exception as e:
+            flash(f'Error al generar folio: {e}', 'error')
+            return redirect(url_for('registro_admin'))
+        
         marca = request.form['marca']
         linea = request.form['linea']
         anio = request.form['anio']
@@ -195,11 +298,6 @@ def registro_admin():
             fecha_expedicion = datetime.now()
 
         fecha_vencimiento = fecha_expedicion + timedelta(days=vigencia)
-
-        # Validar folio único
-        if supabase.table("folios_registrados").select("*").eq("folio", folio).execute().data:
-            flash('Error: el folio ya existe.', 'error')
-            return redirect(url_for('registro_admin'))
 
         # Insertar en Supabase
         supabase.table("folios_registrados").insert({
@@ -233,7 +331,7 @@ def registro_admin():
                                fecha_generacion=fecha_expedicion.strftime('%d/%m/%Y'))
 
     return render_template('registro_admin.html')
-    
+
 @app.route('/consulta_folio', methods=['GET','POST'])
 def consulta_folio():
     resultado = None
@@ -267,7 +365,9 @@ def consulta_folio():
 @app.route('/admin_folios')
 def admin_folios():
     if not session.get('admin'):
+        flash('Acceso denegado. Solo administradores.', 'error')
         return redirect(url_for('login'))
+    
     filtro = request.args.get('filtro','').strip()
     criterio = request.args.get('criterio','folio')
     ordenar = request.args.get('ordenar','desc')
@@ -317,7 +417,9 @@ def admin_folios():
 @app.route('/enviar_sms_manual', methods=['POST'])
 def enviar_sms_manual():
     if not session.get('admin'):
+        flash('Acceso denegado. Solo administradores.', 'error')
         return redirect(url_for('login'))
+    
     folio = request.form['folio']
     telefono = request.form.get('telefono')
     try:
@@ -330,7 +432,9 @@ def enviar_sms_manual():
 @app.route('/enviar_alertas', methods=['POST'])
 def enviar_alertas():
     if not session.get('admin'):
+        flash('Acceso denegado. Solo administradores.', 'error')
         return redirect(url_for('login'))
+    
     hoy = datetime.now().date()
     enviados = 0
     for r in supabase.table("folios_registrados").select("*").execute().data:
@@ -346,7 +450,9 @@ def enviar_alertas():
 @app.route('/editar_folio/<folio>', methods=['GET','POST'])
 def editar_folio(folio):
     if not session.get('admin'):
+        flash('Acceso denegado. Solo administradores.', 'error')
         return redirect(url_for('login'))
+    
     if request.method=='POST':
         data = {
             "marca": request.form['marca'],
@@ -369,7 +475,9 @@ def editar_folio(folio):
 @app.route('/eliminar_folio', methods=['POST'])
 def eliminar_folio():
     if not session.get('admin'):
+        flash('Acceso denegado. Solo administradores.', 'error')
         return redirect(url_for('login'))
+    
     folio = request.form['folio']
     supabase.table("folios_registrados").delete().eq("folio",folio).execute()
     flash("Folio eliminado correctamente.","success")
@@ -378,7 +486,9 @@ def eliminar_folio():
 @app.route('/eliminar_folios_masivo', methods=['POST'])
 def eliminar_folios_masivo():
     if not session.get('admin'):
+        flash('Acceso denegado. Solo administradores.', 'error')
         return redirect(url_for('login'))
+    
     folios = request.form.getlist('folios')
     if not folios:
         flash("No seleccionaste ningún folio.", "error")
@@ -390,7 +500,6 @@ def eliminar_folios_masivo():
         flash(f"Error al eliminar folios: {e}", "error")
     return redirect(url_for('admin_folios'))
 
-# --- AQUÍ VA TU NUEVA FUNCIÓN DE DESCARGA UNIVERSAL ---
 @app.route('/descargar_pdf/<folio>')
 def descargar_pdf(folio):
     # Busca entidad para el folio
