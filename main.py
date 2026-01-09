@@ -302,7 +302,7 @@ def crear_usuario():
     return render_template('crear_usuario.html')
 
 # =========================================
-# 🔥 REGISTRO USUARIO CON PDF UNIFICADO - CORREGIDO
+# 🔥 REGISTRO USUARIO - FOLIO AUTOMÁTICO + NOMBRE
 # =========================================
 @app.route('/registro_usuario', methods=['GET', 'POST'])
 def registro_usuario():
@@ -314,7 +314,7 @@ def registro_usuario():
         return redirect(url_for('admin'))
 
     if request.method == 'POST':
-        # ✅ GENERAR FOLIO AUTOMÁTICO
+        # ✅ GENERAR FOLIO AUTOMÁTICO (USUARIOS)
         try:
             folio = generar_folio_automatico()
         except Exception as e:
@@ -371,7 +371,7 @@ def registro_usuario():
             "fecha": f"{hoy.day} de {meses[hoy.month]} del {hoy.year}",
             "vigencia": fecha_vencimiento.strftime("%d/%m/%Y"),
             "fecha_expedicion": fecha_expedicion,
-            "nombre": nombre  # ✅ NOMBRE REAL, NO CADENA VACÍA
+            "nombre": nombre  # ✅ NOMBRE
         }
 
         # Insertar en BD
@@ -382,7 +382,7 @@ def registro_usuario():
             "anio": anio,
             "numero_serie": numero_serie,
             "numero_motor": numero_motor,
-            "nombre": nombre,  # ✅ GUARDAR NOMBRE EN BD
+            "nombre": nombre,  # ✅ GUARDAR NOMBRE
             "fecha_expedicion": fecha_expedicion.isoformat(),
             "fecha_vencimiento": fecha_vencimiento.isoformat(),
             "entidad": "cdmx"
@@ -427,7 +427,7 @@ def registro_usuario():
                          porcentaje=porcentaje)
 
 # =========================================
-# 🔥 REGISTRO ADMIN CON PDF UNIFICADO
+# 🔥 REGISTRO ADMIN - FOLIO MANUAL + NOMBRE
 # =========================================
 @app.route('/registro_admin', methods=['GET', 'POST'])
 def registro_admin():
@@ -436,11 +436,12 @@ def registro_admin():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        # ✅ GENERAR FOLIO AUTOMÁTICO
-        try:
-            folio = generar_folio_automatico()
-        except Exception as e:
-            flash(f'Error al generar folio: {e}', 'error')
+        # ✅ CAPTURAR FOLIO MANUAL (ADMIN)
+        folio = request.form['folio'].strip().upper()
+        
+        # Validar que el folio no exista
+        if supabase.table("folios_registrados").select("*").eq("folio", folio).execute().data:
+            flash('Error: el folio ya existe.', 'error')
             return redirect(url_for('registro_admin'))
         
         marca = request.form['marca'].upper()
@@ -448,6 +449,7 @@ def registro_admin():
         anio = request.form['anio']
         numero_serie = request.form['serie'].upper()
         numero_motor = request.form['motor'].upper()
+        nombre = request.form['nombre'].upper()  # ✅ CAPTURAR NOMBRE
         telefono = request.form.get('telefono', '0')
         vigencia_dias = int(request.form['vigencia'])
 
@@ -478,7 +480,7 @@ def registro_admin():
             "fecha": f"{hoy.day} de {meses[hoy.month]} del {hoy.year}",
             "vigencia": fecha_vencimiento.strftime("%d/%m/%Y"),
             "fecha_expedicion": fecha_expedicion,
-            "nombre": ""  # Admin no captura nombre (puedes agregarlo si quieres)
+            "nombre": nombre  # ✅ NOMBRE
         }
 
         # Insertar en Supabase
@@ -489,6 +491,7 @@ def registro_admin():
             "anio": anio,
             "numero_serie": numero_serie,
             "numero_motor": numero_motor,
+            "nombre": nombre,  # ✅ GUARDAR NOMBRE
             "numero_telefono": telefono,
             "fecha_expedicion": fecha_expedicion.isoformat(),
             "fecha_vencimiento": fecha_vencimiento.isoformat(),
