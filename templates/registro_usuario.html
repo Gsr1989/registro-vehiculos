@@ -256,6 +256,7 @@
 </form>
 
 <div class="botones-acciones">
+    <a href="{{ url_for('mis_permisos') }}">📋 Ver Mis Permisos</a>
     <a href="{{ url_for('consulta_folio') }}">Consultar Folio</a>
     <a href="{{ url_for('logout') }}">Cerrar Sesión</a>
 </div>
@@ -265,12 +266,53 @@
 </footer>
 
 <script>
+// =========================================
+// 🔥 FECHA AUTOMÁTICA
+// =========================================
 window.addEventListener('DOMContentLoaded', () => {
     const hoy = new Date().toISOString().split('T')[0];
     const fechaExp = document.getElementById("fecha_expedicion");
     if (fechaExp) {
         fechaExp.value = hoy;
     }
+});
+
+// =========================================
+// 🔥 PREVENIR DOBLE CLICK EN FORMULARIO
+// =========================================
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    let enviando = false;
+
+    form.addEventListener('submit', function(e) {
+        if (enviando) {
+            e.preventDefault();
+            return false;
+        }
+
+        enviando = true;
+        
+        // Deshabilitar botón
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.6';
+        submitBtn.style.cursor = 'not-allowed';
+        
+        // Cambiar texto
+        const textoOriginal = submitBtn.textContent;
+        submitBtn.textContent = '⏳ Generando permiso...';
+        
+        // Si por alguna razón no se envía, rehabilitar después de 10 segundos
+        setTimeout(function() {
+            if (enviando) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+                submitBtn.textContent = textoOriginal;
+                enviando = false;
+            }
+        }, 10000);
+    });
 });
 </script>
 
