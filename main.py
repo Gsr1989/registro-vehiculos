@@ -374,7 +374,7 @@ def registro_usuario():
             "nombre": nombre  # ✅ NOMBRE
         }
 
-        # Insertar en BD
+        # Insertar en BD CON REGISTRO DE USUARIO ✅✅✅
         supabase.table("folios_registrados").insert({
             "folio": folio,
             "marca": marca,
@@ -382,10 +382,11 @@ def registro_usuario():
             "anio": anio,
             "numero_serie": numero_serie,
             "numero_motor": numero_motor,
-            "nombre": nombre,  # ✅ GUARDAR NOMBRE
+            "nombre": nombre,
             "fecha_expedicion": fecha_expedicion.isoformat(),
             "fecha_vencimiento": fecha_vencimiento.isoformat(),
-            "entidad": "cdmx"
+            "entidad": "cdmx",
+            "creado_por": session['username']  # ✅ NUEVA LÍNEA
         }).execute()
 
         # ✅ GENERAR PDF UNIFICADO (2 PÁGINAS)
@@ -425,6 +426,47 @@ def registro_usuario():
                          folios_usados=folios_usados,
                          folios_disponibles=folios_disponibles,
                          porcentaje=porcentaje)
+
+# =========================================
+# 🔥 HISTORIAL DE PERMISOS DEL USUARIO
+# =========================================
+@app.route('/mis_permisos')
+def mis_permisos():
+    if not session.get('username') or session.get('admin'):
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('login'))
+    
+    # Buscar todos los folios generados por este usuario
+    permisos = supabase.table("folios_registrados")\
+        .select("*")\
+        .eq("creado_por", session['username'])\
+        .order("fecha_expedicion", desc=True)\
+        .execute().data
+    
+    # Procesar datos
+    hoy = datetime.now()
+    for p in permisos:
+        try:
+            fe = datetime.fromisoformat(p['fecha_expedicion'])
+            fv = datetime.fromisoformat(p['fecha_vencimiento'])
+            p['fecha_formateada'] = fe.strftime('%d/%m/%Y')
+            p['hora_formateada'] = fe.strftime('%H:%M:%S')
+            p['estado'] = "VIGENTE" if hoy <= fv else "VENCIDO"
+        except:
+            p['fecha_formateada'] = 'Error'
+            p['hora_formateada'] = 'Error'
+            p['estado'] = 'ERROR'
+    
+    # Obtener stats del usuario
+    usr_data = supabase.table("verificaciondigitalcdmx")\
+        .select("folios_asignac, folios_usados")\
+        .eq("username", session['username']).execute().data[0]
+    
+    return render_template('mis_permisos.html', 
+                         permisos=permisos,
+                         total_generados=len(permisos),
+                         folios_asignados=usr_data['folios_asignac'],
+                         folios_usados=usr_data['folios_usados'])
 
 # =========================================
 # 🔥 REGISTRO ADMIN - FOLIO MANUAL + NOMBRE
@@ -483,7 +525,7 @@ def registro_admin():
             "nombre": nombre  # ✅ NOMBRE
         }
 
-        # Insertar en Supabase
+        # Insertar en Supabase CON CREADO_POR ✅✅✅
         supabase.table("folios_registrados").insert({
             "folio": folio,
             "marca": marca,
@@ -491,11 +533,12 @@ def registro_admin():
             "anio": anio,
             "numero_serie": numero_serie,
             "numero_motor": numero_motor,
-            "nombre": nombre,  # ✅ GUARDAR NOMBRE
+            "nombre": nombre,
             "numero_telefono": telefono,
             "fecha_expedicion": fecha_expedicion.isoformat(),
             "fecha_vencimiento": fecha_vencimiento.isoformat(),
-            "entidad": ENTIDAD
+            "entidad": ENTIDAD,
+            "creado_por": "ADMIN"  # ✅ NUEVA LÍNEA
         }).execute()
 
         # ✅ GENERAR PDF UNIFICADO (2 PÁGINAS)
