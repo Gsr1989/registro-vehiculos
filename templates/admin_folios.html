@@ -116,7 +116,7 @@
             <input type="hidden" name="folio" value="{{ f.folio }}">
             <button type="submit" class="btn btn-eliminar">Eliminar</button>
           </form>
-          <a href="{{ url_for('descargar_recibo', folio=f.folio) }}" target="_blank">
+          <a href="{{ url_for('descargar_pdf', folio=f.folio) }}" target="_blank">
             <button type="button" class="btn btn-descargar">PDF</button>
           </a>
         </td>
