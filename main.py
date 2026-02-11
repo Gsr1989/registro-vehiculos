@@ -678,8 +678,8 @@ def consulta_folio_directo(folio):
 
     return render_template("resultado_consulta.html", resultado=resultado)
 
-@app.route('/descargar_recibo/<folio>')
-def descargar_recibo(folio):
+@app.route('/descargar_pdf/<folio>')
+def descargar_pdf(folio):
     ruta_pdf = os.path.join(OUTPUT_DIR, f"{folio}.pdf")
     if not os.path.exists(ruta_pdf):
         abort(404)
