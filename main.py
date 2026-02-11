@@ -412,12 +412,17 @@ def registro_usuario():
     folios_usados = int(usuario.get('folios_usados', 0))
     folios_disponibles = folios_asignados - folios_usados
 
-    folios_info = {"folios_asignac": folios_asignados, "folios_usados": folios_usados}
+    # ✅ CALCULAR PORCENTAJE
+    porcentaje = (folios_usados / folios_asignados * 100) if folios_asignados > 0 else 0
 
     if request.method == 'POST':
         if folios_disponibles <= 0:
             flash("⚠️ Sin folios disponibles.", "error")
-            return render_template('registro_usuario.html', folios_info=folios_info)
+            return render_template('registro_usuario.html', 
+                                 folios_asignados=folios_asignados,
+                                 folios_usados=folios_usados,
+                                 folios_disponibles=folios_disponibles,
+                                 porcentaje=porcentaje)
 
         marca = request.form.get('marca', '').strip().upper()
         linea = request.form.get('linea', '').strip().upper()
@@ -430,14 +435,22 @@ def registro_usuario():
 
         if not all([marca, linea, anio, numero_serie, numero_motor, fecha_inicio_str]):
             flash("❌ Faltan campos obligatorios.", "error")
-            return render_template('registro_usuario.html', folios_info=folios_info)
+            return render_template('registro_usuario.html', 
+                                 folios_asignados=folios_asignados,
+                                 folios_usados=folios_usados,
+                                 folios_disponibles=folios_disponibles,
+                                 porcentaje=porcentaje)
 
         try:
             fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
             fecha_inicio = fecha_inicio.replace(tzinfo=TZ_CDMX)
         except:
             flash("❌ Fecha inválida.", "error")
-            return render_template('registro_usuario.html', folios_info=folios_info)
+            return render_template('registro_usuario.html', 
+                                 folios_asignados=folios_asignados,
+                                 folios_usados=folios_usados,
+                                 folios_disponibles=folios_disponibles,
+                                 porcentaje=porcentaje)
 
         venc = fecha_inicio + timedelta(days=30)
 
@@ -456,7 +469,11 @@ def registro_usuario():
         ok = guardar_folio_con_reintento(datos, session['username'])
         if not ok:
             flash("❌ Error al registrar.", "error")
-            return render_template('registro_usuario.html', folios_info=folios_info)
+            return render_template('registro_usuario.html', 
+                                 folios_asignados=folios_asignados,
+                                 folios_usados=folios_usados,
+                                 folios_disponibles=folios_disponibles,
+                                 porcentaje=porcentaje)
 
         folio_final = datos["folio"]
         generar_pdf_unificado_cdmx(datos)
@@ -474,7 +491,12 @@ def registro_usuario():
             fecha_generacion=fecha_inicio.strftime('%d/%m/%Y %H:%M')
         )
 
-    return render_template('registro_usuario.html', folios_info=folios_info)
+    # ✅ GET - PASAR TODAS LAS VARIABLES INCLUIDO PORCENTAJE
+    return render_template('registro_usuario.html', 
+                         folios_asignados=folios_asignados,
+                         folios_usados=folios_usados,
+                         folios_disponibles=folios_disponibles,
+                         porcentaje=porcentaje)
 
 @app.route('/mis_permisos')
 def mis_permisos():
@@ -690,7 +712,9 @@ def admin_folios():
         except:
             f['estado'] = 'ERROR'
     
-    return render_template('admin_folios.html', folios=folios)
+    return render_template('admin_folios.html', folios=folios, 
+                         filtro='', criterio='folio', estado='todos',
+                         fecha_inicio='', fecha_fin='', ordenar='desc')
 
 @app.route('/editar_folio/<folio>', methods=['GET', 'POST'])
 def editar_folio(folio):
