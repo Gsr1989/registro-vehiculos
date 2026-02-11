@@ -696,25 +696,66 @@ def admin_folios():
     if not session.get('admin'):
         return redirect(url_for('login'))
     
-    folios = supabase.table("folios_registrados")\
-        .select("*")\
-        .eq("entidad", ENTIDAD)\
-        .order("fecha_expedicion", desc=True)\
-        .execute().data or []
+    # LEER PARÁMETROS DEL FORMULARIO
+    filtro = request.args.get('filtro', '').strip()
+    criterio = request.args.get('criterio', 'folio')
+    estado_filtro = request.args.get('estado', 'todos')
+    fecha_inicio = request.args.get('fecha_inicio', '')
+    fecha_fin = request.args.get('fecha_fin', '')
+    ordenar = request.args.get('ordenar', 'desc')
     
+    # QUERY BASE
+    query = supabase.table("folios_registrados").select("*").eq("entidad", ENTIDAD)
+    
+    # FILTRO POR FOLIO O SERIE
+    if filtro:
+        if criterio == 'folio':
+            query = query.ilike('folio', f'%{filtro}%')
+        elif criterio == 'numero_serie':
+            query = query.ilike('numero_serie', f'%{filtro}%')
+    
+    # FILTRO POR FECHAS
+    if fecha_inicio:
+        query = query.gte('fecha_expedicion', fecha_inicio)
+    if fecha_fin:
+        query = query.lte('fecha_expedicion', fecha_fin)
+    
+    # ORDENAR
+    query = query.order('fecha_expedicion', desc=(ordenar == 'desc'))
+    
+    # EJECUTAR QUERY
+    folios = query.execute().data or []
+    
+    # CALCULAR ESTADO Y FILTRAR
     hoy = today_cdmx()
+    folios_filtrados = []
     
     for f in folios:
         try:
             fe = parse_date_any(f.get('fecha_expedicion'))
             fv = parse_date_any(f.get('fecha_vencimiento'))
             f['estado'] = "VIGENTE" if hoy <= fv else "VENCIDO"
+            
+            # FILTRAR POR ESTADO
+            if estado_filtro == 'todos':
+                folios_filtrados.append(f)
+            elif estado_filtro == 'vigente' and f['estado'] == 'VIGENTE':
+                folios_filtrados.append(f)
+            elif estado_filtro == 'vencido' and f['estado'] == 'VENCIDO':
+                folios_filtrados.append(f)
         except:
             f['estado'] = 'ERROR'
+            if estado_filtro == 'todos':
+                folios_filtrados.append(f)
     
-    return render_template('admin_folios.html', folios=folios, 
-                         filtro='', criterio='folio', estado='todos',
-                         fecha_inicio='', fecha_fin='', ordenar='desc')
+    return render_template('admin_folios.html', 
+                         folios=folios_filtrados,
+                         filtro=filtro,
+                         criterio=criterio,
+                         estado=estado_filtro,
+                         fecha_inicio=fecha_inicio,
+                         fecha_fin=fecha_fin,
+                         ordenar=ordenar)
 
 @app.route('/editar_folio/<folio>', methods=['GET', 'POST'])
 def editar_folio(folio):
