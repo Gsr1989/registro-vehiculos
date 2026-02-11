@@ -43,6 +43,19 @@
       font-size: 16px;
       text-transform: uppercase;
     }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      color: #333;
+    }
+    .nota {
+      font-size: 13px;
+      color: #666;
+      font-style: italic;
+      margin-top: 5px;
+    }
     .btn {
       background-color: #800000;
       color: white;
@@ -54,6 +67,7 @@
       transition: background-color 0.3s ease;
       width: 100%;
       margin-top: 15px;
+      font-weight: bold;
     }
     .btn:hover {
       background-color: #a00000;
@@ -103,34 +117,19 @@
 {% endwith %}
 
 <form method="POST" class="formulario">
-  <input type="hidden" name="entidad" value="cdmx">
-  <input type="hidden" name="telefono" value="0">
-  
-  <!-- ✅ ADMIN PIDE FOLIO MANUAL -->
-  <input type="text" name="folio" id="folio" placeholder="Folio (ADMIN)" required>
-  
+  <label for="folio">Folio (opcional):</label>
+  <input type="text" name="folio" id="folio" placeholder="Dejar vacío para generar automático">
+  <p class="nota">💡 Si dejas este campo vacío, se generará automáticamente</p>
+
   <input type="text" name="marca" id="marca" placeholder="Marca" required>
   <input type="text" name="linea" id="linea" placeholder="Línea" required>
   <input type="number" name="anio" id="anio" placeholder="Año" required>
   <input type="text" name="serie" id="serie" placeholder="Número de Serie" required>
   <input type="text" name="motor" id="motor" placeholder="Número de Motor" required>
-  
-  <!-- ✅ ADMIN TAMBIÉN PIDE NOMBRE -->
-  <input type="text" name="nombre" id="nombre" placeholder="Nombre Completo" required>
+  <input type="text" name="nombre" id="nombre" placeholder="Nombre del Propietario">
 
-  <label>Fecha de expedición: 
-    <input type="date" name="fecha_expedicion" id="fecha_expedicion" required>
-  </label>
-
-  <label>Vigencia: 
-    <select name="vigencia" id="vigencia" required>
-      <option value="30" selected>30 días</option>
-      <option value="60">60 días</option>
-      <option value="90">90 días</option>
-    </select>
-  </label>
-
-  <input type="hidden" name="fecha_vencimiento" id="fecha_vencimiento">
+  <label for="fecha_inicio">Fecha de inicio de vigencia:</label>
+  <input type="date" name="fecha_inicio" id="fecha_inicio" required>
 
   <label>
     <input type="checkbox" id="modoAuto" checked> Activar detección automática
@@ -152,6 +151,12 @@
 </footer>
 
 <script>
+// Establecer fecha de hoy como valor mínimo y por defecto
+const fechaInput = document.getElementById('fecha_inicio');
+const hoy = new Date().toISOString().split('T')[0];
+fechaInput.setAttribute('min', hoy);
+fechaInput.value = hoy;
+
 async function decodificarVIN(vin) {
   if (!vin || vin.length < 11) return;
   const url = `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`;
@@ -159,34 +164,19 @@ async function decodificarVIN(vin) {
     const res = await fetch(url);
     const data = await res.json();
     const result = data.Results[0];
-    if (result.Make)      document.getElementById("marca").value = result.Make.toUpperCase();
-    if (result.Model)     document.getElementById("linea").value = result.Model.toUpperCase();
-    if (result.ModelYear) document.getElementById("anio").value = result.ModelYear;
+    if (result.Make && !document.getElementById("marca").value)      
+      document.getElementById("marca").value = result.Make.toUpperCase();
+    if (result.Model && !document.getElementById("linea").value)     
+      document.getElementById("linea").value = result.Model.toUpperCase();
+    if (result.ModelYear && !document.getElementById("anio").value) 
+      document.getElementById("anio").value = result.ModelYear;
   } catch (err) {
     console.log("Error al decodificar VIN:", err);
   }
 }
 
-function actualizarFechas() {
-  const fechaExp = document.getElementById("fecha_expedicion");
-  const vigencia = document.getElementById("vigencia");
-  const fechaVen = document.getElementById("fecha_vencimiento");
-
-  const expDate = new Date(fechaExp.value);
-  const vig = parseInt(vigencia.value);
-  expDate.setDate(expDate.getDate() + vig);
-  fechaVen.value = expDate.toISOString().split('T')[0];
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  const hoy = new Date().toISOString().split('T')[0];
-  const fechaExp = document.getElementById("fecha_expedicion");
-  fechaExp.value = hoy;
-  actualizarFechas();
-});
-
-campo = document.getElementById("autotexto");
-auto = document.getElementById("modoAuto");
+const campo = document.getElementById("autotexto");
+const auto = document.getElementById("modoAuto");
 
 campo.addEventListener("input", () => {
   if (!auto.checked) return;
@@ -194,35 +184,36 @@ campo.addEventListener("input", () => {
   const texto = campo.value.toUpperCase();
   const limpiar = txt => txt.replace(/(FOLIO|MARCA|L[ÍI]NEA|MODELO|AÑO|N[ÚU]MERO DE SERIE|SERIE|MOTOR|NOMBRE|:)/g, '').trim();
 
-  // ✅ DETECCIÓN DE FOLIO
   const folio = texto.match(/FOLIO\s+[A-Z0-9]{3,}/);
-  if (folio) document.getElementById("folio").value = limpiar(folio[0]);
+  if (folio && !document.getElementById("folio").value) 
+    document.getElementById("folio").value = limpiar(folio[0]);
 
   const marca = texto.match(/MARCA\s+[A-Z0-9\s]+/);
-  if (marca) document.getElementById("marca").value = limpiar(marca[0]);
+  if (marca && !document.getElementById("marca").value) 
+    document.getElementById("marca").value = limpiar(marca[0]);
 
   const linea = texto.match(/L[ÍI]NEA\s+[A-Z0-9\s]+/);
-  if (linea) document.getElementById("linea").value = limpiar(linea[0]);
+  if (linea && !document.getElementById("linea").value) 
+    document.getElementById("linea").value = limpiar(linea[0]);
 
   const anio = texto.match(/\b(19[5-9][0-9]|20[0-4][0-9]|[1-4][0-9]{3})\b/);
-  if (anio) document.getElementById("anio").value = anio[0];
+  if (anio && !document.getElementById("anio").value) 
+    document.getElementById("anio").value = anio[0];
 
   const serie = texto.match(/\b[A-HJ-NPR-Z0-9]{11,17}\b/);
-  if (serie) {
+  if (serie && !document.getElementById("serie").value) {
     document.getElementById("serie").value = serie[0];
     decodificarVIN(serie[0]);
   }
 
   const motor = texto.match(/(MOTOR|HECHO EN|FABRICADO EN|SIN NÚMERO|S\/N|NO TIENE|NO CUENTA)\s*[A-Z0-9ÁÉÍÓÚÑ\s]+/);
-  if (motor) document.getElementById("motor").value = limpiar(motor[0]);
+  if (motor && !document.getElementById("motor").value) 
+    document.getElementById("motor").value = limpiar(motor[0]);
   
-  // ✅ DETECCIÓN DE NOMBRE
   const nombre = texto.match(/NOMBRE\s+[A-ZÁÉÍÓÚÑ\s]+/);
-  if (nombre) document.getElementById("nombre").value = limpiar(nombre[0]);
+  if (nombre && !document.getElementById("nombre").value) 
+    document.getElementById("nombre").value = limpiar(nombre[0]);
 });
-
-document.getElementById("fecha_expedicion").addEventListener("change", actualizarFechas);
-document.getElementById("vigencia").addEventListener("change", actualizarFechas);
 </script>
 
 </body>
