@@ -30,8 +30,6 @@
     .btn-editar   { background:#2a72a5; color:#fff }
     .btn-eliminar { background:#a00;    color:#fff }
     .btn-descargar{ background:#228B22; color:#fff }
-    .btn-sms      { background:#ff9900; color:#fff }
-    .btn-masivo   { background:#800; color:#fff; margin-top:20px; }
     .volver { text-align:center; margin-bottom:20px }
     .volver a { background:#800; color:#fff; padding:10px 18px; border-radius:8px; text-decoration:none; font-size:15px }
     footer img { width:100%; display:block }
@@ -52,7 +50,6 @@
 
 <div class="titulo">Administración de Folios Registrados</div>
 
-<!-- Mensajes flash -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     <div class="flash-container">
@@ -63,7 +60,6 @@
   {% endif %}
 {% endwith %}
 
-<!-- 1) BUSCADOR SERVER-SIDE -->
 <form method="get" action="{{ url_for('admin_folios') }}" class="server-filter">
   <input type="text" name="filtro" placeholder="Buscar servidor..." value="{{ filtro }}">
   <select name="criterio">
@@ -84,73 +80,58 @@
   <button type="submit">Buscar</button>
 </form>
 
-<!-- 2) BUSCADOR CLIENT-SIDE -->
 <input id="search" type="text" placeholder="Buscar en esta tabla…">
 
-<!-- ✅ FORMULARIO MASIVO -->
-<form method="POST" action="{{ url_for('eliminar_folios_masivo') }}">
-  <div class="tabla-container">
-    <table id="tabla">
-      <thead>
-        <tr>
-          <th><input type="checkbox" id="select-all"></th>
-          <th>Folio</th><th>Marca</th><th>Línea</th><th>Año</th>
-          <th>Serie</th><th>Motor</th><th>Entidad</th><th>Teléfono</th>
-          <th>Expedición</th><th>Vencimiento</th><th>Estado</th><th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for f in folios %}
-        <tr>
-          <td><input type="checkbox" name="folios" value="{{ f.folio }}"></td>
-          <td>{{ f.folio }}</td>
-          <td>{{ f.marca }}</td>
-          <td>{{ f.linea }}</td>
-          <td>{{ f.anio }}</td>
-          <td>{{ f.numero_serie }}</td>
-          <td>{{ f.numero_motor }}</td>
-          <td>{{ f.entidad }}</td>
-          <td>{{ f.numero_telefono or '—' }}</td>
-          <td>{{ f.fecha_expedicion[:10] }}</td>
-          <td>{{ f.fecha_vencimiento[:10] }}</td>
-          <td>
-            <span class="{% if f.estado=='VIGENTE' %}estado-verde{% else %}estado-rojo{% endif %}">
-              {{ f.estado }}
-            </span>
-          </td>
-          <td>
-            <a href="{{ url_for('editar_folio', folio=f.folio) }}">
-              <button type="button" class="btn btn-editar">Editar</button>
-            </a>
-            <form method="POST" action="{{ url_for('eliminar_folio') }}" style="display:inline">
-              <input type="hidden" name="folio" value="{{ f.folio }}">
-              <button type="submit" class="btn btn-eliminar">Eliminar</button>
-            </form>
-            <a href="{{ url_for('descargar_pdf', folio=f.folio) }}" target="_blank">
-              <button type="button" class="btn btn-descargar">PDF</button>
-            </a>
-            <form method="POST" action="{{ url_for('enviar_sms_manual') }}" style="display:inline">
-              <input type="hidden" name="folio" value="{{ f.folio }}">
-              <input type="hidden" name="telefono" value="{{ f.numero_telefono }}">
-              <button type="submit" class="btn btn-sms">SMS</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  <div style="text-align:center;">
-    <button type="submit" class="btn btn-masivo">🗑️ Eliminar seleccionados</button>
-  </div>
-</form>
+<div class="tabla-container">
+  <table id="tabla">
+    <thead>
+      <tr>
+        <th>Folio</th><th>Marca</th><th>Línea</th><th>Año</th>
+        <th>Serie</th><th>Motor</th><th>Entidad</th>
+        <th>Expedición</th><th>Vencimiento</th><th>Estado</th><th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in folios %}
+      <tr>
+        <td>{{ f.folio }}</td>
+        <td>{{ f.marca }}</td>
+        <td>{{ f.linea }}</td>
+        <td>{{ f.anio }}</td>
+        <td>{{ f.numero_serie }}</td>
+        <td>{{ f.numero_motor }}</td>
+        <td>{{ f.entidad }}</td>
+        <td>{{ f.fecha_expedicion[:10] }}</td>
+        <td>{{ f.fecha_vencimiento[:10] }}</td>
+        <td>
+          <span class="{% if f.estado=='VIGENTE' %}estado-verde{% else %}estado-rojo{% endif %}">
+            {{ f.estado }}
+          </span>
+        </td>
+        <td>
+          <a href="{{ url_for('editar_folio', folio=f.folio) }}">
+            <button type="button" class="btn btn-editar">Editar</button>
+          </a>
+          <form method="POST" action="{{ url_for('eliminar_folio') }}" style="display:inline">
+            <input type="hidden" name="folio" value="{{ f.folio }}">
+            <button type="submit" class="btn btn-eliminar">Eliminar</button>
+          </form>
+          <a href="{{ url_for('descargar_recibo', folio=f.folio) }}" target="_blank">
+            <button type="button" class="btn btn-descargar">PDF</button>
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
 <div class="volver">
   <a href="{{ url_for('admin') }}">Volver al Panel</a>
 </div>
+
 <footer><img src="{{ url_for('static', filename='footer.png') }}" alt="Footer"></footer>
 
-<!-- ✅ JS -->
 <script>
   const s = document.getElementById('search');
   s.addEventListener('keydown', e => {
@@ -160,13 +141,6 @@
     const term = this.value.toLowerCase();
     document.querySelectorAll('#tabla tbody tr').forEach(r => {
       r.style.display = r.textContent.toLowerCase().includes(term) ? '' : 'none';
-    });
-  });
-
-  const selectAll = document.getElementById('select-all');
-  selectAll.addEventListener('change', function() {
-    document.querySelectorAll('input[name="folios"]').forEach(cb => {
-      cb.checked = this.checked;
     });
   });
 </script>
