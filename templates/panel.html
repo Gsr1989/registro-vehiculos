@@ -51,13 +51,14 @@
             background-color: #800000;
             color: #fff;
             border: none;
-            padding: 4px 8px;
-            font-size: 14px;
-            border-radius: 4px;
+            padding: 14px 22px;
+            font-size: 16px;
+            border-radius: 6px;
             cursor: pointer;
             text-decoration: none;
             white-space: nowrap;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
         }
         .btn:hover {
             background-color: #a00000;
@@ -76,9 +77,8 @@
             header img { height: 60px; }
             .titulo { font-size: 24px; margin-top: 20px; }
             .btn {
-                padding: 6px 10px;
-                font-size: 16px;
-                width: auto;
+                padding: 10px 16px;
+                font-size: 14px;
             }
         }
     </style>
@@ -101,14 +101,11 @@
 {% endwith %}
 
 <div class="botones">
-    <a href="{{ url_for('registro_admin') }}" class="btn">Registrar Folio</a>
-    <a href="{{ url_for('consulta_folio') }}" class="btn">Consultar Folio</a>
-    <a href="{{ url_for('crear_usuario') }}" class="btn">Crear Usuario</a>
-    <a href="{{ url_for('admin_folios') }}" class="btn">Ver Todos los Folios</a>
-    <form method="POST" action="{{ url_for('enviar_alertas') }}" style="display:inline;">
-      <button type="submit" class="btn">Enviar SMS Vencidos</button>
-    </form>
-    <a href="{{ url_for('logout') }}" class="btn">Cerrar Sesión</a>
+    <a href="{{ url_for('registro_admin') }}" class="btn">📝 Registrar Folio</a>
+    <a href="{{ url_for('consulta_folio') }}" class="btn">🔍 Consultar Folio</a>
+    <a href="{{ url_for('crear_usuario') }}" class="btn">👤 Crear Usuario</a>
+    <a href="{{ url_for('admin_folios') }}" class="btn">📋 Ver Todos los Folios</a>
+    <a href="{{ url_for('logout') }}" class="btn">🚪 Cerrar Sesión</a>
 </div>
 
 <footer>
