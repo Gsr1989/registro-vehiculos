@@ -28,7 +28,6 @@
             color: #222;
         }
         
-        /* ✅ NUEVO: Contador visual de folios */
         .contador-folios {
             max-width: 600px;
             margin: 30px auto 20px;
@@ -112,6 +111,13 @@
             font-size: 16px;
             text-transform: uppercase;
         }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            color: #333;
+        }
         .btn {
             background-color: #800000;
             color: white;
@@ -123,6 +129,7 @@
             transition: background-color 0.3s ease;
             width: 100%;
             margin-top: 15px;
+            font-weight: bold;
         }
         .btn:hover {
             background-color: #a00000;
@@ -148,6 +155,7 @@
             justify-content: center;
             gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
         .botones-acciones a {
             background-color: #800000;
@@ -196,13 +204,12 @@
 
 <div class="titulo">Secretaría de Movilidad</div>
 
-<!-- ✅ NUEVO: Contador visual de folios -->
 <div class="contador-folios">
     <h3>📊 Tus Folios Disponibles</h3>
     
     <div class="barra-contenedor">
         <div class="barra-progreso" style="width: {{ porcentaje }}%;">
-            {{ "%.1f"|format(porcentaje) }}%
+            {{ porcentaje|round(1) }}%
         </div>
     </div>
     
@@ -217,7 +224,7 @@
         </div>
         <div>
             <span>🎯 Disponibles</span>
-            <strong>{{ folios_disponibles }}</strong>
+            <strong>{{ folios_asignados - folios_usados }}</strong>
         </div>
     </div>
 </div>
@@ -231,12 +238,6 @@
 {% endwith %}
 
 <form method="POST" class="formulario">
-    <input type="hidden" name="entidad" value="cdmx">
-    <input type="hidden" name="telefono" value="0">
-    <input type="hidden" name="vigencia" value="30">
-
-    <!-- ✅ QUITADO: Input de folio manual -->
-    <!-- ✅ AGREGADO: Mensaje informativo -->
     <div class="folio-auto-info">
         🎯 El folio se generará automáticamente
     </div>
@@ -246,19 +247,18 @@
     <input type="number" name="anio" placeholder="Año" required>
     <input type="text" name="serie" placeholder="Número de Serie" required>
     <input type="text" name="motor" placeholder="Número de Motor" required>
-    <input type="text" name="nombre" placeholder="Nombre" required>
+    <input type="text" name="nombre" placeholder="Nombre del Propietario">
 
-    <label>Fecha de expedición: 
-        <input type="date" name="fecha_expedicion" id="fecha_expedicion" required>
-    </label>
+    <label for="fecha_inicio">Fecha de inicio de vigencia:</label>
+    <input type="date" name="fecha_inicio" id="fecha_inicio" required>
 
     <button type="submit" class="btn">Registrar Folio</button>
 </form>
 
 <div class="botones-acciones">
-    <a href="{{ url_for('mis_permisos') }}">📋 Ver Mis Permisos</a>
-    <a href="{{ url_for('consulta_folio') }}">Consultar Folio</a>
-    <a href="{{ url_for('logout') }}">Cerrar Sesión</a>
+    <a href="{{ url_for('mis_permisos') }}">📋 Mis Permisos</a>
+    <a href="{{ url_for('consulta_folio') }}">🔍 Consultar Folio</a>
+    <a href="{{ url_for('logout') }}">🚪 Cerrar Sesión</a>
 </div>
 
 <footer>
@@ -266,20 +266,13 @@
 </footer>
 
 <script>
-// =========================================
-// 🔥 FECHA AUTOMÁTICA
-// =========================================
-window.addEventListener('DOMContentLoaded', () => {
-    const hoy = new Date().toISOString().split('T')[0];
-    const fechaExp = document.getElementById("fecha_expedicion");
-    if (fechaExp) {
-        fechaExp.value = hoy;
-    }
-});
+// Establecer fecha de hoy como valor mínimo y por defecto
+const fechaInput = document.getElementById('fecha_inicio');
+const hoy = new Date().toISOString().split('T')[0];
+fechaInput.setAttribute('min', hoy);
+fechaInput.value = hoy;
 
-// =========================================
-// 🔥 PREVENIR DOBLE CLICK EN FORMULARIO
-// =========================================
+// Prevenir doble click
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
     const submitBtn = form.querySelector('button[type="submit"]');
@@ -292,23 +285,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         enviando = true;
-        
-        // Deshabilitar botón
         submitBtn.disabled = true;
         submitBtn.style.opacity = '0.6';
-        submitBtn.style.cursor = 'not-allowed';
-        
-        // Cambiar texto
-        const textoOriginal = submitBtn.textContent;
         submitBtn.textContent = '⏳ Generando permiso...';
         
-        // Si por alguna razón no se envía, rehabilitar después de 10 segundos
         setTimeout(function() {
             if (enviando) {
                 submitBtn.disabled = false;
                 submitBtn.style.opacity = '1';
-                submitBtn.style.cursor = 'pointer';
-                submitBtn.textContent = textoOriginal;
+                submitBtn.textContent = 'Registrar Folio';
                 enviando = false;
             }
         }, 10000);
