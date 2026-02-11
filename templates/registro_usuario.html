@@ -209,7 +209,7 @@
     
     <div class="barra-contenedor">
         <div class="barra-progreso" style="width: {{ porcentaje }}%;">
-            {{ porcentaje|round(1) }}%
+            {{ "%.1f"|format(porcentaje) }}%
         </div>
     </div>
     
