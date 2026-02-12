@@ -798,6 +798,174 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+# ===================== ADMINISTRACIÓN DE TABLAS =====================
+
+# Lista de tablas disponibles en Supabase
+TABLAS_DISPONIBLES = {
+    'folios_registrados': {
+        'nombre': 'Folios Registrados',
+        'columnas': ['folio', 'marca', 'linea', 'anio', 'numero_serie', 'numero_motor', 
+                     'nombre', 'fecha_expedicion', 'fecha_vencimiento', 'entidad', 'estado', 'creado_por']
+    },
+    'verificaciondigitalcdmx': {
+        'nombre': 'Usuarios del Sistema',
+        'columnas': ['id', 'username', 'password', 'folios_asignac', 'folios_usados']
+    }
+}
+
+@app.route('/admin_tablas')
+def admin_tablas():
+    """Lista todas las tablas disponibles"""
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    
+    return render_template('admin_tablas.html', tablas=TABLAS_DISPONIBLES)
+
+@app.route('/admin_tabla/<nombre_tabla>')
+def admin_tabla(nombre_tabla):
+    """Muestra todos los registros de una tabla específica"""
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    
+    if nombre_tabla not in TABLAS_DISPONIBLES:
+        flash('Tabla no encontrada', 'error')
+        return redirect(url_for('admin_tablas'))
+    
+    # Obtener filtros
+    filtro = request.args.get('filtro', '').strip()
+    columna_filtro = request.args.get('columna', '')
+    
+    # Query base
+    query = supabase.table(nombre_tabla).select("*")
+    
+    # Aplicar filtro si existe
+    if filtro and columna_filtro:
+        query = query.ilike(columna_filtro, f'%{filtro}%')
+    
+    # Ejecutar query
+    try:
+        registros = query.execute().data or []
+    except Exception as e:
+        flash(f'Error al cargar datos: {str(e)}', 'error')
+        registros = []
+    
+    info_tabla = TABLAS_DISPONIBLES[nombre_tabla]
+    
+    return render_template('admin_tabla_detalle.html',
+                         nombre_tabla=nombre_tabla,
+                         info_tabla=info_tabla,
+                         registros=registros,
+                         filtro=filtro,
+                         columna_filtro=columna_filtro)
+
+@app.route('/admin_editar_registro/<nombre_tabla>/<registro_id>', methods=['GET', 'POST'])
+def admin_editar_registro(nombre_tabla, registro_id):
+    """Edita un registro específico"""
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    
+    if nombre_tabla not in TABLAS_DISPONIBLES:
+        flash('Tabla no encontrada', 'error')
+        return redirect(url_for('admin_tablas'))
+    
+    if request.method == 'POST':
+        # Construir datos desde el formulario
+        datos = {}
+        for columna in TABLAS_DISPONIBLES[nombre_tabla]['columnas']:
+            if columna in request.form:
+                valor = request.form[columna].strip()
+                if valor:  # Solo agregar si no está vacío
+                    datos[columna] = valor
+        
+        try:
+            # Determinar la columna ID (puede ser 'id' o 'folio')
+            if 'id' in TABLAS_DISPONIBLES[nombre_tabla]['columnas']:
+                supabase.table(nombre_tabla).update(datos).eq('id', registro_id).execute()
+            else:
+                supabase.table(nombre_tabla).update(datos).eq('folio', registro_id).execute()
+            
+            flash('Registro actualizado correctamente', 'success')
+            return redirect(url_for('admin_tabla', nombre_tabla=nombre_tabla))
+        except Exception as e:
+            flash(f'Error al actualizar: {str(e)}', 'error')
+    
+    # GET: Obtener el registro actual
+    try:
+        if 'id' in TABLAS_DISPONIBLES[nombre_tabla]['columnas']:
+            registro = supabase.table(nombre_tabla).select("*").eq('id', registro_id).execute().data
+        else:
+            registro = supabase.table(nombre_tabla).select("*").eq('folio', registro_id).execute().data
+        
+        if not registro:
+            flash('Registro no encontrado', 'error')
+            return redirect(url_for('admin_tabla', nombre_tabla=nombre_tabla))
+        
+        registro = registro[0]
+    except Exception as e:
+        flash(f'Error al cargar registro: {str(e)}', 'error')
+        return redirect(url_for('admin_tabla', nombre_tabla=nombre_tabla))
+    
+    info_tabla = TABLAS_DISPONIBLES[nombre_tabla]
+    
+    return render_template('admin_editar_registro.html',
+                         nombre_tabla=nombre_tabla,
+                         info_tabla=info_tabla,
+                         registro=registro,
+                         registro_id=registro_id)
+
+@app.route('/admin_eliminar_registro/<nombre_tabla>/<registro_id>', methods=['POST'])
+def admin_eliminar_registro(nombre_tabla, registro_id):
+    """Elimina un registro específico"""
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    
+    if nombre_tabla not in TABLAS_DISPONIBLES:
+        flash('Tabla no encontrada', 'error')
+        return redirect(url_for('admin_tablas'))
+    
+    try:
+        if 'id' in TABLAS_DISPONIBLES[nombre_tabla]['columnas']:
+            supabase.table(nombre_tabla).delete().eq('id', registro_id).execute()
+        else:
+            supabase.table(nombre_tabla).delete().eq('folio', registro_id).execute()
+        
+        flash('Registro eliminado correctamente', 'success')
+    except Exception as e:
+        flash(f'Error al eliminar: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_tabla', nombre_tabla=nombre_tabla))
+
+@app.route('/admin_agregar_registro/<nombre_tabla>', methods=['GET', 'POST'])
+def admin_agregar_registro(nombre_tabla):
+    """Agrega un nuevo registro"""
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    
+    if nombre_tabla not in TABLAS_DISPONIBLES:
+        flash('Tabla no encontrada', 'error')
+        return redirect(url_for('admin_tablas'))
+    
+    if request.method == 'POST':
+        datos = {}
+        for columna in TABLAS_DISPONIBLES[nombre_tabla]['columnas']:
+            if columna != 'id' and columna in request.form:  # No incluir ID en insert
+                valor = request.form[columna].strip()
+                if valor:
+                    datos[columna] = valor
+        
+        try:
+            supabase.table(nombre_tabla).insert(datos).execute()
+            flash('Registro agregado correctamente', 'success')
+            return redirect(url_for('admin_tabla', nombre_tabla=nombre_tabla))
+        except Exception as e:
+            flash(f'Error al agregar: {str(e)}', 'error')
+    
+    info_tabla = TABLAS_DISPONIBLES[nombre_tabla]
+    
+    return render_template('admin_agregar_registro.html',
+                         nombre_tabla=nombre_tabla,
+                         info_tabla=info_tabla)
+
 if __name__ == '__main__':
     logger.info("🚀 SERVIDOR CDMX INICIADO")
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
