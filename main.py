@@ -149,35 +149,22 @@ def generar_folio_automatico_cdmx():
 def guardar_folio_con_reintento(datos, username):
     """
     Guarda folio en BD con reintentos
-    Si falla por duplicado, busca el siguiente disponible
+    - Si hay folio MANUAL: usa ESE exactamente (sin cambios)
+    - Si NO hay folio: genera automático con reintentos
     """
-    max_intentos = 10000000
-    
-    # Si no hay folio, generar uno
-    if not datos.get("folio"):
-        try:
-            datos["folio"] = generar_folio_automatico_cdmx()
-        except Exception as e:
-            logger.error(f"[ERROR] No se pudo generar folio: {e}")
-            return False
-    
     fexp_date = parse_date_any(datos["fecha_exp"])
     fven_date = parse_date_any(datos["fecha_ven"])
     
-    folio_base = datos["folio"]
-    
-    # Extraer el número después de "412"
-    try:
-        num_inicial = int(folio_base[3:])
-    except:
-        num_inicial = 1
-    
-    for intento in range(max_intentos):
-        folio_actual = f"{PREFIJO_CDMX}{num_inicial + intento}"
+    # ========================================
+    # 🔥 MODO 1: FOLIO MANUAL (SIN CAMBIOS)
+    # ========================================
+    if datos.get("folio") and datos["folio"].strip():
+        folio_manual = datos["folio"].strip()
+        logger.info(f"[FOLIO MANUAL] Intentando usar: {folio_manual}")
         
         try:
             supabase.table("folios_registrados").insert({
-                "folio": folio_actual,
+                "folio": folio_manual,
                 "marca": datos["marca"],
                 "linea": datos["linea"],
                 "anio": datos["anio"],
@@ -191,14 +178,67 @@ def guardar_folio_con_reintento(datos, username):
                 "creado_por": username
             }).execute()
             
-            datos["folio"] = folio_actual
-            logger.info(f"[DB] ✅ Folio {folio_actual} guardado (intento {intento + 1})")
+            datos["folio"] = folio_manual
+            logger.info(f"[DB] ✅ Folio MANUAL {folio_manual} guardado exitosamente")
             return True
             
         except Exception as e:
             em = str(e).lower()
             if "duplicate" in em or "unique constraint" in em or "23505" in em:
-                logger.warning(f"[DUP] {folio_actual} existe, probando siguiente...")
+                logger.error(f"[ERROR] ❌ Folio {folio_manual} YA EXISTE - Elige otro folio")
+                return False
+            
+            logger.error(f"[ERROR BD] {e}")
+            return False
+    
+    # ========================================
+    # 🔥 MODO 2: FOLIO AUTOMÁTICO (CON REINTENTOS)
+    # ========================================
+    logger.info("[FOLIO AUTO] Generando folio automático...")
+    
+    max_intentos = 10000000
+    
+    # Generar folio base
+    try:
+        folio_base = generar_folio_automatico_cdmx()
+    except Exception as e:
+        logger.error(f"[ERROR] No se pudo generar folio: {e}")
+        return False
+    
+    # Extraer número después de "412"
+    try:
+        num_inicial = int(folio_base[3:])
+    except:
+        num_inicial = 1
+    
+    # Intentar guardar con reintentos
+    for intento in range(max_intentos):
+        folio_candidato = f"{PREFIJO_CDMX}{num_inicial + intento}"
+        
+        try:
+            supabase.table("folios_registrados").insert({
+                "folio": folio_candidato,
+                "marca": datos["marca"],
+                "linea": datos["linea"],
+                "anio": datos["anio"],
+                "numero_serie": datos["numero_serie"],
+                "numero_motor": datos["numero_motor"],
+                "nombre": datos.get("nombre", "SIN NOMBRE"),
+                "fecha_expedicion": fexp_date.isoformat(),
+                "fecha_vencimiento": fven_date.isoformat(),
+                "entidad": ENTIDAD,
+                "estado": "ACTIVO",
+                "creado_por": username
+            }).execute()
+            
+            datos["folio"] = folio_candidato
+            logger.info(f"[DB] ✅ Folio AUTO {folio_candidato} guardado (intento {intento + 1})")
+            return True
+            
+        except Exception as e:
+            em = str(e).lower()
+            if "duplicate" in em or "unique constraint" in em or "23505" in em:
+                logger.warning(f"[DUP] {folio_candidato} existe, probando siguiente...")
                 continue
             
             logger.error(f"[ERROR BD] {e}")
@@ -412,7 +452,7 @@ def registro_usuario():
     folios_usados = int(usuario.get('folios_usados', 0))
     folios_disponibles = folios_asignados - folios_usados
 
-    # ✅ CALCULAR PORCENTAJE
+    # CALCULAR PORCENTAJE
     porcentaje = (folios_usados / folios_asignados * 100) if folios_asignados > 0 else 0
 
     if request.method == 'POST':
@@ -424,9 +464,7 @@ def registro_usuario():
                                  folios_disponibles=folios_disponibles,
                                  porcentaje=porcentaje)
 
-        # ========================================
-        # 🔥 CAMBIO 1: FOLIO MANUAL OPCIONAL
-        # ========================================
+        # FOLIO MANUAL OPCIONAL
         folio_manual = request.form.get('folio', '').strip()
         
         marca = request.form.get('marca', '').strip().upper()
@@ -436,9 +474,7 @@ def registro_usuario():
         numero_motor = request.form.get('motor', '').strip().upper()
         nombre = request.form.get('nombre', '').strip().upper() or 'SIN NOMBRE'
         
-        # ========================================
-        # 🔥 CAMBIO 2: FECHA RETROACTIVA OPCIONAL
-        # ========================================
+        # FECHA RETROACTIVA OPCIONAL
         fecha_inicio_str = request.form.get('fecha_inicio', '').strip()
 
         if not all([marca, linea, anio, numero_serie, numero_motor]):
@@ -469,7 +505,7 @@ def registro_usuario():
         venc = fecha_inicio + timedelta(days=30)
 
         datos = {
-            "folio": folio_manual if folio_manual else None,  # 🔥 MANUAL O AUTOMÁTICO
+            "folio": folio_manual if folio_manual else None,
             "marca": marca,
             "linea": linea,
             "anio": anio,
@@ -482,7 +518,7 @@ def registro_usuario():
 
         ok = guardar_folio_con_reintento(datos, session['username'])
         if not ok:
-            flash("❌ Error al registrar.", "error")
+            flash("❌ Error al registrar (folio duplicado o error de BD).", "error")
             return render_template('registro_usuario.html', 
                                  folios_asignados=folios_asignados,
                                  folios_usados=folios_usados,
@@ -505,7 +541,6 @@ def registro_usuario():
             fecha_generacion=fecha_inicio.strftime('%d/%m/%Y %H:%M')
         )
 
-    # ✅ GET - PASAR TODAS LAS VARIABLES INCLUIDO PORCENTAJE
     return render_template('registro_usuario.html', 
                          folios_asignados=folios_asignados,
                          folios_usados=folios_usados,
@@ -598,7 +633,7 @@ def registro_admin():
 
         ok = guardar_folio_con_reintento(datos, "ADMIN")
         if not ok:
-            flash("❌ Error al registrar.", "error")
+            flash("❌ Error al registrar (folio duplicado o error de BD).", "error")
             return redirect(url_for('registro_admin'))
 
         folio_final = datos["folio"]
@@ -710,7 +745,6 @@ def admin_folios():
     if not session.get('admin'):
         return redirect(url_for('login'))
     
-    # LEER PARÁMETROS DEL FORMULARIO
     filtro = request.args.get('filtro', '').strip()
     criterio = request.args.get('criterio', 'folio')
     estado_filtro = request.args.get('estado', 'todos')
@@ -718,29 +752,23 @@ def admin_folios():
     fecha_fin = request.args.get('fecha_fin', '')
     ordenar = request.args.get('ordenar', 'desc')
     
-    # QUERY BASE
     query = supabase.table("folios_registrados").select("*").eq("entidad", ENTIDAD)
     
-    # FILTRO POR FOLIO O SERIE
     if filtro:
         if criterio == 'folio':
             query = query.ilike('folio', f'%{filtro}%')
         elif criterio == 'numero_serie':
             query = query.ilike('numero_serie', f'%{filtro}%')
     
-    # FILTRO POR FECHAS
     if fecha_inicio:
         query = query.gte('fecha_expedicion', fecha_inicio)
     if fecha_fin:
         query = query.lte('fecha_expedicion', fecha_fin)
     
-    # ORDENAR
     query = query.order('fecha_expedicion', desc=(ordenar == 'desc'))
     
-    # EJECUTAR QUERY
     folios = query.execute().data or []
     
-    # CALCULAR ESTADO Y FILTRAR
     hoy = today_cdmx()
     folios_filtrados = []
     
@@ -750,7 +778,6 @@ def admin_folios():
             fv = parse_date_any(f.get('fecha_vencimiento'))
             f['estado'] = "VIGENTE" if hoy <= fv else "VENCIDO"
             
-            # FILTRAR POR ESTADO
             if estado_filtro == 'todos':
                 folios_filtrados.append(f)
             elif estado_filtro == 'vigente' and f['estado'] == 'VIGENTE':
@@ -814,7 +841,6 @@ def logout():
 
 # ===================== ADMINISTRACIÓN DE TABLAS =====================
 
-# Lista de tablas disponibles en Supabase
 TABLAS_DISPONIBLES = {
     'folios_registrados': {
         'nombre': 'Folios Registrados',
@@ -829,7 +855,6 @@ TABLAS_DISPONIBLES = {
 
 @app.route('/admin_tablas')
 def admin_tablas():
-    """Lista todas las tablas disponibles"""
     if not session.get('admin'):
         return redirect(url_for('login'))
     
@@ -837,7 +862,6 @@ def admin_tablas():
 
 @app.route('/admin_tabla/<nombre_tabla>')
 def admin_tabla(nombre_tabla):
-    """Muestra todos los registros de una tabla específica"""
     if not session.get('admin'):
         return redirect(url_for('login'))
     
@@ -845,18 +869,14 @@ def admin_tabla(nombre_tabla):
         flash('Tabla no encontrada', 'error')
         return redirect(url_for('admin_tablas'))
     
-    # Obtener filtros
     filtro = request.args.get('filtro', '').strip()
     columna_filtro = request.args.get('columna', '')
     
-    # Query base
     query = supabase.table(nombre_tabla).select("*")
     
-    # Aplicar filtro si existe
     if filtro and columna_filtro:
         query = query.ilike(columna_filtro, f'%{filtro}%')
     
-    # Ejecutar query
     try:
         registros = query.execute().data or []
     except Exception as e:
@@ -874,7 +894,6 @@ def admin_tabla(nombre_tabla):
 
 @app.route('/admin_editar_registro/<nombre_tabla>/<registro_id>', methods=['GET', 'POST'])
 def admin_editar_registro(nombre_tabla, registro_id):
-    """Edita un registro específico"""
     if not session.get('admin'):
         return redirect(url_for('login'))
     
@@ -883,16 +902,14 @@ def admin_editar_registro(nombre_tabla, registro_id):
         return redirect(url_for('admin_tablas'))
     
     if request.method == 'POST':
-        # Construir datos desde el formulario
         datos = {}
         for columna in TABLAS_DISPONIBLES[nombre_tabla]['columnas']:
             if columna in request.form:
                 valor = request.form[columna].strip()
-                if valor:  # Solo agregar si no está vacío
+                if valor:
                     datos[columna] = valor
         
         try:
-            # Determinar la columna ID (puede ser 'id' o 'folio')
             if 'id' in TABLAS_DISPONIBLES[nombre_tabla]['columnas']:
                 supabase.table(nombre_tabla).update(datos).eq('id', registro_id).execute()
             else:
@@ -903,7 +920,6 @@ def admin_editar_registro(nombre_tabla, registro_id):
         except Exception as e:
             flash(f'Error al actualizar: {str(e)}', 'error')
     
-    # GET: Obtener el registro actual
     try:
         if 'id' in TABLAS_DISPONIBLES[nombre_tabla]['columnas']:
             registro = supabase.table(nombre_tabla).select("*").eq('id', registro_id).execute().data
@@ -929,7 +945,6 @@ def admin_editar_registro(nombre_tabla, registro_id):
 
 @app.route('/admin_eliminar_registro/<nombre_tabla>/<registro_id>', methods=['POST'])
 def admin_eliminar_registro(nombre_tabla, registro_id):
-    """Elimina un registro específico"""
     if not session.get('admin'):
         return redirect(url_for('login'))
     
@@ -951,7 +966,6 @@ def admin_eliminar_registro(nombre_tabla, registro_id):
 
 @app.route('/admin_agregar_registro/<nombre_tabla>', methods=['GET', 'POST'])
 def admin_agregar_registro(nombre_tabla):
-    """Agrega un nuevo registro"""
     if not session.get('admin'):
         return redirect(url_for('login'))
     
@@ -962,7 +976,7 @@ def admin_agregar_registro(nombre_tabla):
     if request.method == 'POST':
         datos = {}
         for columna in TABLAS_DISPONIBLES[nombre_tabla]['columnas']:
-            if columna != 'id' and columna in request.form:  # No incluir ID en insert
+            if columna != 'id' and columna in request.form:
                 valor = request.form[columna].strip()
                 if valor:
                     datos[columna] = valor
