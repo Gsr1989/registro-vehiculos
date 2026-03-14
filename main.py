@@ -424,6 +424,11 @@ def registro_usuario():
                                  folios_disponibles=folios_disponibles,
                                  porcentaje=porcentaje)
 
+        # ========================================
+        # 🔥 CAMBIO 1: FOLIO MANUAL OPCIONAL
+        # ========================================
+        folio_manual = request.form.get('folio', '').strip()
+        
         marca = request.form.get('marca', '').strip().upper()
         linea = request.form.get('linea', '').strip().upper()
         anio = request.form.get('anio', '').strip()
@@ -431,9 +436,12 @@ def registro_usuario():
         numero_motor = request.form.get('motor', '').strip().upper()
         nombre = request.form.get('nombre', '').strip().upper() or 'SIN NOMBRE'
         
+        # ========================================
+        # 🔥 CAMBIO 2: FECHA RETROACTIVA OPCIONAL
+        # ========================================
         fecha_inicio_str = request.form.get('fecha_inicio', '').strip()
 
-        if not all([marca, linea, anio, numero_serie, numero_motor, fecha_inicio_str]):
+        if not all([marca, linea, anio, numero_serie, numero_motor]):
             flash("❌ Faltan campos obligatorios.", "error")
             return render_template('registro_usuario.html', 
                                  folios_asignados=folios_asignados,
@@ -441,21 +449,27 @@ def registro_usuario():
                                  folios_disponibles=folios_disponibles,
                                  porcentaje=porcentaje)
 
-        try:
-            fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
-            fecha_inicio = fecha_inicio.replace(tzinfo=TZ_CDMX)
-        except:
-            flash("❌ Fecha inválida.", "error")
-            return render_template('registro_usuario.html', 
-                                 folios_asignados=folios_asignados,
-                                 folios_usados=folios_usados,
-                                 folios_disponibles=folios_disponibles,
-                                 porcentaje=porcentaje)
+        # Si NO hay fecha, usar HOY
+        if not fecha_inicio_str:
+            fecha_inicio = now_cdmx()
+            logger.info("[FECHA] Usando fecha actual (no se proporcionó)")
+        else:
+            try:
+                fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
+                fecha_inicio = fecha_inicio.replace(tzinfo=TZ_CDMX)
+                logger.info(f"[FECHA] Usando fecha retroactiva: {fecha_inicio_str}")
+            except:
+                flash("❌ Fecha inválida.", "error")
+                return render_template('registro_usuario.html', 
+                                     folios_asignados=folios_asignados,
+                                     folios_usados=folios_usados,
+                                     folios_disponibles=folios_disponibles,
+                                     porcentaje=porcentaje)
 
         venc = fecha_inicio + timedelta(days=30)
 
         datos = {
-            "folio": None,
+            "folio": folio_manual if folio_manual else None,  # 🔥 MANUAL O AUTOMÁTICO
             "marca": marca,
             "linea": linea,
             "anio": anio,
