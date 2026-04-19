@@ -8,16 +8,13 @@
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:#fff;font-family:Arial,sans-serif}
 
-    /* ── HEADER / FOOTER (igual que admin_tablas.html) ── */
     header{display:flex;justify-content:space-between;align-items:center;padding:10px 30px;border-bottom:2px solid #800}
     header img{height:80px}
     footer img{width:100%;display:block;margin-top:40px}
 
-    /* ── TÍTULO ── */
     .titulo{text-align:center;font-size:22px;font-weight:bold;margin:18px 0 10px;color:#800}
     .subtitulo{text-align:center;font-size:13px;color:#666;margin-bottom:16px}
 
-    /* ── BARRA HERRAMIENTAS ── */
     .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 20px;background:#fdf5f5;border-top:1px solid #eee;border-bottom:1px solid #eee}
     .sbox{flex:1;min-width:220px;border:1px solid #ccc;border-radius:6px;padding:8px 12px;font-size:13px;font-family:Arial;outline:none}
     .sbox:focus{border-color:#800}
@@ -29,45 +26,38 @@
     .dl-btn:hover{background:#333}
     .info-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 20px;font-size:12px;color:#666;border-bottom:1px solid #eee}
 
-    /* ── TABLA ── */
     .wrap{overflow-x:auto;padding:0 20px 80px}
     table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
-    thead th{background:#800;color:#fff;padding:8px 8px;text-align:left;white-space:nowrap;font-size:11px;letter-spacing:.3px;position:sticky;top:0;z-index:50}
+    thead th{background:#800;color:#fff;padding:8px;text-align:left;white-space:nowrap;font-size:11px;letter-spacing:.3px;position:sticky;top:0;z-index:50}
     tbody tr:nth-child(odd){background:#fff}
     tbody tr:nth-child(even){background:#fdf5f5}
     tbody tr:hover{background:#ffe8e8}
     td{padding:5px 6px;border-bottom:1px solid #f0e0e0;vertical-align:middle;white-space:nowrap}
     .num{color:#bbb;font-size:11px;text-align:center;min-width:30px;user-select:none}
 
-    /* ── CELDA TEXTO (span) → click convierte a input ── */
     .cv{display:inline-block;min-width:60px;max-width:200px;overflow:hidden;text-overflow:ellipsis;cursor:text;padding:3px 5px;border-radius:4px;border:1px solid transparent;color:#333;vertical-align:middle}
     .cv:hover{border-color:#ccc;background:#fff8f8}
     .cv.null-val{color:#ccc;font-style:italic}
     .cv.col-folio{color:#800;font-weight:bold}
     .cv.col-estado{color:#060}
 
-    /* ── INPUT (solo al editar) ── */
     .cell-input{border:2px solid #800;border-radius:4px;padding:3px 6px;font-size:12px;font-family:Arial;min-width:120px;max-width:260px;outline:none;background:#fff8f8}
     .cell-input.saving{border-color:#060;background:#f0fff0}
     .cell-input.err{border-color:#c00;background:#fff0f0}
 
-    /* ── BOTÓN DEL ── */
     .del-btn{background:#fff;border:1px solid #ccc;color:#c00;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer}
     .del-btn:hover{background:#c00;color:#fff;border-color:#c00}
 
-    /* ── PAGINACIÓN ── */
     .pag{display:flex;gap:6px;align-items:center;justify-content:center;padding:14px 20px;border-top:1px solid #eee;flex-wrap:wrap;position:sticky;bottom:0;background:#fff}
     .pag a,.pag span{padding:6px 12px;border:1px solid #ccc;border-radius:5px;font-size:12px;color:#800;text-decoration:none}
     .pag a:hover{background:#fff0f0}
     .pag .cur{background:#800;color:#fff;border-color:#800;font-weight:bold}
     .pag .dots{border:none;color:#aaa}
 
-    /* ── VOLVER ── */
     .volver{text-align:center;margin:20px 0}
     .volver a{background:#800;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none}
     .volver a:hover{background:#a00}
 
-    /* ── TOAST ── */
     .toast{position:fixed;bottom:70px;right:18px;z-index:999;padding:9px 16px;border-radius:7px;font-size:12px;opacity:0;transition:opacity .25s;pointer-events:none;border:1px solid transparent;max-width:260px}
     .toast.show{opacity:1}
     .toast.ok{background:#e6ffee;border-color:#060;color:#060}
@@ -87,7 +77,6 @@
   {% if q %} · Búsqueda: "<strong>{{ q }}</strong>"{% endif %}
 </div>
 
-<!-- BARRA DE HERRAMIENTAS -->
 <div class="bar">
   <form method="GET" action="" style="display:contents">
     <input
@@ -116,7 +105,6 @@
   <span>{{ registros|length }} en esta página</span>
 </div>
 
-<!-- TABLA -->
 <div class="wrap">
   {% if registros %}
   <table id="tbl">
@@ -149,7 +137,7 @@
         <td>
           <button
             class="del-btn"
-            onclick="delRow(this,'{{ reg.get(pk_col,'') }}','row{{ loop.index }}')"
+            onclick="delRow(this,'{{ reg.get(pk_col, '') }}','row{{ loop.index }}')"
           >Borrar</button>
         </td>
       </tr>
@@ -168,23 +156,18 @@
   {% endif %}
 </div>
 
-<!-- PAGINACIÓN -->
 {% if total_pages > 1 %}
 <div class="pag">
   {% if page > 1 %}
     <a href="?q={{ q }}&page={{ page - 1 }}">&#8592; Ant</a>
   {% endif %}
-
   {% if page > 2 %}<a href="?q={{ q }}&page=1">1</a>{% endif %}
   {% if page > 3 %}<span class="dots">…</span>{% endif %}
   {% if page > 1 %}<a href="?q={{ q }}&page={{ page - 1 }}">{{ page - 1 }}</a>{% endif %}
-
   <span class="cur">{{ page }}</span>
-
   {% if page < total_pages %}<a href="?q={{ q }}&page={{ page + 1 }}">{{ page + 1 }}</a>{% endif %}
   {% if page < total_pages - 2 %}<span class="dots">…</span>{% endif %}
   {% if page < total_pages - 1 %}<a href="?q={{ q }}&page={{ total_pages }}">{{ total_pages }}</a>{% endif %}
-
   {% if page < total_pages %}
     <a href="?q={{ q }}&page={{ page + 1 }}">Sig &#8594;</a>
   {% endif %}
@@ -205,27 +188,23 @@
 const TABLA  = "{{ nombre_tabla }}";
 const PK_COL = "{{ pk_col }}";
 
-/* ── Click en span → reemplaza con input ──────────────────────────────────── */
 function editCell(span) {
-  // Si ya hay un input activo en esta celda, ignorar
   if (span.style.display === 'none') return;
+  const col   = span.dataset.col;
+  const pk    = span.dataset.pk;
+  const origV = span.dataset.val;
 
-  const col    = span.dataset.col;
-  const pk     = span.dataset.pk;
-  const origV  = span.dataset.val;
-
-  const inp       = document.createElement('input');
-  inp.type        = 'text';
-  inp.className   = 'cell-input';
-  inp.value       = origV;
-  inp._span       = span;
-  inp._origVal    = origV;
-  inp._col        = col;
-  inp._pk         = pk;
+  const inp    = document.createElement('input');
+  inp.type     = 'text';
+  inp.className = 'cell-input';
+  inp.value    = origV;
+  inp._span    = span;
+  inp._origVal = origV;
+  inp._col     = col;
+  inp._pk      = pk;
 
   span.parentNode.insertBefore(inp, span);
   span.style.display = 'none';
-
   inp.focus();
   inp.select();
 
@@ -246,19 +225,14 @@ function finishEdit(inp) {
 
   if (inp._cancel || newVal === orig) return;
 
-  // Actualización visual inmediata (optimistic)
-  span.textContent  = newVal || 'null';
-  span.dataset.val  = newVal;
+  span.textContent = newVal || 'null';
+  span.dataset.val = newVal;
   span.classList.toggle('null-val', !newVal);
 
-  // Guardar en BD
   fetch('/api/update_cell', {
     method:  'POST',
     headers: {'Content-Type': 'application/json'},
-    body:    JSON.stringify({
-      tabla: TABLA, pk_col: PK_COL, pk_val: inp._pk,
-      col:   inp._col, val: newVal
-    })
+    body:    JSON.stringify({tabla: TABLA, pk_col: PK_COL, pk_val: inp._pk, col: inp._col, val: newVal})
   })
   .then(r => r.json())
   .then(d => {
@@ -277,7 +251,6 @@ function finishEdit(inp) {
   });
 }
 
-/* ── Eliminar fila ────────────────────────────────────────────────────────── */
 function delRow(btn, pk, rowId) {
   if (!confirm('¿Eliminar este registro?\nEsta acción no se puede deshacer.')) return;
   btn.disabled    = true;
@@ -311,7 +284,6 @@ function delRow(btn, pk, rowId) {
   });
 }
 
-/* ── Toast ────────────────────────────────────────────────────────────────── */
 let tt;
 function showToast(msg, ok) {
   const t = document.getElementById('toast');
