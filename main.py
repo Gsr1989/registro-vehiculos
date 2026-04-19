@@ -654,7 +654,6 @@ def admin_tabla(nombre_tabla):
     offset = (page - 1) * PAGE_SIZE
 
     try:
-        # ================= CONTAR TOTAL =================
         cq = supabase.table(nombre_tabla).select("*", count='exact')
 
         if q and scols:
@@ -664,7 +663,6 @@ def admin_tabla(nombre_tabla):
         cr = cq.execute()
         total = cr.count if cr.count is not None else len(cr.data)
 
-        # ================= TRAER REGISTROS =================
         dq = supabase.table(nombre_tabla).select("*")
 
         if q and scols:
@@ -678,10 +676,7 @@ def admin_tabla(nombre_tabla):
         registros = []
         total = 0
 
-    # ================= COLUMNAS DINÁMICAS =================
     columnas = list(registros[0].keys()) if registros else info_tabla.get('columnas', [])
-
-    # ================= PAGINACIÓN =================
     total_pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
 
     return render_template(
