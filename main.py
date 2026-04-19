@@ -658,7 +658,7 @@ def admin_tabla(nombre_tabla):
 
         if q and scols:
             filtro = ",".join([f"{c}.ilike.%{q}%" for c in scols])
-            cq = cq.filter("or", f"({filtro})")
+            cq = cq.or_(filtro)
 
         cr = cq.execute()
         total = cr.count if cr.count is not None else len(cr.data)
