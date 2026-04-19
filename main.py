@@ -667,7 +667,7 @@ def admin_tabla(nombre_tabla):
 
         if q and scols:
             filtro = ",".join([f"{c}.ilike.%{q}%" for c in scols])
-            dq = dq.filter("or", f"({filtro})")
+            dq = dq.or_(filtro)
 
         registros = dq.range(offset, offset + PAGE_SIZE - 1).execute().data or []
 
