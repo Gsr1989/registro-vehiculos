@@ -636,55 +636,7 @@ def admin_tablas():
         return redirect(url_for('login'))
     return render_template('admin_tablas.html', tablas=TABLAS_DISPONIBLES)
 
-
 @app.route('/admin_tabla/<nombre_tabla>')
-def admin_tabla(nombre_tabla):
-    """
-    Vista inline editable usando admin_tabla_detalle.html.
-    - Celdas como <span> texto — click convierte a <input> (sin lag).
-    - Búsqueda server-side en Supabase sin selector de columna.
-    - Paginación de 100 filas.
-    - Muestra TODAS las columnas que devuelve Supabase.
-    """
-    if not session.get('admin'):
-        return redirect(url_for('login'))
-    if nombre_tabla not in TABLAS_DISPONIBLES:
-        flash('Tabla no encontrada', 'error')
-        return redirect(url_for('admin_tablas'))
-
-    info_tabla = TABLAS_DISPONIBLES[nombre_tabla]
-    pk_col     = info_tabla['pk_col']
-    scols      = info_tabla.get('search_cols', [])
-
-    q    = request.args.get('q', '').strip()
-    page = max(1, int(request.args.get('page', 1) or 1))
-    offset = (page - 1) * PAGE_SIZE
-
-    try:
-    #Contar total
-    cq = supabase.table(nombre_tabla).select("*", count='exact')
-
-    if q and scols:
-        filtro = ",".join([f"{c}.ilike.%{q}%" for c in scols])
-        cq = cq.filter("or", f"({filtro})")
-
-    cr = cq.execute()
-    total = cr.count if cr.count is not None else len(cr.data)
-
-    # Traer página
-    dq = supabase.table(nombre_tabla).select("*")
-
-    if q and scols:
-        filtro = ",".join([f"{c}.ilike.%{q}%" for c in scols])
-        dq = dq.filter("or", f"({filtro})")
-
-    registros = dq.range(offset, offset + PAGE_SIZE - 1).execute().data or []
-
-    except Exception as e:
-    flash(f'Error al cargar datos: {e}', 'error')
-    registros, total = [], 0
-
-   @app.route('/admin_tabla/<nombre_tabla>')
 def admin_tabla(nombre_tabla):
     if not session.get('admin'):
         return redirect(url_for('login'))
