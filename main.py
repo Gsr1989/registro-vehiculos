@@ -661,7 +661,7 @@ def admin_tabla(nombre_tabla):
     offset = (page - 1) * PAGE_SIZE
 
     try:
-    # Contar total
+    #Contar total
     cq = supabase.table(nombre_tabla).select("*", count='exact')
 
     if q and scols:
