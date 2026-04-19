@@ -680,7 +680,7 @@ def admin_tabla(nombre_tabla):
 
     registros = dq.range(offset, offset + PAGE_SIZE - 1).execute().data or []
 
-except Exception as e:
+    except Exception as e:
     flash(f'Error al cargar datos: {e}', 'error')
     registros, total = [], 0
 
