@@ -662,9 +662,9 @@ def admin_tabla(nombre_tabla):
 
     try:
         # Contar total
-cq = supabase.table(nombre_tabla).select("*", count='exact')
+    cq = supabase.table(nombre_tabla).select("*", count='exact')
 
-if q and scols:
+    if q and scols:
     filtro = ",".join([f"{c}.ilike.%{q}%" for c in scols])
     cq = cq.filter("or", f"({filtro})")
 
