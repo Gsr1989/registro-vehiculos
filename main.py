@@ -661,18 +661,24 @@ def admin_tabla(nombre_tabla):
     offset = (page - 1) * PAGE_SIZE
 
     try:
-        # Contar total con/sin filtro
-        cq = supabase.table(nombre_tabla).select("*", count='exact')
-        if q and scols:
-            cq = cq.or_(','.join(f'{c}.ilike.%{q}%' for c in scols))
-        cr    = cq.execute()
-        total = cr.count if cr.count is not None else len(cr.data)
+        # Contar total
+cq = supabase.table(nombre_tabla).select("*", count='exact')
 
-        # Traer página
-        dq = supabase.table(nombre_tabla).select("*")
-        if q and scols:
-            dq = dq.or_(','.join(f'{c}.ilike.%{q}%' for c in scols))
-        registros = dq.range(offset, offset + PAGE_SIZE - 1).execute().data or []
+if q and scols:
+    filtro = ",".join([f"{c}.ilike.%{q}%" for c in scols])
+    cq = cq.filter("or", f"({filtro})")
+
+cr = cq.execute()
+total = cr.count if cr.count is not None else len(cr.data)
+
+# Traer página
+dq = supabase.table(nombre_tabla).select("*")
+
+if q and scols:
+    filtro = ",".join([f"{c}.ilike.%{q}%" for c in scols])
+    dq = dq.filter("or", f"({filtro})")
+
+registros = dq.range(offset, offset + PAGE_SIZE - 1).execute().data or []
 
     except Exception as e:
         flash(f'Error al cargar datos: {e}', 'error')
