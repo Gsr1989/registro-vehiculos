@@ -271,7 +271,7 @@ def generar_pdf_unificado_cdmx(datos: dict) -> str:
             pg2.insert_text((135, 170), titulo_p2,                            fontsize=6,  fontname="hebo", color=(0,0,0))
             pg2.insert_text((135, 194), datos["numero_serie"],                fontsize=6,  fontname="hebo", color=(0,0,0))
             pg2.insert_text((135, 202), anio_str,                             fontsize=6,  fontname="hebo", color=(0,0,0))
-            pg2.insert_text((385, 415), f"${PRECIO_PERMISO}",                 fontsize=16, fontname="hebo", color=(0,0,0))
+            pg2.insert_text((385, 420), f"${PRECIO_PERMISO}",                 fontsize=16, fontname="hebo", color=(0,0,0))
             pg2.insert_text((190, 324), fecha_exp_dt.strftime('%d/%m/%Y'),    fontsize=6,  fontname="hebo", color=(0,0,0))
 
             doc1.insert_pdf(doc2)
