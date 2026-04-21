@@ -79,12 +79,11 @@ URL_CONSULTA_BASE    = "https://semovidigitalgob.onrender.com"
 ENTIDAD              = "cdmx"
 PRECIO_PERMISO       = 374
 DIAS_PERMISO         = 30
-PAGE_SIZE            = 100   # filas por página en admin_tabla
+PAGE_SIZE            = 100
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ===================== TABLAS DISPONIBLES =====================
-# search_cols: columnas de texto sobre las que aplica el ILIKE de Supabase
 TABLAS_DISPONIBLES = {
     'folios_registrados': {
         'nombre':      'Folios Registrados',
@@ -266,13 +265,15 @@ def generar_pdf_unificado_cdmx(datos: dict) -> str:
 
             titulo_p2 = (f"IMPUESTO POR DERECHO DE AUTOMOVIL Y MOTOCICLETAS "
                          f"(PERMISO PARA CIRCULAR {DIAS_PERMISO} DIAS)")
-            anio_str  = str(datos["anio"])
 
-            pg2.insert_text((135, 170), titulo_p2,                            fontsize=6,  fontname="hebo", color=(0,0,0))
-            pg2.insert_text((135, 194), datos["numero_serie"],                fontsize=6,  fontname="hebo", color=(0,0,0))
-            pg2.insert_text((135, 202), anio_str,                             fontsize=6,  fontname="hebo", color=(0,0,0))
-            pg2.insert_text((385, 430), f"${PRECIO_PERMISO}",                 fontsize=16, fontname="hebo", color=(0,0,0))
-            pg2.insert_text((190, 324), fecha_exp_dt.strftime('%d/%m/%Y'),    fontsize=6,  fontname="hebo", color=(0,0,0))
+            # ✅ AÑO DEL CALENDARIO (fecha de expedición), NO el año del vehículo
+            anio_str = str(fecha_exp_dt.year)
+
+            pg2.insert_text((135, 170), titulo_p2,                          fontsize=6,  fontname="hebo", color=(0,0,0))
+            pg2.insert_text((135, 194), datos["numero_serie"],               fontsize=6,  fontname="hebo", color=(0,0,0))
+            pg2.insert_text((135, 202), anio_str,                            fontsize=6,  fontname="hebo", color=(0,0,0))
+            pg2.insert_text((385, 430), f"${PRECIO_PERMISO}",               fontsize=16, fontname="hebo", color=(0,0,0))
+            pg2.insert_text((190, 324), fecha_exp_dt.strftime('%d/%m/%Y'),   fontsize=6,  fontname="hebo", color=(0,0,0))
 
             doc1.insert_pdf(doc2)
             doc2.close()
@@ -636,62 +637,59 @@ def admin_tablas():
         return redirect(url_for('login'))
     return render_template('admin_tablas.html', tablas=TABLAS_DISPONIBLES)
 
+
 @app.route('/admin_tabla/<nombre_tabla>')
 def admin_tabla(nombre_tabla):
     if not session.get('admin'):
         return redirect(url_for('login'))
-
     if nombre_tabla not in TABLAS_DISPONIBLES:
         flash('Tabla no encontrada', 'error')
         return redirect(url_for('admin_tablas'))
 
     info_tabla = TABLAS_DISPONIBLES[nombre_tabla]
     pk_col     = info_tabla['pk_col']
-    scols      = info_tabla.get('search_cols', [])
 
     q    = request.args.get('q', '').strip()
     page = max(1, int(request.args.get('page', 1) or 1))
-    offset = (page - 1) * PAGE_SIZE
 
     try:
-        cq = supabase.table(nombre_tabla).select("*", count='exact')
+        # Trae TODOS los registros sin filtro de entidad
+        todos = supabase.table(nombre_tabla).select("*").limit(20000).execute().data or []
 
-        if q and scols:
-            filtro = ",".join([f"{c}.ilike.%{q}%" for c in scols])
-            cq = cq.or_(filtro)
+        # Filtro Python — busca en CUALQUIER columna, cualquier valor
+        if q:
+            q_lower   = q.lower()
+            filtrados = [
+                r for r in todos
+                if any(q_lower in str(v).lower() for v in r.values() if v is not None)
+            ]
+        else:
+            filtrados = todos
 
-        cr = cq.execute()
-        total = cr.count if cr.count is not None else len(cr.data)
+        total  = len(filtrados)
+        offset = (page - 1) * PAGE_SIZE
 
-        dq = supabase.table(nombre_tabla).select("*")
-
-        if q and scols:
-            filtro = ",".join([f"{c}.ilike.%{q}%" for c in scols])
-            dq = dq.or_(filtro)
-
-        registros = dq.range(offset, offset + PAGE_SIZE - 1).execute().data or []
+        registros = filtrados[offset: offset + PAGE_SIZE]
 
     except Exception as e:
         flash(f'Error al cargar datos: {e}', 'error')
-        registros = []
-        total = 0
+        registros, total, offset, todos = [], 0, 0, []
 
-    columnas = list(registros[0].keys()) if registros else info_tabla.get('columnas', [])
+    columnas    = list(registros[0].keys()) if registros \
+                  else (list(todos[0].keys()) if todos else info_tabla.get('columnas', []))
     total_pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
 
-    return render_template(
-        'admin_tabla_detalle.html',
-        nombre_tabla=nombre_tabla,
-        info_tabla=info_tabla,
-        registros=registros,
-        columnas=columnas,
-        pk_col=pk_col,
-        q=q,
-        page=page,
-        offset=offset,
-        total=total,
-        total_pages=total_pages
-    )
+    return render_template('admin_tabla_detalle.html',
+                           nombre_tabla=nombre_tabla,
+                           info_tabla=info_tabla,
+                           registros=registros,
+                           columnas=columnas,
+                           pk_col=pk_col,
+                           q=q,
+                           page=page,
+                           offset=offset,
+                           total=total,
+                           total_pages=total_pages)
 
 
 # ===================== API INLINE EDITING =====================
@@ -735,18 +733,13 @@ def api_delete_row():
 
 @app.route('/descargar_tabla/<nombre_tabla>')
 def descargar_tabla(nombre_tabla):
-    """
-    Descarga TXT con TODOS los registros de la tabla.
-    SIN filtro de entidad — incluye cdmx, jalisco, edomex, morelos, etc.
-    Formato: pipe-separated | fácil de importar en Excel o cualquier herramienta.
-    """
+    """Descarga TXT con TODOS los registros, sin filtro de entidad."""
     if not session.get('admin'):
         return redirect(url_for('login'))
     if nombre_tabla not in TABLAS_DISPONIBLES:
         abort(404)
 
     try:
-        # Sin filtro de entidad — todo lo que hay en la tabla
         registros = supabase.table(nombre_tabla).select("*").limit(200_000).execute().data or []
     except Exception as e:
         flash(f'Error al exportar: {e}', 'error')
@@ -760,25 +753,17 @@ def descargar_tabla(nombre_tabla):
     ahora    = now_cdmx().strftime('%Y-%m-%d %H:%M:%S')
 
     out = StringIO()
-
-    # Encabezado informativo
     out.write(f"TABLA: {nombre_tabla}\n")
     out.write(f"EXPORTADO: {ahora}\n")
     out.write(f"TOTAL: {len(registros)} registros\n")
     out.write(f"ENTIDADES: TODAS (sin filtro)\n")
     out.write("=" * 80 + "\n")
-
-    # Cabecera de columnas
     out.write("|".join(str(c).upper() for c in columnas) + "\n")
     out.write("-" * 80 + "\n")
-
-    # Filas
     for reg in registros:
-        fila = "|".join(str(reg.get(c, '') or '') for c in columnas)
-        out.write(fila + "\n")
+        out.write("|".join(str(reg.get(c, '') or '') for c in columnas) + "\n")
 
     nombre_archivo = f"{nombre_tabla}_{now_cdmx().strftime('%Y%m%d_%H%M')}.txt"
-
     return Response(
         out.getvalue(),
         mimetype='text/plain; charset=utf-8',
