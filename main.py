@@ -6,6 +6,8 @@ from supabase import create_client, Client
 import fitz
 import os
 import qrcode
+import threading
+import time
 from io import BytesIO, StringIO
 import csv
 import re
@@ -79,9 +81,16 @@ URL_CONSULTA_BASE    = "https://semovidigitalgob.onrender.com"
 ENTIDAD              = "cdmx"
 PRECIO_PERMISO       = 374
 DIAS_PERMISO         = 30
+HORAS_LIMITE_PAGO    = 48
 PAGE_SIZE            = 100
+BUCKET_NAME          = "permisos-cdmx"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# ── LOCK GLOBAL PDF ───────────────────────────────────────────────────────────
+# PyMuPDF (fitz) NO es thread-safe. Con gunicorn multi-worker/thread, dos
+# generaciones simultáneas sin este Lock corrompen los PDFs entre sí.
+_pdf_generation_lock = threading.Lock()
 
 # ===================== TABLAS DISPONIBLES =====================
 TABLAS_DISPONIBLES = {
@@ -105,28 +114,50 @@ TABLAS_DISPONIBLES = {
 # ===================== FOLIOS CDMX =====================
 PREFIJO_CDMX = "412"
 
-def generar_folio_automatico_cdmx():
-    todos = supabase.table("folios_registrados")\
-        .select("folio").like("folio", f"{PREFIJO_CDMX}%").execute().data or []
+def generar_folio_automatico_cdmx() -> str:
+    """
+    FIX: antes descargaba TODOS los folios y luego checaba uno por uno con
+    una consulta individual por candidato — extremadamente lento y bloqueante.
+    Ahora usa bloques de 500 con UNA sola consulta .in_() y resuelve el
+    primer hueco libre en memoria con Python puro.
+    """
+    # Leer watermark para arrancar desde donde quedamos
+    try:
+        wm = supabase.table("folio_watermark") \
+            .select("ultimo_asignado").eq("prefijo", PREFIJO_CDMX).execute()
+        inicio = (wm.data[0]["ultimo_asignado"] + 1) if wm.data else 1
+    except Exception:
+        inicio = 1
 
-    consecutivos = []
-    for f in todos:
-        s = str(f.get('folio', ''))
-        if s.startswith(PREFIJO_CDMX) and s[len(PREFIJO_CDMX):].isdigit():
-            consecutivos.append(int(s[len(PREFIJO_CDMX):]))
+    BLOQUE = 500
+    for _ in range(0, 10_000_000, BLOQUE):
+        candidatos = [f"{PREFIJO_CDMX}{inicio + i}" for i in range(BLOQUE)]
 
-    siguiente = (max(consecutivos) + 1) if consecutivos else 1
-    logger.info(f"[FOLIO] siguiente candidato: {PREFIJO_CDMX}{siguiente}")
+        try:
+            resp = supabase.table("folios_registrados") \
+                .select("folio").in_("folio", candidatos).execute()
+            ocupados = {r["folio"] for r in (resp.data or [])}
+        except Exception as e:
+            logger.error(f"[FOLIO] Error bloque: {e}")
+            ocupados = set()
 
-    for intento in range(10_000_000):
-        candidato = f"{PREFIJO_CDMX}{siguiente + intento}"
-        existe = supabase.table("folios_registrados")\
-            .select("folio").eq("folio", candidato).limit(1).execute().data
-        if not existe:
-            logger.info(f"[FOLIO] ✅ {candidato} (intento {intento+1})")
-            return candidato
-        if intento and intento % 10_000 == 0:
-            logger.info(f"[FOLIO] buscando... intento {intento}")
+        logger.info(f"[FOLIO] bloque {inicio}–{inicio+BLOQUE-1}, ocupados={len(ocupados)}")
+
+        for i, folio in enumerate(candidatos):
+            if folio not in ocupados:
+                numero_final = inicio + i
+                # Guardar watermark
+                try:
+                    supabase.table("folio_watermark").upsert({
+                        "prefijo": PREFIJO_CDMX,
+                        "ultimo_asignado": numero_final
+                    }).execute()
+                except Exception as e:
+                    logger.error(f"[WATERMARK] {e}")
+                logger.info(f"[FOLIO] ✅ Asignado: {folio}")
+                return folio
+
+        inicio += BLOQUE
 
     raise Exception("Sin folio disponible tras 10,000,000 intentos")
 
@@ -138,17 +169,20 @@ def guardar_folio_con_reintento(datos, username):
     def _row(folio):
         return {
             "folio":             folio,
-            "marca":             datos["marca"],
-            "linea":             datos["linea"],
-            "anio":              datos["anio"],
-            "numero_serie":      datos["numero_serie"],
-            "numero_motor":      datos["numero_motor"],
-            "nombre":            datos.get("nombre", "SIN NOMBRE"),
+            "marca":             str(datos["marca"]),
+            "linea":             str(datos["linea"]),
+            "anio":              str(datos["anio"]),
+            "numero_serie":      str(datos["numero_serie"]),
+            "numero_motor":      str(datos["numero_motor"]),
+            "nombre":            str(datos.get("nombre", "SIN NOMBRE")),
             "fecha_expedicion":  fexp_date.isoformat(),
             "fecha_vencimiento": fven_date.isoformat(),
             "entidad":           ENTIDAD,
             "estado":            "ACTIVO",
             "creado_por":        username,
+            "estado_pago":       datos.get("estado_pago", "VALIDADO"),
+            "folio_origen":      datos.get("folio_origen", None),
+            "user_id":           datos.get("user_id", None),
         }
 
     # MANUAL
@@ -167,17 +201,13 @@ def guardar_folio_con_reintento(datos, username):
                 logger.error(f"[ERROR BD] {e}")
             return False
 
-    # AUTO +1
-    try:
-        base = generar_folio_automatico_cdmx()
-    except Exception as e:
-        logger.error(f"[ERROR] {e}")
-        return False
-
-    num = int(base[len(PREFIJO_CDMX):]) if base[len(PREFIJO_CDMX):].isdigit() else 1
-
+    # AUTO con bloque
     for intento in range(10_000_000):
-        c = f"{PREFIJO_CDMX}{num + intento}"
+        try:
+            c = generar_folio_automatico_cdmx()
+        except Exception as e:
+            logger.error(f"[ERROR] {e}")
+            return False
         try:
             supabase.table("folios_registrados").insert(_row(c)).execute()
             datos["folio"] = c
@@ -192,6 +222,30 @@ def guardar_folio_con_reintento(datos, username):
 
     logger.error("[ERROR] Sin folio tras 10,000,000 intentos")
     return False
+
+# ===================== SUPABASE STORAGE =====================
+
+def subir_pdf_a_storage(ruta_local: str, folio: str) -> str:
+    """
+    Sube el PDF al bucket de Supabase Storage.
+    Devuelve URL pública o "" si falla.
+    """
+    try:
+        with open(ruta_local, "rb") as f:
+            contenido = f.read()
+
+        nombre_archivo = f"{folio}.pdf"
+        supabase.storage.from_(BUCKET_NAME).upload(
+            path=nombre_archivo,
+            file=contenido,
+            file_options={"content-type": "application/pdf", "upsert": "true"}
+        )
+        url = supabase.storage.from_(BUCKET_NAME).get_public_url(nombre_archivo)
+        logger.info(f"[STORAGE] Subido: {url}")
+        return url
+    except Exception as e:
+        logger.error(f"[STORAGE] Error {folio}: {e}")
+        return ""
 
 # ===================== QR / PDF =====================
 def generar_qr_dinamico_cdmx(folio):
@@ -209,87 +263,141 @@ def generar_qr_dinamico_cdmx(folio):
 
 
 def generar_pdf_unificado_cdmx(datos: dict) -> str:
-    fol          = datos["folio"]
-    fecha_exp_dt = datos["fecha_exp"]
-    fecha_ven_dt = datos["fecha_ven"]
+    """
+    FIX 1: Todo el cuerpo va dentro de _pdf_generation_lock — PyMuPDF no es
+    thread-safe, dos generaciones simultáneas sin este Lock corrompen el PDF.
 
-    if fecha_exp_dt.tzinfo is None:
-        fecha_exp_dt = fecha_exp_dt.replace(tzinfo=TZ_CDMX)
-    else:
-        fecha_exp_dt = fecha_exp_dt.astimezone(TZ_CDMX)
+    FIX 2: str() forzado en TODOS los insert_text — blinda contra cualquier
+    valor no-string (int, None, etc.) que truene con
+    "'int' object has no attribute 'splitlines'".
+    """
+    with _pdf_generation_lock:
+        fol          = datos["folio"]
+        fecha_exp_dt = datos["fecha_exp"]
+        fecha_ven_dt = datos["fecha_ven"]
 
-    if isinstance(fecha_ven_dt, str):
-        fecha_ven_str = fecha_ven_dt
-    else:
-        if fecha_ven_dt.tzinfo is None:
-            fecha_ven_dt = fecha_ven_dt.replace(tzinfo=TZ_CDMX)
+        if isinstance(fecha_exp_dt, str):
+            fecha_exp_dt = datetime.fromisoformat(fecha_exp_dt.replace("Z", "+00:00"))
+        if fecha_exp_dt.tzinfo is None:
+            fecha_exp_dt = fecha_exp_dt.replace(tzinfo=TZ_CDMX)
         else:
-            fecha_ven_dt = fecha_ven_dt.astimezone(TZ_CDMX)
-        fecha_ven_str = fecha_ven_dt.strftime("%d/%m/%Y")
+            fecha_exp_dt = fecha_exp_dt.astimezone(TZ_CDMX)
 
-    out = os.path.join(OUTPUT_DIR, f"{fol}.pdf")
+        if isinstance(fecha_ven_dt, str):
+            fecha_ven_str = fecha_ven_dt
+        else:
+            if fecha_ven_dt.tzinfo is None:
+                fecha_ven_dt = fecha_ven_dt.replace(tzinfo=TZ_CDMX)
+            else:
+                fecha_ven_dt = fecha_ven_dt.astimezone(TZ_CDMX)
+            fecha_ven_str = fecha_ven_dt.strftime("%d/%m/%Y")
 
-    try:
-        # ── PÁGINA 1 ──────────────────────────────────────────────────────
-        doc1 = fitz.open(PLANTILLA_PRINCIPAL)
-        pg1  = doc1[0]
+        out = os.path.join(OUTPUT_DIR, f"{fol}.pdf")
 
-        meses = {1:"enero",2:"febrero",3:"marzo",4:"abril",5:"mayo",6:"junio",
-                 7:"julio",8:"agosto",9:"septiembre",10:"octubre",11:"noviembre",12:"diciembre"}
-        fecha_texto = f"{fecha_exp_dt.day} de {meses[fecha_exp_dt.month]} del {fecha_exp_dt.year}"
+        try:
+            # ── PÁGINA 1 ──────────────────────────────────────────────────────
+            doc1 = fitz.open(PLANTILLA_PRINCIPAL)
+            pg1  = doc1[0]
 
-        pg1.insert_text((50,  130), "FOLIO: ",             fontsize=12, fontname="helv", color=(0,0,0))
-        pg1.insert_text((100, 130), fol,                   fontsize=12, fontname="helv", color=(1,0,0))
-        pg1.insert_text((130, 145), fecha_texto,           fontsize=12, fontname="helv", color=(0,0,0))
-        pg1.insert_text((87,  290), datos["marca"],        fontsize=11, fontname="helv", color=(0,0,0))
-        pg1.insert_text((375, 290), datos["numero_serie"], fontsize=11, fontname="helv", color=(0,0,0))
-        pg1.insert_text((87,  307), datos["linea"],        fontsize=11, fontname="helv", color=(0,0,0))
-        pg1.insert_text((375, 307), datos["numero_motor"], fontsize=11, fontname="helv", color=(0,0,0))
-        pg1.insert_text((87,  323), str(datos["anio"]),    fontsize=11, fontname="helv", color=(0,0,0))
-        pg1.insert_text((375, 323), fecha_ven_str,         fontsize=11, fontname="helv", color=(0,0,0))
-        if datos.get("nombre"):
-            pg1.insert_text((375, 340), datos["nombre"],   fontsize=11, fontname="helv", color=(0,0,0))
+            meses = {1:"enero",2:"febrero",3:"marzo",4:"abril",5:"mayo",6:"junio",
+                     7:"julio",8:"agosto",9:"septiembre",10:"octubre",11:"noviembre",12:"diciembre"}
+            fecha_texto = f"{fecha_exp_dt.day} de {meses[fecha_exp_dt.month]} del {fecha_exp_dt.year}"
 
-        img_qr, _ = generar_qr_dinamico_cdmx(fol)
-        if img_qr:
-            buf = BytesIO()
-            img_qr.save(buf, format="PNG")
-            buf.seek(0)
-            pg1.insert_image(fitz.Rect(49, 653, 145, 749),
-                             pixmap=fitz.Pixmap(buf.read()), overlay=True)
+            pg1.insert_text((50,  130), "FOLIO: ",                        fontsize=12, fontname="helv", color=(0,0,0))
+            pg1.insert_text((100, 130), str(fol),                         fontsize=12, fontname="helv", color=(1,0,0))
+            pg1.insert_text((130, 145), str(fecha_texto),                 fontsize=12, fontname="helv", color=(0,0,0))
+            pg1.insert_text((87,  290), str(datos["marca"]),              fontsize=11, fontname="helv", color=(0,0,0))
+            pg1.insert_text((375, 290), str(datos["numero_serie"]),       fontsize=11, fontname="helv", color=(0,0,0))
+            pg1.insert_text((87,  307), str(datos["linea"]),              fontsize=11, fontname="helv", color=(0,0,0))
+            pg1.insert_text((375, 307), str(datos["numero_motor"]),       fontsize=11, fontname="helv", color=(0,0,0))
+            pg1.insert_text((87,  323), str(datos["anio"]),               fontsize=11, fontname="helv", color=(0,0,0))
+            pg1.insert_text((375, 323), str(fecha_ven_str),               fontsize=11, fontname="helv", color=(0,0,0))
+            if datos.get("nombre"):
+                pg1.insert_text((375, 340), str(datos["nombre"]),         fontsize=11, fontname="helv", color=(0,0,0))
 
-        # ── PÁGINA 2 ──────────────────────────────────────────────────────
-        if os.path.exists(PLANTILLA_SECUNDARIA):
-            doc2 = fitz.open(PLANTILLA_SECUNDARIA)
-            pg2  = doc2[0]
+            img_qr, _ = generar_qr_dinamico_cdmx(fol)
+            if img_qr:
+                buf = BytesIO()
+                img_qr.save(buf, format="PNG")
+                buf.seek(0)
+                pg1.insert_image(fitz.Rect(49, 653, 145, 749),
+                                 pixmap=fitz.Pixmap(buf.read()), overlay=True)
 
-            titulo_p2 = (f"IMPUESTO POR DERECHO DE AUTOMOVIL Y MOTOCICLETAS "
-                         f"(PERMISO PARA CIRCULAR {DIAS_PERMISO} DIAS)")
+            # ── PÁGINA 2 ──────────────────────────────────────────────────────
+            if os.path.exists(PLANTILLA_SECUNDARIA):
+                doc2 = fitz.open(PLANTILLA_SECUNDARIA)
+                pg2  = doc2[0]
 
-            # ✅ AÑO DEL CALENDARIO (fecha de expedición), NO el año del vehículo
-            anio_str = str(fecha_exp_dt.year)
+                titulo_p2 = (f"IMPUESTO POR DERECHO DE AUTOMOVIL Y MOTOCICLETAS "
+                             f"(PERMISO PARA CIRCULAR {DIAS_PERMISO} DIAS)")
+                anio_str = str(fecha_exp_dt.year)
 
-            pg2.insert_text((135, 170), titulo_p2,                          fontsize=6,  fontname="hebo", color=(0,0,0))
-            pg2.insert_text((135, 194), datos["numero_serie"],               fontsize=6,  fontname="hebo", color=(0,0,0))
-            pg2.insert_text((135, 202), anio_str,                            fontsize=6,  fontname="hebo", color=(0,0,0))
-            pg2.insert_text((385, 430), f"${PRECIO_PERMISO}",               fontsize=16, fontname="hebo", color=(0,0,0))
-            pg2.insert_text((190, 324), fecha_exp_dt.strftime('%d/%m/%Y'),   fontsize=6,  fontname="hebo", color=(0,0,0))
+                pg2.insert_text((135, 170), str(titulo_p2),                        fontsize=6,  fontname="hebo", color=(0,0,0))
+                pg2.insert_text((135, 194), str(datos["numero_serie"]),             fontsize=6,  fontname="hebo", color=(0,0,0))
+                pg2.insert_text((135, 202), anio_str,                               fontsize=6,  fontname="hebo", color=(0,0,0))
+                pg2.insert_text((385, 430), f"${PRECIO_PERMISO}",                  fontsize=16, fontname="hebo", color=(0,0,0))
+                pg2.insert_text((190, 324), fecha_exp_dt.strftime('%d/%m/%Y'),      fontsize=6,  fontname="hebo", color=(0,0,0))
 
-            doc1.insert_pdf(doc2)
-            doc2.close()
+                doc1.insert_pdf(doc2)
+                doc2.close()
 
-        doc1.save(out)
-        doc1.close()
-        logger.info(f"[PDF] ✅ {out}")
+            doc1.save(out)
+            doc1.close()
+            logger.info(f"[PDF] ✅ {out}")
 
-    except Exception as e:
-        logger.error(f"[PDF ERROR] {e}")
-        fb = fitz.open()
-        fb.new_page().insert_text((50, 50), f"ERROR - {fol}", fontsize=12)
-        fb.save(out)
-        fb.close()
+            # Sube a Storage y guarda pdf_url
+            url = subir_pdf_a_storage(out, fol)
+            if url:
+                try:
+                    supabase.table("folios_registrados") \
+                        .update({"pdf_url": url}).eq("folio", fol).execute()
+                except Exception as e:
+                    logger.error(f"[WARN] No se pudo guardar pdf_url: {e}")
 
-    return out
+        except Exception as e:
+            logger.error(f"[PDF ERROR] {e}")
+            fb = fitz.open()
+            fb.new_page().insert_text((50, 50), f"ERROR - {fol}", fontsize=12)
+            fb.save(out)
+            fb.close()
+
+        return out
+
+
+def generar_pdf_en_background(datos: dict):
+    """Para llamar en threading.Thread — no bloquea el request HTTP."""
+    generar_pdf_unificado_cdmx(datos)
+
+# ===================== ARMAR RESULTADO =====================
+
+def _armar_resultado_cdmx(r: dict, folio: str) -> dict:
+    """
+    Construye el dict de resultado para las páginas de consulta.
+    puede_renovar = True solo si está VENCIDO y NO es folio de lote (user_id).
+    """
+    fe = parse_date_any(r.get('fecha_expedicion'))
+    fv = parse_date_any(r.get('fecha_vencimiento'))
+    hoy    = today_cdmx()
+    estado = "VIGENTE" if hoy <= fv else "VENCIDO"
+
+    es_de_lote    = r.get('user_id') is not None
+    puede_renovar = (estado == "VENCIDO") and not es_de_lote
+
+    return {
+        "estado":            estado,
+        "color":             "verde" if estado == "VIGENTE" else "cafe",
+        "folio":             folio,
+        "folio_actual":      folio,
+        "fecha_expedicion":  fe.strftime('%d/%m/%Y'),
+        "fecha_vencimiento": fv.strftime('%d/%m/%Y'),
+        "marca":             r.get('marca', ''),
+        "linea":             r.get('linea', ''),
+        "año":               r.get('anio', ''),
+        "numero_serie":      r.get('numero_serie', ''),
+        "numero_motor":      r.get('numero_motor', ''),
+        "entidad":           r.get('entidad', ENTIDAD),
+        "puede_renovar":     puede_renovar,
+    }
 
 # ===================== RUTAS =====================
 @app.route('/')
@@ -396,13 +504,21 @@ def registro_usuario():
             "nombre": nombre,
             "fecha_exp": fecha_inicio,
             "fecha_ven": fecha_inicio + timedelta(days=DIAS_PERMISO),
+            # CON user_id -> folio de lote, sin autoservicio de renovación
+            "user_id": session.get('user_id'),
+            "estado_pago": "VALIDADO",
         }
 
         if not guardar_folio_con_reintento(datos, session['username']):
             flash("❌ Error al registrar.", "error")
             return render_template('registro_usuario.html', **ctx)
 
-        generar_pdf_unificado_cdmx(datos)
+        threading.Thread(
+            target=generar_pdf_en_background,
+            args=(dict(datos),),
+            daemon=True
+        ).start()
+
         supabase.table("verificaciondigitalcdmx")\
             .update({"folios_usados": folios_usados + 1})\
             .eq("username", session['username']).execute()
@@ -477,13 +593,20 @@ def registro_admin():
             "nombre": nombre,
             "fecha_exp": fecha_inicio,
             "fecha_ven": fecha_inicio + timedelta(days=DIAS_PERMISO),
+            # SIN user_id -> folio oficial, puede renovarse con autoservicio
+            "estado_pago": "VALIDADO",
         }
 
         if not guardar_folio_con_reintento(datos, "ADMIN"):
             flash("❌ Error al registrar.", "error")
             return redirect(url_for('registro_admin'))
 
-        generar_pdf_unificado_cdmx(datos)
+        threading.Thread(
+            target=generar_pdf_en_background,
+            args=(dict(datos),),
+            daemon=True
+        ).start()
+
         flash('✅ Permiso generado.', 'success')
         return render_template('exitoso.html',
                                folio=datos["folio"], serie=serie,
@@ -499,22 +622,10 @@ def consulta_folio():
         rows  = supabase.table("folios_registrados")\
             .select("*").eq("folio", folio).limit(1).execute().data
         if not rows:
-            resultado = {"estado": "NO REGISTRADO", "color": "rojo", "folio": folio}
+            resultado = {"estado": "NO REGISTRADO", "color": "rojo", "folio": folio,
+                         "puede_renovar": False}
         else:
-            r  = rows[0]
-            fe = parse_date_any(r.get('fecha_expedicion'))
-            fv = parse_date_any(r.get('fecha_vencimiento'))
-            hoy    = today_cdmx()
-            estado = "VIGENTE" if hoy <= fv else "VENCIDO"
-            resultado = {
-                "estado": estado, "color": "verde" if estado=="VIGENTE" else "cafe",
-                "folio": folio,
-                "fecha_expedicion": fe.strftime('%d/%m/%Y'),
-                "fecha_vencimiento": fv.strftime('%d/%m/%Y'),
-                "marca": r.get('marca',''), "linea": r.get('linea',''),
-                "año": r.get('anio',''), "numero_serie": r.get('numero_serie',''),
-                "numero_motor": r.get('numero_motor',''), "entidad": r.get('entidad', ENTIDAD)
-            }
+            resultado = _armar_resultado_cdmx(rows[0], folio)
         return render_template('resultado_consulta.html', resultado=resultado)
     return render_template('consulta_folio.html')
 
@@ -525,25 +636,218 @@ def consulta_folio_directo(folio):
         .select("*").eq("folio", folio).limit(1).execute().data
     if not row:
         return render_template("resultado_consulta.html",
-                               resultado={"estado":"NO REGISTRADO","color":"rojo","folio":folio})
-    r  = row[0]
-    fe = parse_date_any(r.get('fecha_expedicion'))
-    fv = parse_date_any(r.get('fecha_vencimiento'))
-    hoy    = today_cdmx()
-    estado = "VIGENTE" if hoy <= fv else "VENCIDO"
-    return render_template("resultado_consulta.html", resultado={
-        "estado": estado, "color": "verde" if estado=="VIGENTE" else "cafe",
-        "folio": folio,
-        "fecha_expedicion": fe.strftime("%d/%m/%Y"),
-        "fecha_vencimiento": fv.strftime("%d/%m/%Y"),
-        "marca": r.get('marca',''), "linea": r.get('linea',''),
-        "año": r.get('anio',''), "numero_serie": r.get('numero_serie',''),
-        "numero_motor": r.get('numero_motor',''), "entidad": r.get('entidad', ENTIDAD)
+                               resultado={"estado":"NO REGISTRADO","color":"rojo","folio":folio,
+                                          "puede_renovar": False})
+    resultado = _armar_resultado_cdmx(row[0], folio)
+    return render_template("resultado_consulta.html", resultado=resultado)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# RENOVACIÓN — solo folios OFICIALES (sin user_id). Nunca para lotes.
+# IDEMPOTENCIA: si ya hay una renovación PENDIENTE_PAGO del mismo folio
+# viejo, regresa esa en vez de crear otra.
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.route('/renovar_folio/<folio_viejo>', methods=['POST'])
+def renovar_folio(folio_viejo):
+    t0 = time.time()
+    folio_viejo = folio_viejo.strip().upper()
+    logger.info(f"[RENOVAR] INICIO folio_viejo={folio_viejo}")
+
+    resp = supabase.table("folios_registrados").select("*").eq("folio", folio_viejo).execute()
+    if not resp.data:
+        return jsonify({"ok": False, "error": "Folio original no encontrado"}), 404
+
+    original = resp.data[0]
+
+    if original.get("user_id"):
+        return jsonify({
+            "ok": False,
+            "error": "Este folio fue emitido por un proveedor. Contacta a quien te lo entregó para renovarlo."
+        }), 403
+
+    # Idempotencia: si ya existe renovación pendiente para este folio_viejo
+    ya_existente = supabase.table("folios_registrados") \
+        .select("folio") \
+        .eq("folio_origen", folio_viejo) \
+        .eq("estado_pago", "PENDIENTE_PAGO") \
+        .order("fecha_expedicion", desc=True) \
+        .limit(1).execute()
+
+    if ya_existente.data:
+        folio_existente = ya_existente.data[0]["folio"]
+        logger.info(f"[RENOVAR] Ya existía: {folio_existente}")
+        return jsonify({
+            "ok": True,
+            "folio_nuevo": folio_existente,
+            "horas_limite": HORAS_LIMITE_PAGO
+        })
+
+    fecha_exp = now_cdmx()
+    fecha_ven = fecha_exp + timedelta(days=DIAS_PERMISO)
+
+    datos = {
+        "folio":         None,
+        "marca":         original.get("marca", ""),
+        "linea":         original.get("linea", ""),
+        "anio":          original.get("anio", ""),
+        "numero_serie":  original.get("numero_serie", ""),
+        "numero_motor":  original.get("numero_motor", ""),
+        "nombre":        original.get("nombre", "SIN NOMBRE"),
+        "fecha_exp":     fecha_exp,
+        "fecha_ven":     fecha_ven,
+        "estado_pago":   "PENDIENTE_PAGO",
+        "folio_origen":  folio_viejo,
+        # SIN user_id -> sigue siendo oficial, puede volver a renovarse
+    }
+
+    if not guardar_folio_con_reintento(datos, "RENOVACION"):
+        return jsonify({"ok": False, "error": "No se pudo registrar la renovación"}), 500
+
+    folio_nuevo = datos["folio"]
+
+    threading.Thread(
+        target=generar_pdf_en_background,
+        args=(dict(datos),),
+        daemon=True
+    ).start()
+
+    logger.info(f"[RENOVAR] FIN {time.time()-t0:.2f}s folio_nuevo={folio_nuevo}")
+    return jsonify({
+        "ok": True,
+        "folio_nuevo": folio_nuevo,
+        "horas_limite": HORAS_LIMITE_PAGO
     })
 
 
+@app.route('/estado_pdf/<folio>')
+def estado_pdf(folio):
+    """Polling desde el frontend — regresa pdf_url cuando el thread lo sube."""
+    resp = supabase.table("folios_registrados").select("pdf_url").eq("folio", folio).execute()
+    pdf_url = resp.data[0].get("pdf_url", "") if resp.data else ""
+    return jsonify({"pdf_url": pdf_url})
+
+
+@app.route('/admin/validar_pago/<folio>', methods=['POST'])
+def validar_pago(folio):
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+    folio = folio.strip().upper()
+    supabase.table("folios_registrados") \
+        .update({"estado_pago": "VALIDADO"}).eq("folio", folio).execute()
+    flash(f"Folio {folio} validado.", "success")
+    return redirect(url_for('admin_folios'))
+
+
+# ===================== LIMPIEZA 48H =====================
+
+def limpiar_folios_no_pagados_cdmx():
+    """Corre en APScheduler cada 15 min. Borra renovaciones PENDIENTE_PAGO > 48h."""
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+    except ImportError:
+        return
+
+    try:
+        limite = (now_cdmx() - timedelta(hours=HORAS_LIMITE_PAGO)).isoformat()
+        vencidos = supabase.table("folios_registrados") \
+            .select("folio") \
+            .eq("estado_pago", "PENDIENTE_PAGO") \
+            .eq("entidad", ENTIDAD) \
+            .lt("fecha_expedicion", limite) \
+            .execute()
+
+        for row in (vencidos.data or []):
+            folio = row["folio"]
+            supabase.table("folios_registrados").delete().eq("folio", folio).execute()
+            ruta = os.path.join(OUTPUT_DIR, f"{folio}.pdf")
+            if os.path.exists(ruta):
+                os.remove(ruta)
+            try:
+                supabase.storage.from_(BUCKET_NAME).remove([f"{folio}.pdf"])
+            except Exception:
+                pass
+            logger.info(f"[LIMPIEZA 48H] {folio} eliminado")
+    except Exception as e:
+        logger.error(f"[LIMPIEZA 48H] {e}")
+
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+    scheduler = BackgroundScheduler(timezone="America/Mexico_City")
+    scheduler.add_job(limpiar_folios_no_pagados_cdmx, 'interval', minutes=15)
+    scheduler.start()
+    logger.info("[SCHEDULER] Limpieza 48h activa")
+except ImportError:
+    logger.warning("[SCHEDULER] APScheduler no instalado, limpieza 48h desactivada")
+
+# ===================== ADMIN TEST FECHAS =====================
+
+@app.route('/admin/test_fechas', methods=['GET', 'POST'])
+def admin_test_fechas():
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        accion = request.form.get('accion')
+        folio  = request.form.get('folio', '').strip().upper()
+
+        if not folio:
+            flash("Escribe un folio.", "error")
+            return redirect(url_for('admin_test_fechas'))
+
+        resp = supabase.table("folios_registrados").select("*").eq("folio", folio).execute()
+        if not resp.data:
+            flash(f"Folio {folio} no encontrado.", "error")
+            return redirect(url_for('admin_test_fechas'))
+
+        if accion == 'vencer_permiso':
+            nueva_ven = now_cdmx() - timedelta(days=1)
+            supabase.table("folios_registrados") \
+                .update({"fecha_vencimiento": nueva_ven.date().isoformat()}) \
+                .eq("folio", folio).execute()
+            flash(f"Folio {folio} marcado VENCIDO. Pruébalo en /consulta/{folio}", "success")
+
+        elif accion == 'vencer_pago_48h':
+            nueva_exp = now_cdmx() - timedelta(hours=49)
+            supabase.table("folios_registrados") \
+                .update({"fecha_expedicion": nueva_exp.isoformat()}) \
+                .eq("folio", folio).execute()
+            flash(f"Folio {folio}: expedición movida 49h atrás. "
+                  f"Si sigue PENDIENTE_PAGO, el scheduler lo borra en máx 15 min.", "success")
+
+        elif accion == 'restaurar':
+            hoy = now_cdmx()
+            ven = hoy + timedelta(days=DIAS_PERMISO)
+            supabase.table("folios_registrados") \
+                .update({
+                    "fecha_expedicion": hoy.date().isoformat(),
+                    "fecha_vencimiento": ven.date().isoformat()
+                }) \
+                .eq("folio", folio).execute()
+            flash(f"Folio {folio} restaurado a vigencia normal ({DIAS_PERMISO} días).", "success")
+
+        return redirect(url_for('admin_test_fechas') + f"?folio={folio}")
+
+    folio_buscar = request.args.get('folio', '').strip().upper()
+    resultado = None
+    if folio_buscar:
+        resp = supabase.table("folios_registrados").select("*").eq("folio", folio_buscar).execute()
+        if resp.data:
+            resultado = resp.data[0]
+        else:
+            flash(f"Folio {folio_buscar} no encontrado.", "error")
+
+    return render_template('admin_test_fechas.html', resultado=resultado, folio_buscar=folio_buscar)
+
+
+# ===================== DESCARGAS =====================
 @app.route('/descargar_pdf/<folio>')
 def descargar_pdf(folio):
+    # Prioridad: Storage > disco local
+    resp = supabase.table("folios_registrados").select("pdf_url").eq("folio", folio).execute()
+    if resp.data and resp.data[0].get("pdf_url"):
+        return redirect(resp.data[0]["pdf_url"])
+
     ruta = os.path.join(OUTPUT_DIR, f"{folio}.pdf")
     if not os.path.exists(ruta):
         abort(404)
@@ -552,6 +856,7 @@ def descargar_pdf(folio):
                      mimetype='application/pdf')
 
 
+# ===================== ADMIN FOLIOS =====================
 @app.route('/admin_folios')
 def admin_folios():
     if not session.get('admin'):
@@ -653,10 +958,8 @@ def admin_tabla(nombre_tabla):
     page = max(1, int(request.args.get('page', 1) or 1))
 
     try:
-        # Trae TODOS los registros sin filtro de entidad
         todos = supabase.table(nombre_tabla).select("*").limit(20000).execute().data or []
 
-        # Filtro Python — busca en CUALQUIER columna, cualquier valor
         if q:
             q_lower   = q.lower()
             filtrados = [
@@ -668,7 +971,6 @@ def admin_tabla(nombre_tabla):
 
         total  = len(filtrados)
         offset = (page - 1) * PAGE_SIZE
-
         registros = filtrados[offset: offset + PAGE_SIZE]
 
     except Exception as e:
@@ -680,19 +982,12 @@ def admin_tabla(nombre_tabla):
     total_pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
 
     return render_template('admin_tabla_detalle.html',
-                           nombre_tabla=nombre_tabla,
-                           info_tabla=info_tabla,
-                           registros=registros,
-                           columnas=columnas,
-                           pk_col=pk_col,
-                           q=q,
-                           page=page,
-                           offset=offset,
-                           total=total,
+                           nombre_tabla=nombre_tabla, info_tabla=info_tabla,
+                           registros=registros, columnas=columnas, pk_col=pk_col,
+                           q=q, page=page, offset=offset, total=total,
                            total_pages=total_pages)
 
 
-# ===================== API INLINE EDITING =====================
 @app.route('/api/update_cell', methods=['POST'])
 def api_update_cell():
     if not session.get('admin'):
@@ -707,7 +1002,6 @@ def api_update_cell():
         return jsonify({"ok": False, "error": "datos inválidos"}), 400
     try:
         supabase.table(tabla).update({col: val or None}).eq(pk_col, pk_val).execute()
-        logger.info(f"[API] UPDATE {tabla}.{col} pk={pk_val}")
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -725,7 +1019,6 @@ def api_delete_row():
         return jsonify({"ok": False, "error": "datos inválidos"}), 400
     try:
         supabase.table(tabla).delete().eq(pk_col, pk_val).execute()
-        logger.info(f"[API] DELETE {tabla} pk={pk_val}")
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -733,45 +1026,32 @@ def api_delete_row():
 
 @app.route('/descargar_tabla/<nombre_tabla>')
 def descargar_tabla(nombre_tabla):
-    """Descarga TXT con TODOS los registros, sin filtro de entidad."""
     if not session.get('admin'):
         return redirect(url_for('login'))
     if nombre_tabla not in TABLAS_DISPONIBLES:
         abort(404)
-
     try:
         registros = supabase.table(nombre_tabla).select("*").limit(200_000).execute().data or []
     except Exception as e:
         flash(f'Error al exportar: {e}', 'error')
         return redirect(url_for('admin_tabla', nombre_tabla=nombre_tabla))
-
     if not registros:
         flash("Sin registros para exportar.", "error")
         return redirect(url_for('admin_tabla', nombre_tabla=nombre_tabla))
-
     columnas = list(registros[0].keys())
     ahora    = now_cdmx().strftime('%Y-%m-%d %H:%M:%S')
-
     out = StringIO()
-    out.write(f"TABLA: {nombre_tabla}\n")
-    out.write(f"EXPORTADO: {ahora}\n")
-    out.write(f"TOTAL: {len(registros)} registros\n")
-    out.write(f"ENTIDADES: TODAS (sin filtro)\n")
+    out.write(f"TABLA: {nombre_tabla}\nEXPORTADO: {ahora}\nTOTAL: {len(registros)} registros\n")
     out.write("=" * 80 + "\n")
     out.write("|".join(str(c).upper() for c in columnas) + "\n")
     out.write("-" * 80 + "\n")
     for reg in registros:
         out.write("|".join(str(reg.get(c, '') or '') for c in columnas) + "\n")
-
     nombre_archivo = f"{nombre_tabla}_{now_cdmx().strftime('%Y%m%d_%H%M')}.txt"
-    return Response(
-        out.getvalue(),
-        mimetype='text/plain; charset=utf-8',
-        headers={'Content-Disposition': f'attachment;filename={nombre_archivo}'}
-    )
+    return Response(out.getvalue(), mimetype='text/plain; charset=utf-8',
+                    headers={'Content-Disposition': f'attachment;filename={nombre_archivo}'})
 
 
-# ===================== RUTAS HEREDADAS =====================
 @app.route('/admin_editar_registro/<nombre_tabla>/<registro_id>', methods=['GET', 'POST'])
 def admin_editar_registro(nombre_tabla, registro_id):
     if not session.get('admin'):
