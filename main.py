@@ -731,12 +731,22 @@ def estado_pdf(folio):
 @app.route('/admin/validar_pago/<folio>', methods=['POST'])
 def validar_pago(folio):
     if not session.get('admin'):
-        return redirect(url_for('login'))
+        return jsonify({"ok": False, "error": "no autorizado"}), 403
     folio = folio.strip().upper()
-    supabase.table("folios_registrados") \
-        .update({"estado_pago": "VALIDADO"}).eq("folio", folio).execute()
-    flash(f"Folio {folio} validado.", "success")
-    return redirect(url_for('admin_folios'))
+    try:
+        supabase.table("folios_registrados") \
+            .update({"estado_pago": "VALIDADO"}).eq("folio", folio).execute()
+        # Si viene de un form normal (admin_folios), redirige
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' \
+                or request.accept_mimetypes.best == 'application/json':
+            return jsonify({"ok": True})
+        flash(f"Folio {folio} validado.", "success")
+        return redirect(request.referrer or url_for('admin_folios'))
+    except Exception as e:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({"ok": False, "error": str(e)}), 500
+        flash(f"Error: {e}", "error")
+        return redirect(url_for('admin_folios'))
 
 
 # ===================== LIMPIEZA 48H =====================
