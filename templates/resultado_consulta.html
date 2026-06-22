@@ -123,6 +123,21 @@
             cursor: not-allowed;
         }
 
+        /* ── AVISO YA RENOVADO ── */
+        .aviso-pendiente {
+            width: 90%;
+            max-width: 600px;
+            margin: 10px auto 20px;
+            padding: 14px 20px;
+            border-radius: 10px;
+            background-color: #fff3cd;
+            border: 2px solid #e0a800;
+            color: #7a5a00;
+            font-size: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
         footer {
             margin-top: 40px;
             width: 100%;
@@ -176,7 +191,15 @@
       </div>
     {% endif %}
 
-    {% if resultado.puede_renovar %}
+    {% if resultado.ya_renovado %}
+    {# ── PARCHE: ya hay renovación pendiente de pago, bloquear botón ── #}
+    <div class="aviso-pendiente">
+        ⚠️ Ya tienes una renovación en proceso.<br>
+        Envía tu comprobante de pago para activarla.<br>
+        Si no realizas el pago a tiempo, el folio se cancelará automáticamente.
+    </div>
+
+    {% elif resultado.puede_renovar %}
     <div class="renovar-container">
         <button id="btnRenovar" class="btn-renovar"
                 onclick="confirmarRenovacion('{{ resultado.folio_actual }}')">
@@ -188,8 +211,9 @@
     function confirmarRenovacion(folio) {
         const ok = confirm(
             "Estás a punto de renovar tu permiso de CDMX.\n\n" +
-            "Recuerda que tienes 48 horas para pagar o este se elimina.\n\n" +
-            "¿Continuar?"
+            "⚠️ Tienes solo 2 horas para realizar tu pago, " +
+            "de lo contrario el folio se eliminará automáticamente.\n\n" +
+            "¿Deseas continuar?"
         );
         if (!ok) return;
 
@@ -201,7 +225,7 @@
             .then(r => r.json())
             .then(data => {
                 if (!data.ok) {
-                    alert("Error: " + data.error);
+                    alert("⚠️ " + data.error);
                     btn.disabled = false;
                     btn.textContent = "Renovar tu permiso";
                     return;
@@ -217,7 +241,6 @@
                         .then(estado => {
                             if (estado.pdf_url) {
                                 clearInterval(checarPdf);
-                                // Navega al PDF — más confiable en móvil que a.click()
                                 window.location.href = estado.pdf_url;
                             } else if (intentos >= 15) {
                                 clearInterval(checarPdf);
