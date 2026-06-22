@@ -88,8 +88,6 @@ BUCKET_NAME          = "permisos-cdmx"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ── LOCK GLOBAL PDF ───────────────────────────────────────────────────────────
-# PyMuPDF (fitz) NO es thread-safe. Con gunicorn multi-worker/thread, dos
-# generaciones simultáneas sin este Lock corrompen los PDFs entre sí.
 _pdf_generation_lock = threading.Lock()
 
 # ===================== TABLAS DISPONIBLES =====================
@@ -115,13 +113,6 @@ TABLAS_DISPONIBLES = {
 PREFIJO_CDMX = "412"
 
 def generar_folio_automatico_cdmx() -> str:
-    """
-    FIX: antes descargaba TODOS los folios y luego checaba uno por uno con
-    una consulta individual por candidato — extremadamente lento y bloqueante.
-    Ahora usa bloques de 500 con UNA sola consulta .in_() y resuelve el
-    primer hueco libre en memoria con Python puro.
-    """
-    # Leer watermark para arrancar desde donde quedamos
     try:
         wm = supabase.table("folio_watermark") \
             .select("ultimo_asignado").eq("prefijo", PREFIJO_CDMX).execute()
@@ -146,7 +137,6 @@ def generar_folio_automatico_cdmx() -> str:
         for i, folio in enumerate(candidatos):
             if folio not in ocupados:
                 numero_final = inicio + i
-                # Guardar watermark
                 try:
                     supabase.table("folio_watermark").upsert({
                         "prefijo": PREFIJO_CDMX,
@@ -185,7 +175,6 @@ def guardar_folio_con_reintento(datos, username):
             "user_id":           datos.get("user_id", None),
         }
 
-    # MANUAL
     if datos.get("folio") and str(datos["folio"]).strip():
         fm = str(datos["folio"]).strip()
         try:
@@ -201,7 +190,6 @@ def guardar_folio_con_reintento(datos, username):
                 logger.error(f"[ERROR BD] {e}")
             return False
 
-    # AUTO con bloque
     for intento in range(10_000_000):
         try:
             c = generar_folio_automatico_cdmx()
@@ -226,14 +214,9 @@ def guardar_folio_con_reintento(datos, username):
 # ===================== SUPABASE STORAGE =====================
 
 def subir_pdf_a_storage(ruta_local: str, folio: str) -> str:
-    """
-    Sube el PDF al bucket de Supabase Storage.
-    Devuelve URL pública o "" si falla.
-    """
     try:
         with open(ruta_local, "rb") as f:
             contenido = f.read()
-
         nombre_archivo = f"{folio}.pdf"
         supabase.storage.from_(BUCKET_NAME).upload(
             path=nombre_archivo,
@@ -263,14 +246,6 @@ def generar_qr_dinamico_cdmx(folio):
 
 
 def generar_pdf_unificado_cdmx(datos: dict) -> str:
-    """
-    FIX 1: Todo el cuerpo va dentro de _pdf_generation_lock — PyMuPDF no es
-    thread-safe, dos generaciones simultáneas sin este Lock corrompen el PDF.
-
-    FIX 2: str() forzado en TODOS los insert_text — blinda contra cualquier
-    valor no-string (int, None, etc.) que truene con
-    "'int' object has no attribute 'splitlines'".
-    """
     with _pdf_generation_lock:
         fol          = datos["folio"]
         fecha_exp_dt = datos["fecha_exp"]
@@ -295,7 +270,6 @@ def generar_pdf_unificado_cdmx(datos: dict) -> str:
         out = os.path.join(OUTPUT_DIR, f"{fol}.pdf")
 
         try:
-            # ── PÁGINA 1 ──────────────────────────────────────────────────────
             doc1 = fitz.open(PLANTILLA_PRINCIPAL)
             pg1  = doc1[0]
 
@@ -323,7 +297,6 @@ def generar_pdf_unificado_cdmx(datos: dict) -> str:
                 pg1.insert_image(fitz.Rect(49, 653, 145, 749),
                                  pixmap=fitz.Pixmap(buf.read()), overlay=True)
 
-            # ── PÁGINA 2 ──────────────────────────────────────────────────────
             if os.path.exists(PLANTILLA_SECUNDARIA):
                 doc2 = fitz.open(PLANTILLA_SECUNDARIA)
                 pg2  = doc2[0]
@@ -345,7 +318,6 @@ def generar_pdf_unificado_cdmx(datos: dict) -> str:
             doc1.close()
             logger.info(f"[PDF] ✅ {out}")
 
-            # Sube a Storage y guarda pdf_url
             url = subir_pdf_a_storage(out, fol)
             if url:
                 try:
@@ -365,23 +337,43 @@ def generar_pdf_unificado_cdmx(datos: dict) -> str:
 
 
 def generar_pdf_en_background(datos: dict):
-    """Para llamar en threading.Thread — no bloquea el request HTTP."""
     generar_pdf_unificado_cdmx(datos)
 
 # ===================== ARMAR RESULTADO =====================
 
 def _armar_resultado_cdmx(r: dict, folio: str) -> dict:
     """
-    Construye el dict de resultado para las páginas de consulta.
-    puede_renovar = True solo si está VENCIDO y NO es folio de lote (user_id).
+    PARCHE ANTI-ROBO:
+    ─────────────────
+    puede_renovar  = True  solo si VENCIDO + no es lote + NO tiene renovación
+                           pendiente activa (PENDIENTE_PAGO).
+    ya_renovado    = True  si existe un folio_origen=folio con PENDIENTE_PAGO.
+                           En ese caso el template muestra aviso en vez de botón.
+
+    Ambas condiciones se evalúan server-side via Supabase, por lo que aplican
+    desde CUALQUIER dispositivo que escanee el QR — no depende de cookies ni sesión.
     """
     fe = parse_date_any(r.get('fecha_expedicion'))
     fv = parse_date_any(r.get('fecha_vencimiento'))
     hoy    = today_cdmx()
     estado = "VIGENTE" if hoy <= fv else "VENCIDO"
 
-    es_de_lote    = r.get('user_id') is not None
-    puede_renovar = (estado == "VENCIDO") and not es_de_lote
+    es_de_lote = r.get('user_id') is not None
+
+    # ── PARCHE 1: bloquear si ya hay renovación pendiente de pago ─────────────
+    ya_renovado = False
+    if estado == "VENCIDO" and not es_de_lote:
+        try:
+            chk = supabase.table("folios_registrados") \
+                .select("folio") \
+                .eq("folio_origen", folio) \
+                .eq("estado_pago", "PENDIENTE_PAGO") \
+                .limit(1).execute()
+            ya_renovado = bool(chk.data)
+        except Exception as e:
+            logger.error(f"[RENOVAR CHECK] {e}")
+
+    puede_renovar = (estado == "VENCIDO") and not es_de_lote and not ya_renovado
 
     return {
         "estado":            estado,
@@ -397,6 +389,7 @@ def _armar_resultado_cdmx(r: dict, folio: str) -> dict:
         "numero_motor":      r.get('numero_motor', ''),
         "entidad":           r.get('entidad', ENTIDAD),
         "puede_renovar":     puede_renovar,
+        "ya_renovado":       ya_renovado,   # ← nuevo, para el template
     }
 
 # ===================== RUTAS =====================
@@ -504,7 +497,6 @@ def registro_usuario():
             "nombre": nombre,
             "fecha_exp": fecha_inicio,
             "fecha_ven": fecha_inicio + timedelta(days=DIAS_PERMISO),
-            # CON user_id -> folio de lote, sin autoservicio de renovación
             "user_id": session.get('user_id'),
             "estado_pago": "VALIDADO",
         }
@@ -593,7 +585,6 @@ def registro_admin():
             "nombre": nombre,
             "fecha_exp": fecha_inicio,
             "fecha_ven": fecha_inicio + timedelta(days=DIAS_PERMISO),
-            # SIN user_id -> folio oficial, puede renovarse con autoservicio
             "estado_pago": "VALIDADO",
         }
 
@@ -623,7 +614,7 @@ def consulta_folio():
             .select("*").eq("folio", folio).limit(1).execute().data
         if not rows:
             resultado = {"estado": "NO REGISTRADO", "color": "rojo", "folio": folio,
-                         "puede_renovar": False}
+                         "puede_renovar": False, "ya_renovado": False}
         else:
             resultado = _armar_resultado_cdmx(rows[0], folio)
         return render_template('resultado_consulta.html', resultado=resultado)
@@ -637,15 +628,16 @@ def consulta_folio_directo(folio):
     if not row:
         return render_template("resultado_consulta.html",
                                resultado={"estado":"NO REGISTRADO","color":"rojo","folio":folio,
-                                          "puede_renovar": False})
+                                          "puede_renovar": False, "ya_renovado": False})
     resultado = _armar_resultado_cdmx(row[0], folio)
     return render_template("resultado_consulta.html", resultado=resultado)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# RENOVACIÓN — solo folios OFICIALES (sin user_id). Nunca para lotes.
-# IDEMPOTENCIA: si ya hay una renovación PENDIENTE_PAGO del mismo folio
-# viejo, regresa esa en vez de crear otra.
+# RENOVACIÓN
+# PARCHE 2: doble validación server-side antes de crear la renovación.
+#   - No puede renovar si ya existe un PENDIENTE_PAGO activo (folio_origen=folio_viejo)
+#   - No puede renovar folios de lote (user_id != null)
 # ═══════════════════════════════════════════════════════════════════════════
 
 @app.route('/renovar_folio/<folio_viejo>', methods=['POST'])
@@ -660,13 +652,14 @@ def renovar_folio(folio_viejo):
 
     original = resp.data[0]
 
+    # Bloqueo 1: folios de lote (emitidos por terceros)
     if original.get("user_id"):
         return jsonify({
             "ok": False,
             "error": "Este folio fue emitido por un proveedor. Contacta a quien te lo entregó para renovarlo."
         }), 403
 
-    # Idempotencia: si ya existe renovación pendiente para este folio_viejo
+    # ── PARCHE 2: bloqueo server-side — no crear renovación si ya hay una pendiente ──
     ya_existente = supabase.table("folios_registrados") \
         .select("folio") \
         .eq("folio_origen", folio_viejo) \
@@ -676,12 +669,12 @@ def renovar_folio(folio_viejo):
 
     if ya_existente.data:
         folio_existente = ya_existente.data[0]["folio"]
-        logger.info(f"[RENOVAR] Ya existía: {folio_existente}")
+        logger.info(f"[RENOVAR] Bloqueado — ya existe pendiente: {folio_existente}")
         return jsonify({
-            "ok": True,
-            "folio_nuevo": folio_existente,
-            "horas_limite": HORAS_LIMITE_PAGO
-        })
+            "ok": False,
+            "error": "Ya tienes una renovación pendiente de pago. Envía tu comprobante para activarla o espera 48 horas.",
+            "folio_pendiente": folio_existente
+        }), 409  # ← 409 Conflict en vez de 200, para que el JS lo maneje distinto
 
     fecha_exp = now_cdmx()
     fecha_ven = fecha_exp + timedelta(days=DIAS_PERMISO)
@@ -698,7 +691,6 @@ def renovar_folio(folio_viejo):
         "fecha_ven":     fecha_ven,
         "estado_pago":   "PENDIENTE_PAGO",
         "folio_origen":  folio_viejo,
-        # SIN user_id -> sigue siendo oficial, puede volver a renovarse
     }
 
     if not guardar_folio_con_reintento(datos, "RENOVACION"):
@@ -722,7 +714,6 @@ def renovar_folio(folio_viejo):
 
 @app.route('/estado_pdf/<folio>')
 def estado_pdf(folio):
-    """Polling desde el frontend — regresa pdf_url cuando el thread lo sube."""
     resp = supabase.table("folios_registrados").select("pdf_url").eq("folio", folio).execute()
     pdf_url = resp.data[0].get("pdf_url", "") if resp.data else ""
     return jsonify({"pdf_url": pdf_url})
@@ -736,7 +727,6 @@ def validar_pago(folio):
     try:
         supabase.table("folios_registrados") \
             .update({"estado_pago": "VALIDADO"}).eq("folio", folio).execute()
-        # Si viene de un form normal (admin_folios), redirige
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest' \
                 or request.accept_mimetypes.best == 'application/json':
             return jsonify({"ok": True})
@@ -752,7 +742,6 @@ def validar_pago(folio):
 # ===================== LIMPIEZA 48H =====================
 
 def limpiar_folios_no_pagados_cdmx():
-    """Corre en APScheduler cada 15 min. Borra renovaciones PENDIENTE_PAGO > 48h."""
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
     except ImportError:
@@ -853,7 +842,6 @@ def admin_test_fechas():
 # ===================== DESCARGAS =====================
 @app.route('/descargar_pdf/<folio>')
 def descargar_pdf(folio):
-    # Prioridad: Storage > disco local
     resp = supabase.table("folios_registrados").select("pdf_url").eq("folio", folio).execute()
     if resp.data and resp.data[0].get("pdf_url"):
         return redirect(resp.data[0]["pdf_url"])
