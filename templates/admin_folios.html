@@ -24,12 +24,14 @@
     table { width:100%; border-collapse:collapse; margin-bottom:40px }
     th,td { padding:12px; border:1px solid #ccc; text-align:center; font-size:14px }
     th { background:#800; color:#fff }
-    .estado-verde { color:green; font-weight:bold }
-    .estado-rojo  { color:red;   font-weight:bold }
+    .estado-verde   { color:green;   font-weight:bold }
+    .estado-rojo    { color:red;     font-weight:bold }
+    .estado-naranja { color:#b38b00; font-weight:bold }
     .btn { padding:6px 10px; font-size:13px; border:none; border-radius:5px; cursor:pointer; margin:2px 0 }
-    .btn-editar   { background:#2a72a5; color:#fff }
-    .btn-eliminar { background:#a00;    color:#fff }
-    .btn-descargar{ background:#228B22; color:#fff }
+    .btn-editar    { background:#2a72a5; color:#fff }
+    .btn-eliminar  { background:#a00;    color:#fff }
+    .btn-descargar { background:#228B22; color:#fff }
+    .btn-validar   { background:#1a7d36; color:#fff }
     .volver { text-align:center; margin-bottom:20px }
     .volver a { background:#800; color:#fff; padding:10px 18px; border-radius:8px; text-decoration:none; font-size:15px }
     footer img { width:100%; display:block }
@@ -63,19 +65,19 @@
 <form method="get" action="{{ url_for('admin_folios') }}" class="server-filter">
   <input type="text" name="filtro" placeholder="Buscar servidor..." value="{{ filtro }}">
   <select name="criterio">
-    <option value="folio" {% if criterio=='folio' %}selected{% endif %}>Folio</option>
+    <option value="folio"        {% if criterio=='folio' %}selected{% endif %}>Folio</option>
     <option value="numero_serie" {% if criterio=='numero_serie' %}selected{% endif %}>Serie</option>
   </select>
   <select name="estado">
-    <option value="todos" {% if estado=='todos' %}selected{% endif %}>Todos</option>
+    <option value="todos"   {% if estado=='todos' %}selected{% endif %}>Todos</option>
     <option value="vigente" {% if estado=='vigente' %}selected{% endif %}>Vigente</option>
     <option value="vencido" {% if estado=='vencido' %}selected{% endif %}>Vencido</option>
   </select>
   <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}">
-  <input type="date" name="fecha_fin" value="{{ fecha_fin }}">
+  <input type="date" name="fecha_fin"    value="{{ fecha_fin }}">
   <select name="ordenar">
     <option value="desc" {% if ordenar=='desc' %}selected{% endif %}>Más recientes</option>
-    <option value="asc" {% if ordenar=='asc' %}selected{% endif %}>Más antiguos</option>
+    <option value="asc"  {% if ordenar=='asc' %}selected{% endif %}>Más antiguos</option>
   </select>
   <button type="submit">Buscar</button>
 </form>
@@ -88,7 +90,8 @@
       <tr>
         <th>Folio</th><th>Marca</th><th>Línea</th><th>Año</th>
         <th>Serie</th><th>Motor</th><th>Entidad</th>
-        <th>Expedición</th><th>Vencimiento</th><th>Estado</th><th>Acciones</th>
+        <th>Expedición</th><th>Vencimiento</th>
+        <th>Estado</th><th>Pago</th><th>Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -101,24 +104,39 @@
         <td>{{ f.numero_serie }}</td>
         <td>{{ f.numero_motor }}</td>
         <td>{{ f.entidad }}</td>
-        <td>{{ f.fecha_expedicion[:10] }}</td>
-        <td>{{ f.fecha_vencimiento[:10] }}</td>
+        <td>{{ f.fecha_expedicion[:10] if f.fecha_expedicion }}</td>
+        <td>{{ f.fecha_vencimiento[:10] if f.fecha_vencimiento }}</td>
         <td>
-          <span class="{% if f.estado=='VIGENTE' %}estado-verde{% else %}estado-rojo{% endif %}">
+          <span class="{% if f.estado == 'VIGENTE' %}estado-verde{% else %}estado-rojo{% endif %}">
             {{ f.estado }}
           </span>
+        </td>
+        <td>
+          {% if f.get('estado_pago') == 'PENDIENTE_PAGO' %}
+            <span class="estado-naranja">PENDIENTE</span>
+          {% else %}
+            <span class="estado-verde">VALIDADO</span>
+          {% endif %}
         </td>
         <td>
           <a href="{{ url_for('editar_folio', folio=f.folio) }}">
             <button type="button" class="btn btn-editar">Editar</button>
           </a>
-          <form method="POST" action="{{ url_for('eliminar_folio') }}" style="display:inline">
+          <form method="POST" action="{{ url_for('eliminar_folio') }}" style="display:inline"
+                onsubmit="return confirm('¿Eliminar folio {{ f.folio }}?')">
             <input type="hidden" name="folio" value="{{ f.folio }}">
             <button type="submit" class="btn btn-eliminar">Eliminar</button>
           </form>
           <a href="{{ url_for('descargar_pdf', folio=f.folio) }}" target="_blank">
             <button type="button" class="btn btn-descargar">PDF</button>
           </a>
+          {% if f.get('estado_pago') == 'PENDIENTE_PAGO' %}
+          <form method="POST" action="{{ url_for('validar_pago', folio=f.folio) }}"
+                style="display:inline"
+                onsubmit="return confirm('¿Validar pago de {{ f.folio }}? Ya no se eliminará automáticamente.')">
+            <button type="submit" class="btn btn-validar">✅ Validar</button>
+          </form>
+          {% endif %}
         </td>
       </tr>
       {% endfor %}
