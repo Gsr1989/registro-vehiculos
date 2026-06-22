@@ -113,10 +113,12 @@
         </td>
         <td>
           {% if f.get('estado_pago') == 'PENDIENTE_PAGO' %}
-            <span class="estado-naranja">PENDIENTE</span>
-          {% else %}
-            <span class="estado-verde">VALIDADO</span>
-          {% endif %}
+<button type="button" class="btn btn-validar"
+        id="btn-val-{{ f.folio }}"
+        onclick="validarPago('{{ f.folio }}', this)">
+    ✅ Validar
+</button>
+{% endif %}
         </td>
         <td>
           <a href="{{ url_for('editar_folio', folio=f.folio) }}">
