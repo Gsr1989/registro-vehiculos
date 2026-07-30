@@ -1,2 +1,0 @@
-git log --oneline -5
-# Debe mostrar el commit con gunicorn
