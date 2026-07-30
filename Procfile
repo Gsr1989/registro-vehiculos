@@ -1,1 +1,2 @@
-web: gunicorn main:app --bind 0.0.0.0:$PORT
+supabase>=2.15,<3
+httpx>=0.26,<0.28
