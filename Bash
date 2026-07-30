@@ -1,0 +1,3 @@
+git add requirements.txt
+git commit -m "Update PyMuPDF to 1.24.1 for Render compatibility"
+git push origin main
