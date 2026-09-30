@@ -1,273 +1,2530 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
+    <title>Resultado de Consulta | Secretaría de Movilidad de la CDMX</title>
+
     <meta charset="UTF-8">
-    <title>Resultado de Consulta</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="author"
+          content="Secretaría de Movilidad de la CDMX">
+
+    <meta name="description"
+          content="Consulta de documentos de la Secretaría de Movilidad de la Ciudad de México">
+
+    <meta property="og:locale"
+          content="es_LA">
+
+    <meta property="og:type"
+          content="website">
+
+    <meta property="og:title"
+          content="Secretaría de Movilidad de la CDMX">
+
+    <meta property="og:site_name"
+          content="Secretaría de Movilidad de la CDMX">
+
+    <meta property="og:url"
+          content="https://www.semovi.cdmx.gob.mx">
+
+    <meta property="og:image"
+          content="https://www.semovi.cdmx.gob.mx/themes/base/assets/images/logos/Logo_Dependencia.png">
+
+
+    <!-- FAVICONS -->
+
+    <link rel="apple-touch-icon"
+          sizes="180x180"
+          href="/themes/base/assets/favicon/apple-touch-icon.png?ver=7Z50H">
+
+    <link rel="icon"
+          type="image/png"
+          href="/themes/base/assets/favicon/favicon-32x32.png?ver=7Z50H"
+          sizes="32x32">
+
+    <link rel="icon"
+          type="image/png"
+          href="/themes/base/assets/favicon/favicon-16x16.png?ver=7Z50H"
+          sizes="16x16">
+
+    <link rel="shortcut icon"
+          href="/themes/base/assets/favicon/favicon.ico?ver=7Z50H">
+
+    <meta name="theme-color"
+          content="#ffffff">
+
+
+    <!-- CSS OFICIAL CDMX / SEMOVI -->
+
+    <link href="https://www.semovi.cdmx.gob.mx/themes/base/assets/css/theme.css"
+          rel="stylesheet">
+
+    <link href="https://www.semovi.cdmx.gob.mx/themes/base/assets/css/custom.css"
+          rel="stylesheet">
+
+
+    <!-- ========================================================= -->
+    <!-- ESTILOS EXCLUSIVOS DEL RESULTADO DE CONSULTA               -->
+    <!-- ========================================================= -->
+
     <style>
-        body {
-            background-color: #ffffff;
-            font-family: Arial, sans-serif;
+
+        .consulta-wrapper {
+            width: 92%;
+            max-width: 850px;
+            margin: 40px auto 60px;
+        }
+
+
+        .consulta-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+
+        .consulta-header h1 {
+            margin-bottom: 8px;
+            font-size: 30px;
+            font-weight: 600;
+            color: #333333;
+        }
+
+
+        .consulta-header p {
             margin: 0;
-            padding: 0;
+            color: #666666;
+            font-size: 17px;
         }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 30px;
+
+
+        .resultado-titulo {
+            background: #ffffff;
+            border-left: 6px solid #7b1f3a;
+            border-bottom: 1px solid #dddddd;
+
+            padding: 18px 22px;
+
+            margin-bottom: 25px;
+
+            font-size: 22px;
+            font-weight: 600;
+
+            color: #333333;
         }
-        header img {
-            height: 80px;
-        }
-        .titulo {
-            text-align: center;
-            font-size: 24px;
-            margin-top: 20px;
-            font-weight: bold;
-            color: #222;
-        }
-        .subtitulo {
-            text-align: center;
-            font-size: 18px;
-            margin-top: 5px;
-            color: #444;
-        }
+
+
         .estado {
             text-align: center;
-            font-size: 22px;
+
+            font-size: 21px;
             font-weight: bold;
-            margin-top: 30px;
-            padding: 10px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 600px;
-            margin: 30px auto 0;
-            color: white;
+
+            padding: 16px 20px;
+
+            border-radius: 5px;
+
+            color: #ffffff;
+
+            margin-bottom: 25px;
+
+            overflow-wrap: anywhere;
         }
-        .verde          { background-color: #28a745; }
-        .vencido        { background-color: #b38b00; }
-        .no-encontrado  { background-color: #a00000; }
-        .certificado {
-            border: 2px solid #ccc;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 600px;
-            margin: 30px auto;
-            background-color: #f2f2f2;
+
+
+        .verde {
+            background-color: #28a745;
         }
-        .recuadro-interno {
-            border: 2px solid #aaa;
-            padding: 20px;
-            border-radius: 12px;
-            background-color: #ffffff;
+
+
+        .vencido {
+            background-color: #b38b00;
         }
-        .dato {
-            margin: 12px 0;
-            font-size: 16px;
-        }
-        .dato strong {
-            display: block;
-            font-size: 15px;
-            margin-bottom: 5px;
-            color: #222;
-        }
-        .valido {
-            text-align: center;
-            font-weight: bold;
-            margin-top: 20px;
-            color: #333;
-        }
-        .acciones {
-            width: 90%;
-            max-width: 600px;
-            margin: 20px auto;
-            text-align: center;
-        }
-        .btn-regresar a {
-            display: inline-block;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 16px;
-            color: white;
-            background-color: #800000;
-            text-decoration: none;
-        }
-        .btn-regresar a:hover {
+
+
+        .no-encontrado {
             background-color: #a00000;
         }
 
-        /* ── BOTÓN RENOVAR ── */
-        .renovar-container {
-            width: 90%;
-            max-width: 600px;
-            margin: 10px auto 20px;
+
+        .certificado {
+
+            border: 1px solid #dddddd;
+
+            background-color: #f7f7f7;
+
+            padding: 24px;
+
+            margin-bottom: 25px;
+
+            border-radius: 5px;
+        }
+
+
+        .recuadro-interno {
+
+            background-color: #ffffff;
+
+            border: 1px solid #dddddd;
+
+            padding: 10px 25px;
+        }
+
+
+        .dato {
+
+            padding: 14px 0;
+
+            font-size: 16px;
+
+            border-bottom: 1px solid #eeeeee;
+        }
+
+
+        .dato:last-child {
+            border-bottom: none;
+        }
+
+
+        .dato strong {
+
+            display: block;
+
+            margin-bottom: 4px;
+
+            font-size: 13px;
+
+            color: #666666;
+
+            text-transform: uppercase;
+        }
+
+
+        .valido {
+
             text-align: center;
-        }
-        .btn-renovar {
-            display: inline-block;
-            padding: 14px 36px;
-            border-radius: 8px;
-            font-size: 17px;
+
             font-weight: bold;
-            color: white;
-            background-color: #b38b00;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+
+            color: #555555;
+
+            margin: 25px 0;
+
+            font-size: 15px;
         }
-        .btn-renovar:hover  { background-color: #d4a800; }
+
+
+        /* ========================================================= */
+        /* RENOVACIÓN                                                */
+        /* ========================================================= */
+
+
+        .renovar-container {
+
+            text-align: center;
+
+            margin: 25px auto;
+        }
+
+
+        .btn-renovar {
+
+            padding: 14px 35px;
+
+            border: none;
+
+            border-radius: 5px;
+
+            background-color: #b38b00;
+
+            color: white;
+
+            font-size: 17px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            transition: background-color 0.2s ease;
+        }
+
+
+        .btn-renovar:hover {
+
+            background-color: #967500;
+        }
+
+
         .btn-renovar:disabled {
-            background-color: #888;
+
+            background-color: #888888;
+
             cursor: not-allowed;
         }
 
-        /* ── AVISO YA RENOVADO ── */
+
         .aviso-pendiente {
-            width: 90%;
-            max-width: 600px;
-            margin: 10px auto 20px;
-            padding: 14px 20px;
-            border-radius: 10px;
+
+            margin: 25px auto;
+
+            padding: 18px 25px;
+
             background-color: #fff3cd;
-            border: 2px solid #e0a800;
-            color: #7a5a00;
+
+            border-left: 5px solid #e0a800;
+
+            color: #6c5500;
+
             font-size: 15px;
+
+            line-height: 1.6;
+
             text-align: center;
-            font-weight: bold;
+
+            font-weight: 600;
         }
 
-        footer {
-            margin-top: 40px;
-            width: 100%;
+
+        /* ========================================================= */
+        /* BOTÓN REGRESAR                                            */
+        /* ========================================================= */
+
+
+        .acciones {
+
+            margin-top: 30px;
+
+            text-align: center;
         }
-        footer img {
-            width: 100%;
-            display: block;
+
+
+        .btn-regresar-semovi {
+
+            display: inline-block;
+
+            background-color: #7b1f3a;
+
+            color: #ffffff !important;
+
+            padding: 12px 30px;
+
+            border-radius: 4px;
+
+            text-decoration: none !important;
+
+            font-size: 16px;
         }
+
+
+        .btn-regresar-semovi:hover {
+
+            background-color: #64172e;
+
+            color: #ffffff !important;
+        }
+
+
+        /* ========================================================= */
+        /* RESPONSIVE                                                */
+        /* ========================================================= */
+
+
         @media (max-width: 600px) {
-            header img { height: 60px; }
-            .titulo    { font-size: 20px; }
-            .estado    { font-size: 20px; }
+
+            .consulta-wrapper {
+
+                width: 94%;
+
+                margin-top: 25px;
+            }
+
+
+            .consulta-header h1 {
+
+                font-size: 24px;
+            }
+
+
+            .resultado-titulo {
+
+                font-size: 19px;
+            }
+
+
+            .estado {
+
+                font-size: 18px;
+            }
+
+
+            .certificado {
+
+                padding: 14px;
+            }
+
+
+            .recuadro-interno {
+
+                padding: 8px 17px;
+            }
+
+
+            .dato {
+
+                font-size: 15px;
+            }
+
+
+            .btn-renovar {
+
+                width: 100%;
+
+                max-width: 350px;
+            }
+
         }
+
     </style>
+
 </head>
-<body>
 
-    <header>
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
-        <img src="{{ url_for('static', filename='sub_logo.png') }}" alt="Sub Logo">
-    </header>
 
-    <div class="titulo">Secretaría de Movilidad</div>
-    <div class="subtitulo">Ciudad de México</div>
 
-    {% if resultado.estado == "NO SE ENCUENTRA REGISTRADO" or resultado.estado == "NO REGISTRADO" %}
-      <div class="estado no-encontrado">
-        FOLIO {{ resultado.folio }} : NO SE ENCUENTRA REGISTRADO
-      </div>
-    {% elif resultado.estado == "VENCIDO" %}
-      <div class="estado vencido">
-        FOLIO {{ resultado.folio }} : VENCIDO
-      </div>
-    {% else %}
-      <div class="estado verde">
-        FOLIO {{ resultado.folio }} : VIGENTE
-      </div>
-    {% endif %}
+<body id="top">
 
-    {% if resultado.estado not in ["NO SE ENCUENTRA REGISTRADO", "NO REGISTRADO"] %}
-      <div class="certificado">
-        <div class="recuadro-interno">
-          <div class="dato"><strong>FECHA DE EXPEDICIÓN</strong> {{ resultado.fecha_expedicion }}</div>
-          <div class="dato"><strong>FECHA DE VENCIMIENTO</strong> {{ resultado.fecha_vencimiento }}</div>
-          <div class="dato"><strong>MARCA</strong> {{ resultado.marca }}</div>
-          <div class="dato"><strong>LÍNEA</strong> {{ resultado.linea }}</div>
-          <div class="dato"><strong>AÑO</strong> {{ resultado.año }}</div>
-          <div class="dato"><strong>NÚMERO DE SERIE</strong> {{ resultado.numero_serie }}</div>
-          <div class="dato"><strong>NÚMERO DE MOTOR</strong> {{ resultado.numero_motor }}</div>
+
+<!-- ============================================================= -->
+<!-- BANNER SUPERIOR CDMX                                          -->
+<!-- ============================================================= -->
+
+
+<aside id="top-bar-banner"
+       class="container">
+
+    <a href="https://portal.crt.gob.mx/gestion-de-lineas-telefonicas-moviles"
+       target="_blank"
+       rel="noopener">
+
+        <img
+            src="https://cdn.cdmx.gob.mx/img/notificaciones/registro_celular2x.png"
+
+            alt="Registra tu línea celular para acabar con el anonimato."
+
+            class="top-bar-image"
+
+            onerror="this.closest('aside').style.display='none';"
+        >
+
+    </a>
+
+</aside>
+
+
+
+<div id="absolute-header">
+
+    <div class="header image left">
+
+        <img
+            src="https://cdn.cdmx.gob.mx/assets/cdmx-header-image-left.svg"
+            alt=""
+            onerror="this.style.display='none';"
+        >
+
+    </div>
+
+
+    <div class="header image right">
+
+        <img
+            src="https://cdn.cdmx.gob.mx/assets/cdmx-header-image-right.svg"
+            alt=""
+            onerror="this.style.display='none';"
+        >
+
+    </div>
+
+</div>
+
+
+
+<!-- ============================================================= -->
+<!-- HEADER SEMOVI                                                  -->
+<!-- ============================================================= -->
+
+
+<header class="Header">
+
+
+    <div class="Header-top">
+
+
+        <div class="container">
+
+
+            <div class="row">
+
+
+                <div class="Header-content">
+
+
+                    <div class="HeaderLogo">
+
+                        <a href="https://www.semovi.cdmx.gob.mx">
+
+                            <img
+                                class="Logo-cdmx"
+                                src="https://www.semovi.cdmx.gob.mx/themes/base/assets/images/logos/Logo_CDMX.png"
+                                alt="Gobierno de la Ciudad de México"
+                            >
+
+                            <img
+                                class="Logo-dep"
+                                src="https://www.semovi.cdmx.gob.mx/themes/base/assets/images/logos/Logo_Dependencia.png"
+                                alt="Secretaría de Movilidad"
+                            >
+
+                        </a>
+
+                    </div>
+
+
+
+                    <!-- BUSCADOR -->
+
+
+                    <div class="HeaderSearch">
+
+                        <form
+                            action="https://www.semovi.cdmx.gob.mx/busqueda"
+                            method="get"
+                        >
+
+                            <div class="input-group">
+
+
+                                <input
+                                    type="text"
+
+                                    class="form-control"
+
+                                    placeholder="Buscar en el sitio"
+
+                                    name="q"
+
+                                    aria-label="Buscar en el sitio"
+                                >
+
+
+                                <span class="input-group-btn">
+
+                                    <button
+                                        class="btn btn-default"
+                                        type="submit"
+                                        aria-label="Buscar"
+                                    >
+
+                                        <i
+                                            class="fa fa-search"
+                                            aria-hidden="true"
+                                        ></i>
+
+                                    </button>
+
+                                </span>
+
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <div class="Header-links">
+
+                    <ul class="Items">
+
+
+                        <li>
+
+                            <a
+                                href="https://www.cdmx.gob.mx"
+                                target="_blank"
+                            >
+                                CDMX
+                            </a>
+
+                            /
+
+                            <a
+                                href="https://www.ciudadanos.cdmx.gob.mx/gobierno/gabinete/secretarias"
+                                target="_blank"
+                            >
+                                Secretarías
+                            </a>
+
+                            /
+
+                            <b>SEMOVI</b>
+
+                        </li>
+
+
+                        <li>
+
+                            <a
+                                href="https://www.semovi.cdmx.gob.mx/transparencia"
+                                target="_blank"
+                            >
+                                Transparencia
+                            </a>
+
+                        </li>
+
+
+                        <li>
+
+                            <a
+                                href="https://www.atencionciudadana.cdmx.gob.mx/"
+                                target="_blank"
+                            >
+                                Atención Ciudadana
+                            </a>
+
+                        </li>
+
+
+                        <li>
+
+                            <a
+                                href="https://www.tramites.cdmx.gob.mx/"
+                                target="_blank"
+                            >
+                                Trámites y Servicios
+                            </a>
+
+                        </li>
+
+
+                    </ul>
+
+                </div>
+
+
+            </div>
+
+
         </div>
-      </div>
-    {% endif %}
 
-    {% if resultado.ya_renovado %}
-    {# ── PARCHE: ya hay renovación pendiente de pago, bloquear botón ── #}
-    <div class="aviso-pendiente">
-        ⚠️ Ya tienes una renovación en proceso.<br>
-        Envía tu comprobante de pago para activarla.<br>
-        Si no realizas el pago a tiempo, el folio se cancelará automáticamente.
+
     </div>
 
-    {% elif resultado.puede_renovar %}
-    <div class="renovar-container">
-        <button id="btnRenovar" class="btn-renovar"
-                onclick="confirmarRenovacion('{{ resultado.folio_actual }}')">
-            Renovar tu permiso
-        </button>
+
+
+    <!-- ========================================================= -->
+    <!-- MENÚ PRINCIPAL                                             -->
+    <!-- ========================================================= -->
+
+
+    <div class="HeaderMenu">
+
+
+        <div class="HeaderNav-mobile">
+
+            <a href="#"
+               class="Mobile-actions">
+
+                Menú
+
+            </a>
+
+        </div>
+
+
+
+        <div class="Header-finder">
+
+            <a href="#"
+               class="Mobile-actions">
+
+                Buscar
+
+            </a>
+
+        </div>
+
+
+
+        <div class="HeaderNav">
+
+
+            <div class="container">
+
+
+                <ul class="Header-container">
+
+
+                    <li class="HeaderNav-element Fastlink">
+
+                        <a href="https://www.semovi.cdmx.gob.mx/transparencia">
+
+                            Transparencia
+
+                        </a>
+
+                    </li>
+
+
+
+                    <li class="HeaderNav-element Fastlink">
+
+                        <a href="https://www.atencionciudadana.cdmx.gob.mx/">
+
+                            Atención Ciudadana
+
+                        </a>
+
+                    </li>
+
+
+
+                    <li class="HeaderNav-element Fastlink">
+
+                        <a href="https://www.tramites.cdmx.gob.mx/">
+
+                            Trámites y Servicios
+
+                        </a>
+
+                    </li>
+
+
+
+                    <li class="HeaderNav-element">
+
+                        <a href="https://www.semovi.cdmx.gob.mx">
+
+                            Inicio
+
+                        </a>
+
+                    </li>
+
+
+
+                    <!-- SECRETARÍA -->
+
+
+                    <li class="HeaderNav-element dropdown">
+
+
+                        <a
+                            class="dropdown-toggle"
+
+                            href="https://www.semovi.cdmx.gob.mx/secretaria"
+
+                            data-toggle="dropdown"
+
+                            aria-haspopup="true"
+
+                            aria-expanded="false"
+                        >
+
+                            Secretaría
+
+                        </a>
+
+
+
+                        <ul class="dropdown-menu">
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/secretaria/acerca-de">
+
+                                    Acerca de
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/secretaria/directorio">
+
+                                    Directorio
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/secretaria/estructura">
+
+                                    Estructura Orgánica
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/secretaria/marco-normativo">
+
+                                    Marco Normativo
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/transparencia">
+
+                                    Transparencia
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/contacto">
+
+                                    Contacto
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/secretaria/comites">
+
+                                    Comités
+
+                                </a>
+
+                            </li>
+
+
+                        </ul>
+
+
+                    </li>
+
+
+
+                    <!-- PROGRAMAS -->
+
+
+                    <li class="HeaderNav-element">
+
+                        <a href="https://www.semovi.cdmx.gob.mx/programas-de-mejora-del-transporte-publico">
+
+                            Programas de mejora del Transporte Público
+
+                        </a>
+
+                    </li>
+
+
+
+                    <!-- MOVILIDAD INTEGRADA -->
+
+
+                    <li class="HeaderNav-element dropdown">
+
+
+                        <a
+                            class="dropdown-toggle"
+
+                            href="https://www.semovi.cdmx.gob.mx/movilidad-integrada"
+
+                            data-toggle="dropdown"
+
+                            aria-haspopup="true"
+
+                            aria-expanded="false"
+                        >
+
+                            Movilidad Integrada
+
+                        </a>
+
+
+                        <ul class="dropdown-menu">
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/movilidad-integrada-">
+
+                                    Movilidad Integrada
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/movilidad-integrada/mi-mapa">
+
+                                    Mapa MI
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://app.semovi.cdmx.gob.mx/visor_puntos_recarga/">
+
+                                    Puntos de Recarga MI en Comercios
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://app.semovi.cdmx.gob.mx/visor_sitp/">
+
+                                    Visor MI
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/movilidad-integrada/imagen-mi">
+
+                                    Imagen MI
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/movilidad-integrada/tarjeta-de-gratuidad">
+
+                                    Tarjeta de gratuidad
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/movilidad-integrada/genero-y-movilidad">
+
+                                    Género y Movilidad
+
+                                </a>
+
+                            </li>
+
+
+                            <li>
+
+                                <a href="https://www.semovi.cdmx.gob.mx/movilidad-integrada/mi-movilidad-de-barrio1">
+
+                                    Movilidad de Barrio
+
+                                </a>
+
+                            </li>
+
+
+                        </ul>
+
+
+                    </li>
+
+
+
+                    <!-- TRÁMITES -->
+
+
+                    <li class="HeaderNav-element dropdown">
+
+
+                        <a
+                            class="dropdown-toggle"
+
+                            href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios"
+
+                            data-toggle="dropdown"
+
+                            aria-haspopup="true"
+
+                            aria-expanded="false"
+                        >
+
+                            Trámites y Servicios
+
+                        </a>
+
+
+
+                        <ul class="dropdown-menu">
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/vehiculos-particulares">
+                                    Vehículos Particulares
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/vehiculos-particulares/motocicleta">
+                                    Motocicleta
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/mi-unidad">
+                                    Mi unidad
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites_de_control_vehicular">
+                                    Trámites de control vehicular
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites_de_control_vehicular/tramites-para-empresas">
+                                    Trámites para empresas
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/cursos-vehiculares">
+                                    Cursos Vehiculares
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/registro-publico-del-transporte">
+                                    Registro Público del Transporte
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/vehiculos-particulares/modulos-de-control-vehicular-y-licencias">
+                                    Módulos de Control Vehicular y Licencias
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/biciestacionamientos-masivos">
+                                    Biciestacionamientos Masivos
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/ciclotaxi">
+                                    Ciclotaxi
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/taxis">
+                                    Taxis
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/plataformas">
+                                    Plataformas
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/transporte-de-pasajeros">
+                                    Transporte de Pasajeros "Ruta"
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/transporte-de-carga">
+                                    Transporte de Carga
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/transporte-especializado">
+                                    Transporte Especializado
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/infraestructura-y-vialidades">
+                                    Infraestructura y vialidades
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/estacionamiento-en-la-via-publica">
+                                    Estacionamiento en la vía Pública
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/modulos-de-atencion-y-servicios">
+                                    Módulos de Atención y Servicios
+                                </a>
+                            </li>
+
+
+                        </ul>
+
+
+                    </li>
+
+
+
+                    <!-- GOBIERNO ABIERTO -->
+
+
+                    <li class="HeaderNav-element dropdown">
+
+
+                        <a
+                            class="dropdown-toggle"
+
+                            href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/transparencia"
+
+                            data-toggle="dropdown"
+
+                            aria-haspopup="true"
+
+                            aria-expanded="false"
+                        >
+
+                            Gobierno Abierto
+
+                        </a>
+
+
+
+                        <ul class="dropdown-menu">
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/transparencia/reportes-informes-manuales">
+                                    Programas, reportes, informes y manuales
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/transparencia/codigo-de-conducta-de-la-semovi">
+                                    Código de Conducta de la SEMOVI
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/transparencia/seguridad-vial">
+                                    Seguridad Vial
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/transparencia/convocatorias-de-licitaciones">
+                                    Convocatorias de licitaciones
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/transparencia/fallos-de-licitaciones">
+                                    Fallos de licitaciones
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/transparencia/avisos-de-privacidad">
+                                    Avisos de privacidad
+                                </a>
+                            </li>
+
+
+                            <li>
+                                <a href="https://datospersonales.infocdmx.org.mx/publicconsultation">
+                                    Consulta Pública RESDP 3.0
+                                </a>
+                            </li>
+
+
+                        </ul>
+
+
+                    </li>
+
+
+                </ul>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- BUSCADOR MÓVIL -->
+
+
+        <div class="Header-findbox">
+
+
+            <form
+                action="https://www.semovi.cdmx.gob.mx/busqueda"
+                method="get"
+            >
+
+
+                <div class="form-group">
+
+
+                    <input
+                        type="text"
+
+                        class="form-control"
+
+                        placeholder="Buscar en el sitio"
+
+                        name="q"
+                    >
+
+
+                </div>
+
+
+            </form>
+
+
+        </div>
+
+
     </div>
 
-    <script>
-    function confirmarRenovacion(folio) {
+
+</header>
+
+
+
+<!-- ============================================================= -->
+<!-- ============================================================= -->
+<!--                 RESULTADO DE CONSULTA                          -->
+<!-- ============================================================= -->
+<!-- ============================================================= -->
+
+
+<main>
+
+
+    <div class="container">
+
+
+        <section class="consulta-wrapper">
+
+
+            <div class="consulta-header">
+
+
+                <h1>
+                    Resultado de Consulta
+                </h1>
+
+
+                <p>
+                    Secretaría de Movilidad de la Ciudad de México
+                </p>
+
+
+            </div>
+
+
+
+            <div class="resultado-titulo">
+
+                Información del documento consultado
+
+            </div>
+
+
+
+            <!-- ================================================= -->
+            <!-- ESTADO                                             -->
+            <!-- ================================================= -->
+
+
+            {% if resultado.estado == "NO SE ENCUENTRA REGISTRADO"
+                  or resultado.estado == "NO REGISTRADO" %}
+
+
+                <div class="estado no-encontrado">
+
+                    FOLIO {{ resultado.folio }}:
+                    NO SE ENCUENTRA REGISTRADO
+
+                </div>
+
+
+            {% elif resultado.estado == "VENCIDO" %}
+
+
+                <div class="estado vencido">
+
+                    FOLIO {{ resultado.folio }}:
+                    VENCIDO
+
+                </div>
+
+
+            {% else %}
+
+
+                <div class="estado verde">
+
+                    FOLIO {{ resultado.folio }}:
+                    VIGENTE
+
+                </div>
+
+
+            {% endif %}
+
+
+
+            <!-- ================================================= -->
+            <!-- DATOS DEL PERMISO                                  -->
+            <!-- ================================================= -->
+
+
+            {% if resultado.estado not in
+                ["NO SE ENCUENTRA REGISTRADO", "NO REGISTRADO"] %}
+
+
+                <div class="certificado">
+
+
+                    <div class="recuadro-interno">
+
+
+                        <div class="dato">
+
+                            <strong>
+                                Fecha de expedición
+                            </strong>
+
+                            {{ resultado.fecha_expedicion }}
+
+                        </div>
+
+
+
+                        <div class="dato">
+
+                            <strong>
+                                Fecha de vencimiento
+                            </strong>
+
+                            {{ resultado.fecha_vencimiento }}
+
+                        </div>
+
+
+
+                        <div class="dato">
+
+                            <strong>
+                                Marca
+                            </strong>
+
+                            {{ resultado.marca }}
+
+                        </div>
+
+
+
+                        <div class="dato">
+
+                            <strong>
+                                Línea
+                            </strong>
+
+                            {{ resultado.linea }}
+
+                        </div>
+
+
+
+                        <div class="dato">
+
+                            <strong>
+                                Año
+                            </strong>
+
+                            {{ resultado.año }}
+
+                        </div>
+
+
+
+                        <div class="dato">
+
+                            <strong>
+                                Número de serie
+                            </strong>
+
+                            {{ resultado.numero_serie }}
+
+                        </div>
+
+
+
+                        <div class="dato">
+
+                            <strong>
+                                Número de motor
+                            </strong>
+
+                            {{ resultado.numero_motor }}
+
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+
+            {% endif %}
+
+
+
+            <!-- ================================================= -->
+            <!-- RENOVACIÓN YA PENDIENTE                            -->
+            <!-- ================================================= -->
+
+
+            {% if resultado.ya_renovado %}
+
+
+                <div class="aviso-pendiente">
+
+
+                    ⚠️ Ya tienes una renovación en proceso.
+
+                    <br>
+
+                    Envía tu comprobante de pago para activarla.
+
+                    <br>
+
+                    Si no realizas el pago a tiempo,
+                    el folio se cancelará automáticamente.
+
+
+                </div>
+
+
+
+            <!-- ================================================= -->
+            <!-- BOTÓN RENOVACIÓN                                   -->
+            <!-- ================================================= -->
+
+
+            {% elif resultado.puede_renovar %}
+
+
+                <div class="renovar-container">
+
+
+                    <button
+                        id="btnRenovar"
+
+                        class="btn-renovar"
+
+                        type="button"
+
+                        data-folio="{{ resultado.folio_actual }}"
+                    >
+
+                        Renovar tu permiso
+
+                    </button>
+
+
+                </div>
+
+
+            {% endif %}
+
+
+
+            <div class="valido">
+
+                DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO
+
+            </div>
+
+
+
+            <div class="acciones">
+
+
+                <a
+                    href="https://www.semovi.cdmx.gob.mx/"
+                    class="btn-regresar-semovi"
+                >
+
+                    Regresar al sitio de SEMOVI
+
+                </a>
+
+
+            </div>
+
+
+        </section>
+
+
+    </div>
+
+
+
+    <div id="BackTop">
+
+        <a
+            href="#"
+            id="BackTop-action"
+            aria-label="Regresar al inicio"
+        ></a>
+
+    </div>
+
+
+</main>
+
+
+
+<!-- ============================================================= -->
+<!-- FOOTER OFICIAL                                                 -->
+<!-- ============================================================= -->
+
+
+<footer class="Footer">
+
+
+    <div class="Footer-child">
+
+
+        <div class="container">
+
+
+            <div class="Footer-section--c4">
+
+
+                <div class="Footer-card">
+
+
+                    <div class="Footer-card-logo">
+
+
+                        <img
+                            src="https://www.semovi.cdmx.gob.mx/themes/base/assets/images/logos/Logo_Generico_F.png"
+
+                            alt="Logo de la Dependencia"
+                        >
+
+
+                    </div>
+
+
+
+                    <div class="Footer-card-data">
+
+
+                        <div class="Footer-title">
+
+
+                            <h3>
+
+                                Atención ciudadana
+
+                            </h3>
+
+
+                        </div>
+
+
+
+                        <div class="Footer-card-address">
+
+
+                            <div class="Text">
+
+
+                                <strong>
+                                    Dirección:
+                                </strong>
+
+                                Avenida Álvaro Obregón 269
+
+                                <br>
+
+                                Colonia Roma Norte,
+
+                                Alcaldía Cuauhtémoc
+
+                                <br>
+
+                                C.P. 06700,
+                                Ciudad de México
+
+
+                            </div>
+
+
+
+                            <div class="Title">
+
+
+                                <h4>
+
+                                    Teléfonos:
+
+                                </h4>
+
+
+                            </div>
+
+
+
+                            <div class="Text">
+
+
+                                Trámites, servicios y orientación telefónica
+                                con LOCATEL: 56581111.
+
+                                <br>
+
+                                Atención Ciudadana:
+
+                                https://atencionciudadana.cdmx.gob.mx/
+
+
+                            </div>
+
+
+
+                            <div class="Title">
+
+
+                                <h4>
+
+                                    Horarios:
+
+                                </h4>
+
+
+                            </div>
+
+
+
+                            <div class="Text">
+
+                                Secretaría de Movilidad:
+                                lunes a viernes 09:00 a 21:00 hrs.
+
+                            </div>
+
+
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- REDES -->
+
+
+                <ul class="Footer-social">
+
+
+                    <li class="Footer-title">
+
+
+                        <h3>
+
+                            Redes sociales
+
+                        </h3>
+
+
+                    </li>
+
+
+
+                    <li class="FooterSocial-item">
+
+
+                        <a
+                            href="https://www.facebook.com/lasemovi/timeline"
+                            target="_blank"
+                            rel="noopener"
+                            aria-label="Facebook"
+                        >
+
+                            <i class="fa fa-facebook"></i>
+
+                        </a>
+
+
+                    </li>
+
+
+
+                    <li class="FooterSocial-item">
+
+
+                        <a
+                            href="https://twitter.com/LaSEMOVI"
+                            target="_blank"
+                            rel="noopener"
+                            aria-label="Twitter"
+                        >
+
+                            <i class="fa fa-twitter"></i>
+
+                        </a>
+
+
+                    </li>
+
+
+
+                    <li class="FooterSocial-item">
+
+
+                        <a
+                            href="https://www.youtube.com/channel/UCWSEwAlBKGMwc93Ixrx8ktg"
+
+                            target="_blank"
+
+                            rel="noopener"
+
+                            aria-label="YouTube"
+                        >
+
+                            <i class="fa fa-youtube"></i>
+
+                        </a>
+
+
+                    </li>
+
+
+
+                    <li class="FooterSocial-item">
+
+
+                        <a
+                            href="https://www.instagram.com/semovicdmx/"
+
+                            target="_blank"
+
+                            rel="noopener"
+
+                            aria-label="Instagram"
+                        >
+
+                            <i class="fa fa-instagram"></i>
+
+                        </a>
+
+
+                    </li>
+
+
+                </ul>
+
+
+            </div>
+
+
+
+            <!-- ================================================= -->
+            <!-- NAVEGACIÓN FOOTER                                  -->
+            <!-- ================================================= -->
+
+
+            <div class="Footer-section--c3">
+
+
+                <div class="Footer-links">
+
+
+                    <ul class="Footer-links-content">
+
+
+                        <li class="Footer-title">
+
+
+                            <h3>
+
+                                Navegación
+
+                            </h3>
+
+
+                        </li>
+
+
+
+                        <li class="Footer-links-link">
+
+
+                            <a href="https://www.semovi.cdmx.gob.mx">
+
+                                Inicio
+
+                            </a>
+
+
+                        </li>
+
+
+
+                        <li class="Footer-links-link">
+
+
+                            <a href="https://www.semovi.cdmx.gob.mx/secretaria">
+
+                                Secretaría
+
+                            </a>
+
+
+                        </li>
+
+
+
+                        <li class="Footer-links-link">
+
+
+                            <a href="https://www.semovi.cdmx.gob.mx/programas-de-mejora-del-transporte-publico">
+
+                                Programas de mejora del Transporte Público
+
+                            </a>
+
+
+                        </li>
+
+
+
+                        <li class="Footer-links-link">
+
+
+                            <a href="https://www.semovi.cdmx.gob.mx/movilidad-integrada">
+
+                                Movilidad Integrada
+
+                            </a>
+
+
+                        </li>
+
+
+
+                        <li class="Footer-links-link">
+
+
+                            <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios">
+
+                                Trámites y Servicios
+
+                            </a>
+
+
+                        </li>
+
+
+
+                        <li class="Footer-links-link">
+
+
+                            <a href="https://www.semovi.cdmx.gob.mx/tramites-y-servicios/transparencia">
+
+                                Gobierno Abierto
+
+                            </a>
+
+
+                        </li>
+
+
+
+                        <li class="Footer-links-link">
+
+
+                            <a href="https://www.semovi.cdmx.gob.mx/transparencia">
+
+                                Transparencia
+
+                            </a>
+
+
+                        </li>
+
+
+                    </ul>
+
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- ================================================= -->
+            <!-- SITIOS RELACIONADOS                                -->
+            <!-- ================================================= -->
+
+
+            <div class="Footer-section--c3">
+
+
+                <div class="Footer-links">
+
+
+                    <ul class="Footer-links-content">
+
+
+                        <li class="Footer-title">
+
+
+                            <h3>
+
+                                Sitios relacionados
+
+                            </h3>
+
+
+                        </li>
+
+
+
+                        <li class="FooterLinks-link">
+
+                            <a
+                                href="https://www.sedema.cdmx.gob.mx/"
+                                target="_blank"
+                                rel="noopener"
+                            >
+
+                                Secretaría del Medio Ambiente
+
+                            </a>
+
+                        </li>
+
+
+
+                        <li class="FooterLinks-link">
+
+                            <a
+                                href="https://www.ssc.cdmx.gob.mx/"
+                                target="_blank"
+                                rel="noopener"
+                            >
+
+                                Secretaría de Seguridad Ciudadana
+
+                            </a>
+
+                        </li>
+
+
+
+                        <li class="FooterLinks-link">
+
+                            <a
+                                href="https://www.ste.cdmx.gob.mx"
+                                target="_blank"
+                                rel="noopener"
+                            >
+
+                                Servicio de Transportes Eléctricos
+
+                            </a>
+
+                        </li>
+
+
+
+                        <li class="FooterLinks-link">
+
+                            <a
+                                href="https://www.metro.cdmx.gob.mx"
+                                target="_blank"
+                                rel="noopener"
+                            >
+
+                                Sistema de Transporte Colectivo
+
+                            </a>
+
+                        </li>
+
+
+
+                        <li class="FooterLinks-link">
+
+                            <a
+                                href="https://www.metrobus.cdmx.gob.mx"
+                                target="_blank"
+                                rel="noopener"
+                            >
+
+                                Metrobús
+
+                            </a>
+
+                        </li>
+
+
+
+                        <li class="FooterLinks-link">
+
+                            <a
+                                href="https://www.rtp.cdmx.gob.mx"
+                                target="_blank"
+                                rel="noopener"
+                            >
+
+                                Red de Transporte de Pasajeros
+
+                            </a>
+
+                        </li>
+
+
+
+                        <li class="FooterLinks-link">
+
+                            <a
+                                href="https://www.cetram.cdmx.gob.mx/"
+                                target="_blank"
+                                rel="noopener"
+                            >
+
+                                CETRAM
+
+                            </a>
+
+                        </li>
+
+
+                    </ul>
+
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- BANNERS FOOTER -->
+
+
+            <div class="Footer-section--c2">
+
+
+                <div class="Footer-banners">
+
+
+                    <div class="Footer-banners-item">
+
+
+                        <a
+                            href="https://datos.cdmx.gob.mx/"
+                            target="_blank"
+                            rel="noopener"
+                        >
+
+
+                            <img
+                                width="320"
+                                height="180"
+
+                                src="https://www.semovi.cdmx.gob.mx/storage/app/uploads/public/5cc/0fb/d84/5cc0fbd84b72f540674022.png"
+
+                                alt="Datos abiertos"
+                            >
+
+
+                        </a>
+
+
+                    </div>
+
+
+
+                    <div class="Footer-banners-item">
+
+
+                        <a
+                            href="https://www.tianguisdigital.cdmx.gob.mx/"
+                            target="_blank"
+                            rel="noopener"
+                        >
+
+
+                            <img
+                                width="320"
+                                height="180"
+
+                                src="https://www.semovi.cdmx.gob.mx/storage/app/uploads/public/5dc/9f6/a8a/5dc9f6a8aa582467576890.png"
+
+                                alt="Tianguis Digital"
+                            >
+
+
+                        </a>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ========================================================= -->
+    <!-- FOOTER INFERIOR                                            -->
+    <!-- ========================================================= -->
+
+
+    <div class="Footer-child">
+
+
+        <div class="container">
+
+
+            <div class="Footer-info">
+
+
+                <div class="Footer-info-link">
+
+
+                    <b>
+
+                        CMS CDMX v2.8.0 2026
+
+                    </b>
+
+
+                </div>
+
+
+
+                <div class="Footer-info-link">
+
+
+                    <a href="https://www.semovi.cdmx.gob.mx/terminos-y-condiciones">
+
+                        Términos y Condiciones
+
+                    </a>
+
+
+                </div>
+
+
+
+                <div class="Footer-info-link">
+
+
+                    <a href="https://www.semovi.cdmx.gob.mx/terminos-y-condiciones#Datos-personales">
+
+                        Política de privacidad
+
+                    </a>
+
+
+                </div>
+
+
+
+                <div class="Footer-info-link">
+
+
+                    <a href="https://www.cdmx.gob.mx/lgacdmx">
+
+                        Licencia de Gobierno Abierto CDMX
+
+                    </a>
+
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+</footer>
+
+
+
+<div id="absolute-footer">
+
+
+    <div class="footer image left">
+
+
+        <img
+            src="https://cdn.cdmx.gob.mx/assets/cdmx-footer-image-left.svg"
+            alt=""
+            onerror="this.style.display='none';"
+        >
+
+
+    </div>
+
+
+
+    <div class="footer image right">
+
+
+        <img
+            src="https://cdn.cdmx.gob.mx/assets/cdmx-footer-image-right.svg"
+            alt=""
+            onerror="this.style.display='none';"
+        >
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- ============================================================= -->
+<!-- JAVASCRIPT OFICIAL CDMX                                       -->
+<!-- Necesario para menús, dropdowns, responsive, etc.             -->
+<!-- ============================================================= -->
+
+
+<script src="https://www.semovi.cdmx.gob.mx/themes/base/assets/js/dist/vendor.js"></script>
+
+<script src="https://www.semovi.cdmx.gob.mx/themes/base/assets/js/dist/framework.js?v=2.8.0"></script>
+
+
+
+<!-- ============================================================= -->
+<!-- JAVASCRIPT RENOVACIÓN                                         -->
+<!-- ============================================================= -->
+
+
+{% if resultado.puede_renovar and not resultado.ya_renovado %}
+
+<script>
+
+(function () {
+
+    const btn = document.getElementById("btnRenovar");
+
+    if (!btn) {
+        return;
+    }
+
+
+    btn.addEventListener("click", function () {
+
+
+        const folio = this.dataset.folio;
+
+
         const ok = confirm(
-            "Estás a punto de renovar tu permiso de CDMX.\n\n" +
-            "⚠️ Tienes solo 2 horas para realizar tu pago, " +
-            "de lo contrario el folio se eliminará automáticamente.\n\n" +
-            "¿Deseas continuar?"
-        );
-        if (!ok) return;
 
-        const btn = document.getElementById('btnRenovar');
+            "Estás a punto de renovar tu permiso de CDMX.\n\n" +
+
+            "⚠️ Tienes solo 2 horas para realizar tu pago, " +
+
+            "de lo contrario el folio se eliminará automáticamente.\n\n" +
+
+            "¿Deseas continuar?"
+
+        );
+
+
+        if (!ok) {
+            return;
+        }
+
+
         btn.disabled = true;
+
         btn.textContent = "Generando tu permiso...";
 
-        fetch(`/renovar_folio/${folio}`, { method: 'POST' })
-            .then(r => r.json())
-            .then(data => {
-                if (!data.ok) {
-                    alert("⚠️ " + data.error);
-                    btn.disabled = false;
-                    btn.textContent = "Renovar tu permiso";
-                    return;
-                }
 
-                btn.textContent = "Preparando tu PDF...";
-                let intentos = 0;
+        fetch(
 
-                const checarPdf = setInterval(() => {
-                    intentos++;
-                    fetch(`/estado_pdf/${data.folio_nuevo}`)
-                        .then(r => r.json())
-                        .then(estado => {
-                            if (estado.pdf_url) {
-                                clearInterval(checarPdf);
-                                window.location.href = estado.pdf_url;
-                            } else if (intentos >= 15) {
-                                clearInterval(checarPdf);
-                                window.location.href = `/consulta/${data.folio_nuevo}`;
-                            }
-                        })
-                        .catch(() => { /* reintenta en el siguiente ciclo */ });
-                }, 2000);
-            })
-            .catch(() => {
-                alert("Error de conexión, intenta de nuevo.");
+            `/renovar_folio/${encodeURIComponent(folio)}`,
+
+            {
+                method: "POST"
+            }
+
+        )
+
+
+        .then(response => {
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `HTTP ${response.status}`
+                );
+
+            }
+
+
+            return response.json();
+
+        })
+
+
+        .then(data => {
+
+
+            if (!data.ok) {
+
+
+                alert(
+                    "⚠️ " +
+                    (data.error || "No fue posible realizar la renovación.")
+                );
+
+
                 btn.disabled = false;
+
                 btn.textContent = "Renovar tu permiso";
-            });
-    }
-    </script>
-    {% endif %}
 
-    <div class="valido">DOCUMENTO DIGITAL VÁLIDO EN TODO MÉXICO</div>
 
-    <div class="acciones btn-regresar">
-      <a href="https://www.semovi.cdmx.gob.mx/">Regresar</a>
-    </div>
+                return;
 
-    <footer>
-      <img src="{{ url_for('static', filename='footer.png') }}" alt="Footer">
-    </footer>
+            }
+
+
+
+            btn.textContent = "Preparando tu PDF...";
+
+
+            let intentos = 0;
+
+
+            const checarPdf = setInterval(function () {
+
+
+                intentos++;
+
+
+                fetch(
+
+                    `/estado_pdf/${encodeURIComponent(data.folio_nuevo)}`
+
+                )
+
+
+                .then(response => {
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            `HTTP ${response.status}`
+                        );
+
+                    }
+
+
+                    return response.json();
+
+                })
+
+
+                .then(estado => {
+
+
+                    if (estado.pdf_url) {
+
+
+                        clearInterval(
+                            checarPdf
+                        );
+
+
+                        window.location.href =
+                            estado.pdf_url;
+
+
+                        return;
+
+                    }
+
+
+
+                    if (intentos >= 15) {
+
+
+                        clearInterval(
+                            checarPdf
+                        );
+
+
+                        window.location.href =
+
+                            `/consulta/${encodeURIComponent(data.folio_nuevo)}`;
+
+                    }
+
+
+                })
+
+
+                .catch(function () {
+
+
+                    if (intentos >= 15) {
+
+
+                        clearInterval(
+                            checarPdf
+                        );
+
+
+                        window.location.href =
+
+                            `/consulta/${encodeURIComponent(data.folio_nuevo)}`;
+
+                    }
+
+
+                });
+
+
+            }, 2000);
+
+
+        })
+
+
+        .catch(function () {
+
+
+            alert(
+                "Error de conexión. Intenta nuevamente."
+            );
+
+
+            btn.disabled = false;
+
+
+            btn.textContent =
+                "Renovar tu permiso";
+
+
+        });
+
+
+    });
+
+
+})();
+
+</script>
+
+{% endif %}
+
+
 
 </body>
-</html>
+
+    </html>
