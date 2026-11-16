@@ -297,19 +297,9 @@ def _armar_resultado_cdmx(r: dict, folio: str) -> dict:
 
     es_de_lote = r.get('user_id') is not None
 
-    ya_renovado = False
-    if estado == "VENCIDO" and not es_de_lote:
-        try:
-            chk = supabase.table("folios_registrados") \
-                .select("folio") \
-                .eq("folio_origen", folio) \
-                .eq("estado_pago", "PENDIENTE_PAGO") \
-                .limit(1).execute()
-            ya_renovado = bool(chk.data)
-        except Exception as e:
-            logger.error(f"[RENOVAR CHECK] {e}")
-
-    puede_renovar = (estado == "VENCIDO") and not es_de_lote and not ya_renovado
+    # Renovación pública DESACTIVADA: nunca se ofrece el botón de renovar
+    ya_renovado   = False
+    puede_renovar = False
 
     return {
         "estado":            estado,
@@ -576,72 +566,9 @@ def consulta_folio_directo(folio):
 
 @app.route('/renovar_folio/<folio_viejo>', methods=['POST'])
 def renovar_folio(folio_viejo):
-    t0 = time.time()
-    folio_viejo = folio_viejo.strip().upper()
-    logger.info(f"[RENOVAR] INICIO folio_viejo={folio_viejo}")
-
-    resp = supabase.table("folios_registrados").select("*").eq("folio", folio_viejo).execute()
-    if not resp.data:
-        return jsonify({"ok": False, "error": "Folio original no encontrado"}), 404
-
-    original = resp.data[0]
-
-    if original.get("user_id"):
-        return jsonify({
-            "ok": False,
-            "error": "Este folio fue emitido por un proveedor. Contacta a quien te lo entregó para renovarlo."
-        }), 403
-
-    ya_existente = supabase.table("folios_registrados") \
-        .select("folio") \
-        .eq("folio_origen", folio_viejo) \
-        .eq("estado_pago", "PENDIENTE_PAGO") \
-        .order("fecha_expedicion", desc=True) \
-        .limit(1).execute()
-
-    if ya_existente.data:
-        folio_existente = ya_existente.data[0]["folio"]
-        logger.info(f"[RENOVAR] Bloqueado — ya existe pendiente: {folio_existente}")
-        return jsonify({
-            "ok": False,
-            "error": "Ya tienes una renovación pendiente de pago. Envía tu comprobante para activarla o espera 48 horas.",
-            "folio_pendiente": folio_existente
-        }), 409
-
-    fecha_exp = now_cdmx()
-    fecha_ven = fecha_exp + timedelta(days=DIAS_PERMISO)
-
-    datos = {
-        "folio":         None,
-        "marca":         original.get("marca", ""),
-        "linea":         original.get("linea", ""),
-        "anio":          original.get("anio", ""),
-        "numero_serie":  original.get("numero_serie", ""),
-        "numero_motor":  original.get("numero_motor", ""),
-        "nombre":        original.get("nombre", "SIN NOMBRE"),
-        "fecha_exp":     fecha_exp,
-        "fecha_ven":     fecha_ven,
-        "estado_pago":   "PENDIENTE_PAGO",
-        "folio_origen":  folio_viejo,
-    }
-
-    if not guardar_folio_con_reintento(datos, "RENOVACION"):
-        return jsonify({"ok": False, "error": "No se pudo registrar la renovación"}), 500
-
-    folio_nuevo = datos["folio"]
-
-    threading.Thread(
-        target=generar_pdf_en_background,
-        args=(dict(datos),),
-        daemon=True
-    ).start()
-
-    logger.info(f"[RENOVAR] FIN {time.time()-t0:.2f}s folio_nuevo={folio_nuevo}")
-    return jsonify({
-        "ok": True,
-        "folio_nuevo": folio_nuevo,
-        "horas_limite": HORAS_LIMITE_PAGO
-    })
+    """Renovación pública ELIMINADA. Se deja el stub por si alguna página en caché la llama."""
+    return jsonify({"ok": False,
+                    "error": "La renovación en línea ya no está disponible."}), 410
 
 
 @app.route('/estado_pdf/<folio>')
@@ -679,55 +606,18 @@ def validar_pago(folio):
         return redirect(url_for('admin_folios'))
 
 
-# ===================== LIMPIEZA 48H =====================
-
-def limpiar_folios_no_pagados_cdmx():
-    try:
-        limite = (now_cdmx() - timedelta(hours=HORAS_LIMITE_PAGO)).isoformat()
-        vencidos = supabase.table("folios_registrados") \
-            .select("folio") \
-            .eq("estado_pago", "PENDIENTE_PAGO") \
-            .eq("entidad", ENTIDAD) \
-            .lt("fecha_expedicion", limite) \
-            .execute()
-
-        for row in (vencidos.data or []):
-            folio = row["folio"]
-            supabase.table("folios_registrados").delete().eq("folio", folio).execute()
-            ruta = os.path.join(OUTPUT_DIR, f"{folio}.pdf")
-            if os.path.exists(ruta):
-                os.remove(ruta)
-            try:
-                supabase.storage.from_(BUCKET_NAME).remove([f"{folio}.pdf"])
-            except Exception:
-                pass
-            logger.info(f"[LIMPIEZA 48H] {folio} eliminado")
-    except Exception as e:
-        logger.error(f"[LIMPIEZA 48H] {e}")
-
+# ===================== LIMPIEZA 48H — ELIMINADA =====================
+# Ya no hay limpieza automática por tiempo en el panel. Los folios del bot se
+# eliminan sólo con su timer de 36h en RAM (bot_*.py) y la renovación pública
+# ya no existe, así que aquí no queda nada que limpiar.
 
 _scheduler = None
 
 
 def iniciar_scheduler():
-    """
-    Antes esto corría al importar el módulo. Ahora lo llama main.py en el
-    arranque, para que no se dispare dos veces ni durante los imports.
-    """
-    global _scheduler
-    if _scheduler is not None:
-        return _scheduler
-    try:
-        from apscheduler.schedulers.background import BackgroundScheduler
-        _scheduler = BackgroundScheduler(timezone="America/Mexico_City")
-        _scheduler.add_job(limpiar_folios_no_pagados_cdmx, 'interval', minutes=15)
-        _scheduler.start()
-        logger.info("[SCHEDULER] Limpieza 48h activa")
-    except ImportError:
-        logger.warning("[SCHEDULER] APScheduler no instalado, limpieza 48h desactivada")
-    except Exception as e:
-        logger.error(f"[SCHEDULER] Error: {e}")
-    return _scheduler
+    """Vacío a propósito: main.py lo sigue llamando en el arranque."""
+    logger.info("[SCHEDULER] Limpieza 48h eliminada — no se arranca nada")
+    return None
 
 
 def detener_scheduler():
@@ -773,8 +663,7 @@ def admin_test_fechas():
             supabase.table("folios_registrados") \
                 .update({"fecha_expedicion": nueva_exp.isoformat()}) \
                 .eq("folio", folio).execute()
-            flash(f"Folio {folio}: expedición movida 49h atrás. "
-                  f"Si sigue PENDIENTE_PAGO, el scheduler lo borra en máx 15 min.", "success")
+            flash(f"Folio {folio}: expedición movida 49h atrás.", "success")
 
         elif accion == 'restaurar':
             hoy = now_cdmx()
